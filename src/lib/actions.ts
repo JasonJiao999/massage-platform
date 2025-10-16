@@ -8,6 +8,19 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import { Resend } from 'resend';
 
+
+
+// Helper function to get the current user and their profile
+async function getUserAndProfile(supabase: any) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) throw new Error('User not authenticated.');
+  
+  const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+  if (profileError || !profile) throw new Error('User profile not found.');
+  
+  return { user, profile };
+}
+
 export async function updateShopSettings(prevState: any, formData: FormData) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
@@ -122,156 +135,255 @@ export async function inviteStaffMembers(prevState: any, formData: FormData) {
 }
 
 
+/**
+ * 接受邀请成为店铺员工
+ */
 export async function acceptInvitation(invitationId: string) {
   'use server';
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) { throw new Error("You must be logged in to accept an invitation."); }
-  const { data: invitation, error: invitationError } = await supabase.from('invitations').select('id, shop_id, email, status').eq('id', invitationId).single();
-  if (invitationError || !invitation) { throw new Error("This invitation is invalid or has expired."); }
-  if (invitation.status !== 'pending') { throw new Error("This invitation has already been processed."); }
-  if (invitation.email !== user.email) { throw new Error("This invitation is intended for a different user."); }
-  const { error: staffInsertError } = await supabase.from('staff').insert({ user_id: user.id, shop_id: invitation.shop_id, nickname: user.email?.split('@')[0] || 'New Staff', is_active: true });
-  if (staffInsertError && staffInsertError.code !== '23505') { throw staffInsertError; }
-  const { error: updateInvitationError } = await supabase.from('invitations').update({ status: 'accepted' }).eq('id', invitationId);
-  if (updateInvitationError) { throw updateInvitationError; }
-  revalidatePath('/dashboard/staff');
-  revalidatePath('/staff-dashboard/services');
-  redirect('/staff-dashboard/services');
+
+  const { user } = await getUserAndProfile(supabase);
+
+  const { data: invitation, error: invitationError } = await supabase.from('invitations').select('id, shop_id, status').eq('id', invitationId).single();
+  if (invitationError || !invitation || invitation.status !== 'pending') {
+    throw new Error('Invalid or expired invitation.');
+  }
+
+  // 【核心修改】: 插入 staff 表时，不再包含 nickname
+  // 只插入关系数据：user_id 和 shop_id
+  const { error: insertStaffError } = await supabase.from('staff').insert({
+    user_id: user.id,
+    shop_id: invitation.shop_id,
+  });
+  if (insertStaffError) throw insertStaffError;
+
+  const { error: updateProfileError } = await supabase.from('profiles').update({ role: 'staff' }).eq('id', user.id);
+  if (updateProfileError) throw updateProfileError;
+
+  const { error: updateInvitationError } = await supabase.from('invitations').update({ status: 'accepted' }).eq('id', invitation.id);
+  if (updateInvitationError) throw updateInvitationError;
+
+  revalidatePath('/dashboard/applications');
+  redirect('/staff-dashboard');
 }
 
-export async function updateStaffMember(prevState: any, formData: FormData) {
+/**
+ * 【升级版】更新当前用户的个人资料 (包含所有字段)
+ */
+export async function updateMyProfile(prevState: any, formData: FormData) {
   'use server';
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { message: "Error: User not logged in" };
-  const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', user.id).single();
-  if (!shop) return { message: "Error: Could not find your shop, permission denied" };
-  const staffId = formData.get('staffId') as string;
+
+  const { user } = await getUserAndProfile(supabase);
+
+  // 1. 获取所有表单字段
   const nickname = formData.get('nickname') as string;
-  const level = formData.get('level') as string;
   const bio = formData.get('bio') as string;
-  const years = formData.get('years') as string;
-  const feature = formData.get('feature') as string;
+  const years = formData.get('years') ? parseInt(formData.get('years') as string, 10) : null;
+  const level = formData.get('level') as string;
   const tags = formData.get('tags') as string;
-  const isActive = formData.get('is_active') === 'on';
-  if (!staffId) return { message: "Error: Missing staff ID" };
-  const featureArray = feature ? feature.split(',').map(s => s.trim()) : [];
-  const tagsArray = tags ? tags.split(',').map(t => t.trim()) : [];
-  const yearsNumber = years ? parseInt(years, 10) : null;
-  const { error } = await supabase.from('staff').update({ nickname, level, bio, years: yearsNumber, feature: featureArray, tags: tagsArray, is_active: isActive, }).eq('id', staffId).eq('shop_id', shop.id);
-  if (error) { console.error("Failed to update staff member:", error); return { message: `Update failed: ${error.message}` }; }
-  revalidatePath('/dashboard/staff');
-  revalidatePath(`/dashboard/staff/${staffId}/edit`);
-  return { message: 'Staff member updated successfully!' };
+  const feature = formData.get('feature') as string;
+  
+  // 2. 组装 social_links JSON 对象
+  const socialLinks = {
+    twitter: formData.get('social_twitter') as string,
+    instagram: formData.get('social_instagram') as string,
+    facebook: formData.get('social_facebook') as string,
+  };
+
+  // 3. 将字符串转换为数组
+  const tagsArray = tags ? tags.split(',').map(tag => tag.trim()) : [];
+  const featureArray = feature ? feature.split(',').map(f => f.trim()) : [];
+  
+  // 4. 更新 profiles 表
+  const { error } = await supabase
+    .from('profiles')
+    .update({ 
+      nickname,
+      bio,
+      years,
+      level,
+      tags: tagsArray,
+      feature: featureArray,
+      social_links: socialLinks,
+    })
+    .eq('id', user.id);
+
+  if (error) {
+    return { message: `Update failed: ${error.message}`, success: false };
+  }
+
+  revalidatePath('/staff-dashboard/profile');
+  return { message: '个人资料已成功更新!', success: true };
 }
 
-export async function uploadMultipleStaffPhotos(prevState: any, formData: FormData) {
+/**
+ * 【新功能】更新当前用户的头像
+ */
+export async function updateAvatar(formData: FormData) {
   'use server';
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { message: "Error: User not logged in" };
-  const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', user.id).single();
-  if (!shop) return { message: "Error: Could not find your shop" };
-  const staffId = formData.get('staffId') as string;
-  const files = formData.getAll('photos') as File[];
-  if (!staffId || !files || files.length === 0 || files[0].size === 0) return { message: "Error: Missing staff ID or no files selected" };
-  try {
-    const { data: staff, error: staffError } = await supabase.from('staff').select('photo_urls').eq('id', staffId).eq('shop_id', shop.id).single();
-    if (staffError || !staff) return { message: "Error: Could not find staff member or permission denied" };
-    const currentPhotos = staff.photo_urls || [];
-    const PHOTO_LIMIT = 5;
-    if (currentPhotos.length + files.length > PHOTO_LIMIT) return { message: `Error: Photo limit exceeded (${PHOTO_LIMIT})` };
-    const uploadPromises = files.map(file => { const fileExt = file.name.split('.').pop(); const fileName = `${staffId}-${Date.now()}-${Math.random()}.${fileExt}`; const filePath = `staff-photos/${fileName}`; return supabase.storage.from('web-media').upload(filePath, file); });
+  const { user } = await getUserAndProfile(supabase);
+
+  const file = formData.get('avatar') as File;
+  if (!file || file.size === 0) throw new Error('No file provided.');
+
+  // 【核心修改】: 使用更有条理的文件夹路径
+  const filePath = `${user.id}/avatars/avatar-${Date.now()}`;
+
+  // 【核心修改】: 使用 'web-media' Bucket
+  const { error: uploadError } = await supabase.storage
+    .from('web-media')
+    .upload(filePath, file, { upsert: true });
+
+  if (uploadError) throw uploadError;
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('web-media')
+    .getPublicUrl(filePath);
+
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: publicUrl })
+    .eq('id', user.id);
+
+  if (updateError) throw updateError;
+  
+  revalidatePath('/staff-dashboard/profile');
+}
+
+/**
+ * 【重命名版】为当前用户上传多张照片
+ */
+export async function uploadMultipleMyProfilePhotos(formData: FormData) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { user } = await getUserAndProfile(supabase);
+  
+    const files = formData.getAll('photos') as File[];
+    if (!files || files.length === 0) throw new Error('No files to upload.');
+  
+    const { data: profileData, error: profileError } = await supabase.from('profiles').select('photo_urls').eq('id', user.id).single();
+    if (profileError) throw profileError;
+    const existingUrls = profileData.photo_urls || [];
+  
+    // 【核心修改】: 使用 'web-media' Bucket 和 'photos' 子文件夹
+    const uploadPromises = files.map(file => 
+      supabase.storage.from('web-media').upload(`${user.id}/photos/${Date.now()}_${file.name}`, file)
+    );
     const uploadResults = await Promise.all(uploadPromises);
-    const newUrls: string[] = [];
-    for (const result of uploadResults) { if (result.error) throw result.error; const { data: { publicUrl } } = supabase.storage.from('web-media').getPublicUrl(result.data.path); newUrls.push(publicUrl); }
-    const updatedPhotos = [...currentPhotos, ...newUrls];
-    const { error: updateDbError } = await supabase.from('staff').update({ photo_urls: updatedPhotos }).eq('id', staffId);
-    if (updateDbError) throw updateDbError;
-    revalidatePath(`/dashboard/staff/${staffId}/edit`);
-    return { message: `${files.length} photo(s) uploaded successfully!` };
-  } catch (error: any) { console.error("Failed to upload photos:", error); return { message: `Upload failed: ${error.message}` }; }
+  
+    const newUrls = uploadResults.map(result => {
+      if (result.error) throw result.error;
+      const { data } = supabase.storage.from('web-media').getPublicUrl(result.data.path);
+      return data.publicUrl;
+    });
+  
+    const allUrls = [...existingUrls, ...newUrls];
+  
+    const { error: updateError } = await supabase.from('profiles').update({ photo_urls: allUrls }).eq('id', user.id);
+    if (updateError) throw updateError;
+  
+    revalidatePath('/staff-dashboard/profile');
 }
 
-export async function deleteStaffPhotos(prevState: any, formData: FormData) {
-  'use server';
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { message: "Error: User not logged in" };
-  const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', user.id).single();
-  if (!shop) return { message: "Error: Could not find your shop" };
-  const staffId = formData.get('staffId') as string;
-  const photoUrlsToDelete = formData.getAll('photoUrlsToDelete') as string[];
-  if (!staffId || photoUrlsToDelete.length === 0) return { message: "Error: No photos selected for deletion" };
-  try {
-    const filePaths = photoUrlsToDelete.map(url => new URL(url).pathname.substring(new URL(url).pathname.indexOf('web-media/') + 'web-media/'.length));
-    const { error: storageError } = await supabase.storage.from('web-media').remove(filePaths);
-    if (storageError) throw new Error('Failed to delete files from storage.');
-    const { data: staff, error: staffError } = await supabase.from('staff').select('photo_urls').eq('id', staffId).single();
-    if (staffError || !staff) return { message: "Error: Could not find staff member" };
-    const updatedPhotos = (staff.photo_urls || []).filter((url: string) => !photoUrlsToDelete.includes(url));
-    const { error: dbError } = await supabase.from('staff').update({ photo_urls: updatedPhotos }).eq('id', staffId);
-    if (dbError) throw new Error('Failed to update database.');
-    revalidatePath(`/dashboard/staff/${staffId}/edit`);
-    return { message: `${photoUrlsToDelete.length} photo(s) deleted successfully!` };
-  } catch (error: any) { console.error("Failed to delete photos:", error); return { message: `Deletion failed: ${error.message}` }; }
-}
 
-export async function uploadMultipleStaffVideos(prevState: any, formData: FormData) {
-  'use server';
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { message: "Error: User not logged in" };
-  const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', user.id).single();
-  if (!shop) return { message: "Error: Could not find your shop" };
-  const staffId = formData.get('staffId') as string;
-  const files = formData.getAll('videos') as File[];
-  if (!staffId || !files || files.length === 0 || files[0].size === 0) return { message: "Error: Missing staff ID or no video files selected" };
-  try {
-    const { data: staff, error: staffError } = await supabase.from('staff').select('video_urls').eq('id', staffId).eq('shop_id', shop.id).single();
-    if (staffError || !staff) return { message: "Error: Could not find staff member or permission denied" };
-    const currentVideos = staff.video_urls || [];
-    const VIDEO_LIMIT = 2;
-    if (currentVideos.length + files.length > VIDEO_LIMIT) return { message: `Error: Video limit exceeded (${VIDEO_LIMIT})` };
-    const uploadPromises = files.map(file => { const fileExt = file.name.split('.').pop(); const fileName = `${staffId}-${Date.now()}-${Math.random()}.${fileExt}`; const filePath = `staff-videos/${fileName}`; return supabase.storage.from('web-media').upload(filePath, file); });
-    const uploadResults = await Promise.all(uploadPromises);
-    const newUrls: string[] = [];
-    for (const result of uploadResults) { if (result.error) throw result.error; const { data: { publicUrl } } = supabase.storage.from('web-media').getPublicUrl(result.data.path); newUrls.push(publicUrl); }
-    const updatedVideos = [...currentVideos, ...newUrls];
-    const { error: updateDbError } = await supabase.from('staff').update({ video_urls: updatedVideos }).eq('id', staffId);
-    if (updateDbError) throw updateDbError;
-    revalidatePath(`/dashboard/staff/${staffId}/edit`);
-    return { message: `${files.length} video(s) uploaded successfully!` };
-  } catch (error: any) { console.error("Failed to upload videos:", error); return { message: `Upload failed: ${error.message}` }; }
-}
-
-export async function deleteSingleStaffVideo(staffId: string, videoUrl: string) {
-  'use server';
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not logged in");
-  const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', user.id).single();
-  if (!shop) throw new Error("Could not find your shop");
-  try {
-    const urlParts = new URL(videoUrl);
-    const filePath = urlParts.pathname.substring(urlParts.pathname.indexOf('web-media/') + 'web-media/'.length);
+/**
+ * 【重命名版】为当前用户删除一张照片
+ */
+export async function deleteMyProfilePhoto(photoUrl: string) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { user } = await getUserAndProfile(supabase);
+  
+    // 从 URL 中提取文件路径 (例如: user_id/photos/filename.jpg)
+    const filePath = photoUrl.substring(photoUrl.indexOf(`/${user.id}/`)).substring(1);
+    if (!filePath) throw new Error('Invalid photo URL');
+  
+    // 【核心修改】: 从 'web-media' Bucket 中删除
     const { error: storageError } = await supabase.storage.from('web-media').remove([filePath]);
     if (storageError) throw storageError;
-    const { data: staff, error: staffError } = await supabase.from('staff').select('video_urls').eq('id', staffId).single();
-    if (staffError || !staff) throw new Error("Could not find staff member");
-    const updatedVideos = (staff.video_urls || []).filter((url: string) => url !== videoUrl);
-    const { error: dbError } = await supabase.from('staff').update({ video_urls: updatedVideos }).eq('id', staffId);
-    if (dbError) throw dbError;
-    revalidatePath(`/dashboard/staff/${staffId}/edit`);
-    return { success: true, message: 'Video deleted successfully!' };
-  } catch (error: any) { console.error("Failed to delete video:", error); return { success: false, message: `Deletion failed: ${error.message}` }; }
+  
+    const { data: profileData, error: profileError } = await supabase.from('profiles').select('photo_urls').eq('id', user.id).single();
+    if (profileError) throw profileError;
+  
+    const updatedUrls = (profileData.photo_urls || []).filter((url: string) => url !== photoUrl);
+  
+    const { error: updateError } = await supabase.from('profiles').update({ photo_urls: updatedUrls }).eq('id', user.id);
+    if (updateError) throw updateError;
+  
+    revalidatePath('/staff-dashboard/profile');
+}
+
+
+
+/**
+ * 【重命名版】为当前用户上传多个视频
+ */
+export async function uploadMultipleMyProfileVideos(formData: FormData) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { user } = await getUserAndProfile(supabase);
+  
+    const files = formData.getAll('videos') as File[];
+    if (!files || files.length === 0) throw new Error('No files to upload.');
+  
+    const { data: profileData, error: profileError } = await supabase.from('profiles').select('video_urls').eq('id', user.id).single();
+    if (profileError) throw profileError;
+    const existingUrls = profileData.video_urls || [];
+  
+    // 【核心修改】: 使用 'web-media' Bucket 和 'videos' 子文件夹
+    const uploadPromises = files.map(file => 
+      supabase.storage.from('web-media').upload(`${user.id}/videos/${Date.now()}_${file.name}`, file)
+    );
+    const uploadResults = await Promise.all(uploadPromises);
+  
+    const newUrls = uploadResults.map(result => {
+      if (result.error) throw result.error;
+      const { data } = supabase.storage.from('web-media').getPublicUrl(result.data.path);
+      return data.publicUrl;
+    });
+  
+    const allUrls = [...existingUrls, ...newUrls];
+  
+    const { error: updateError } = await supabase.from('profiles').update({ video_urls: allUrls }).eq('id', user.id);
+    if (updateError) throw updateError;
+  
+    revalidatePath('/staff-dashboard/profile');
+}
+
+/**
+ * 【重命名版】为当前用户删除一个视频
+ */
+export async function deleteMyProfileVideo(videoUrl: string) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { user } = await getUserAndProfile(supabase);
+  
+    // 从 URL 中提取文件路径
+    const filePath = videoUrl.substring(videoUrl.indexOf(`/${user.id}/`)).substring(1);
+    if (!filePath) throw new Error('Invalid video URL');
+  
+    // 【核心修改】: 从 'web-media' Bucket 中删除
+    const { error: storageError } = await supabase.storage.from('web-media').remove([filePath]);
+    if (storageError) throw storageError;
+  
+    const { data: profileData, error: profileError } = await supabase.from('profiles').select('video_urls').eq('id', user.id).single();
+    if (profileError) throw profileError;
+  
+    const updatedUrls = (profileData.video_urls || []).filter((url: string) => url !== videoUrl);
+  
+    const { error: updateError } = await supabase.from('profiles').update({ video_urls: updatedUrls }).eq('id', user.id);
+    if (updateError) throw updateError;
+  
+    revalidatePath('/staff-dashboard/profile');
 }
 
 export async function createL2Category(shopId: string, formData: FormData) {
@@ -414,72 +526,673 @@ export async function createService(prevState: any, formData: FormData) {
 }
 
 /**
- * 【最终版】员工通过输入商户邮箱来加入店铺
+ * 【新架构版】自由人通过商户邮箱加入店铺
  */
 export async function joinShopByMerchantEmail(prevState: any, formData: FormData) {
   'use server';
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { message: "Error: You must be logged in.", success: false };
-
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role !== 'freeman') { // 使用小写 'freeman'
+  const { user, profile } = await getUserAndProfile(supabase);
+  if (profile.role !== 'freeman') {
     return { message: "Error: Only freelance staff can join a new shop.", success: false };
   }
-
-  const { data: staffProfile } = await supabase.from('staff').select('id').eq('user_id', user.id).single();
-  if (!staffProfile) return { message: "Error: Your staff profile could not be found.", success: false };
 
   const merchantEmail = formData.get('merchant_email') as string;
   if (!merchantEmail) return { message: "Error: Merchant email is required.", success: false };
 
-  // 【核心修正】我们直接查询 profiles 表来找商户，这更高效且类型安全
-  const { data: merchantProfile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id, role')
-    .eq('email', merchantEmail)
-    .single();
-
-  if (profileError || !merchantProfile || merchantProfile.role !== 'merchant') {
+  const { data: merchantProfile } = await supabase.from('profiles').select('id, role').eq('email', merchantEmail).single();
+  if (!merchantProfile || merchantProfile.role !== 'merchant') {
     return { message: "Error: No merchant found with that email address.", success: false };
   }
 
-  const { data: shop, error: shopError } = await supabase.from('shops').select('id, name').eq('owner_id', merchantProfile.id).single();
-  if (shopError || !shop) return { message: "Error: This merchant does not own a shop.", success: false };
+  const { data: shop } = await supabase.from('shops').select('id, name').eq('owner_id', merchantProfile.id).single();
+  if (!shop) return { message: "Error: This merchant does not own a shop.", success: false };
 
-  const { error: updateStaffError } = await supabase.from('staff').update({ shop_id: shop.id }).eq('id', staffProfile.id);
-  if (updateStaffError) { console.error("Failed to join shop:", updateStaffError); return { message: `Error: ${updateStaffError.message}`, success: false }; }
+  // 【核心修改】: upsert 操作不再包含 nickname
+  // 我们只在 staff 表中建立关系
+  const { error: upsertStaffError } = await supabase.from('staff').upsert({
+    user_id: user.id,
+    shop_id: shop.id,
+    is_active: true
+  }, { onConflict: 'user_id' });
+  if (upsertStaffError) {
+    console.error("Failed to join shop:", upsertStaffError);
+    return { message: `Error: ${upsertStaffError.message}`, success: false };
+  }
 
   const { error: updateProfileError } = await supabase.from('profiles').update({ role: 'staff' }).eq('id', user.id);
-  if (updateProfileError) { console.error("Failed to update role:", updateProfileError); return { message: `Error: ${updateProfileError.message}`, success: false }; }
+  if (updateProfileError) {
+    console.error("Failed to update role:", updateProfileError);
+    return { message: `Error: ${updateProfileError.message}`, success: false };
+  }
 
   revalidatePath('/staff-dashboard/profile');
   return { message: `Successfully joined ${shop.name}!`, success: true };
 }
 
 /**
- * 【新功能】员工离开店铺，成为自由职业者
+ * 【新架构版】员工离开店铺，成为自由职业者 (删除方案)
  */
-export async function leaveShop() {
+export async function leaveShop(prevState: any, formData: FormData) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+  
+    const { user } = await getUserAndProfile(supabase);
+  
+    try {
+      // 步骤1: 删除 staff 表中的“雇佣关系”记录
+      const { error: deleteStaffError } = await supabase
+        .from('staff')
+        .delete()
+        .eq('user_id', user.id);
+      if (deleteStaffError) throw deleteStaffError;
+  
+      // 步骤2: 更新 profiles 表中的角色
+      const { error: updateProfileError } = await supabase
+        .from('profiles')
+        .update({ role: 'freeman' })
+        .eq('id', user.id);
+      if (updateProfileError) throw updateProfileError;
+  
+    } catch (error: any) {
+      return { message: `Operation failed: ${error.message}`, success: false };
+    }
+  
+    revalidatePath('/staff-dashboard/profile');
+    return { message: 'Successfully left the shop! You are now a freelancer.', success: true };
+}
+
+//创建服务信息
+export async function createMyService(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. Get current user's profile
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { message: "Error: You must be logged in.", success: false };
+  }
+
+  // 2. Check if the user is currently a staff member to get their shop_id
+  const { data: staffEntry } = await supabase
+    .from('staff')
+    .select('id, shop_id')
+    .eq('user_id', user.id)
+    .single();
+
+  // 3. Get all service data from the form
+  const name = formData.get('name') as string;
+  const description = formData.get('description') as string;
+  const price = parseFloat(formData.get('price') as string);
+  const durationValue = parseInt(formData.get('duration_value') as string, 10);
+  const durationUnit = formData.get('duration_unit') as string;
+  const type = formData.get('type') as string;
+
+  if (!name || isNaN(price) || isNaN(durationValue) || !durationUnit) {
+    return { message: "Error: Please fill in all required fields.", success: false };
+  }
+
+  // 4. [CORE LOGIC] Insert into the database using the new schema
+  const { error } = await supabase.from('services').insert({
+    name,
+    description,
+    price,
+    duration_value: durationValue,    // New duration field
+    duration_unit: durationUnit,      // New duration field
+    type,
+    owner_id: user.id,                // [CRITICAL] The service is owned by the user
+    shop_id: staffEntry?.shop_id || null, // Optional: The shop it's associated with, if any
+  });
+
+  if (error) {
+    console.error('Create Service Error:', error);
+    return { message: `Creation failed: ${error.message}`, success: false };
+  }
+
+  revalidatePath('/staff-dashboard/services');
+  return { message: 'Service created successfully!', success: true };
+}
+
+// 更新服务信息
+export async function updateMyService(prevState: any, formData: FormData) {
   'use server';
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("You must be logged in.");
+  if (!user) {
+    return { message: "Error: You must be logged in.", success: false };
+  }
 
-  const { data: staffProfile } = await supabase.from('staff').select('id').eq('user_id', user.id).eq('is_active', true).single();
-  if (!staffProfile) throw new Error("Your staff profile could not be found.");
+  // 从隐藏字段中获取 service_id
+  const serviceId = formData.get('service_id') as string;
+  const name = formData.get('name') as string;
+  const description = formData.get('description') as string;
+  const price = parseFloat(formData.get('price') as string);
+  const durationValue = parseInt(formData.get('duration_value') as string, 10);
+  const durationUnit = formData.get('duration_unit') as string;
+  const type = formData.get('type') as string;
 
-  const { error: updateStaffError } = await supabase.from('staff').update({ shop_id: null }).eq('id', staffProfile.id);
-  if (updateStaffError) throw updateStaffError;
+  if (!serviceId || !name || isNaN(price) || isNaN(durationValue) || !durationUnit) {
+    return { message: "Error: Invalid data provided.", success: false };
+  }
+  
+  // 安全检查：确保用户拥有此服务的所有权
+  const { data: service, error: ownerError } = await supabase
+    .from('services')
+    .select('owner_id')
+    .eq('id', serviceId)
+    .single();
 
-  // 使用小写 'freeman'
-  const { error: updateProfileError } = await supabase.from('profiles').update({ role: 'freeman' }).eq('id', user.id);
-  if (updateProfileError) throw updateProfileError;
+  if (ownerError || service?.owner_id !== user.id) {
+    return { message: "Error: You do not have permission to edit this service.", success: false };
+  }
 
-  revalidatePath('/staff-dashboard/profile');
-  redirect('/staff-dashboard/profile');
+  const { error } = await supabase
+    .from('services')
+    .update({ name, description, price, duration_value: durationValue, duration_unit: durationUnit, type })
+    .eq('id', serviceId);
+
+  if (error) {
+    return { message: `Update failed: ${error.message}`, success: false };
+  }
+
+  revalidatePath('/staff-dashboard/services');
+  return { message: '服务已成功更新!', success: true };
+}
+
+// 删除服务信息
+export async function deleteMyService(serviceId: string) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error('You must be logged in to delete a service.');
+    }
+
+    // Security Check: Ensure the user owns this service
+    const { data: service, error: ownerError } = await supabase
+        .from('services')
+        .select('owner_id')
+        .eq('id', serviceId)
+        .single();
+
+    if (ownerError || service?.owner_id !== user.id) {
+        throw new Error('You do not have permission to delete this service.');
+    }
+
+    const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', serviceId);
+
+    if (error) {
+        console.error('Delete Service Error:', error);
+        throw new Error('Failed to delete the service.');
+    }
+
+    revalidatePath('/staff-dashboard/services');
+}
+
+
+/**
+ * 顾客创建新预约
+ */
+export async function createBooking(
+    serviceId: string,
+    workerProfileId: string,
+    startTimeStr: string
+) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { user, profile } = await getUserAndProfile(supabase);
+  if (profile.role !== 'customer') {
+    throw new Error('只有顾客才能预订服务。');
+  }
+
+  const { data: service } = await supabase.from('services').select('duration_value, duration_unit, price, owner_id').eq('id', serviceId).single();
+  if (!service || service.owner_id !== workerProfileId) {
+    throw new Error('服务与技师不匹配。');
+  }
+
+  const { data: staffEntry } = await supabase.from('staff').select('id, shop_id').eq('user_id', workerProfileId).single();
+
+  const startTime = new Date(startTimeStr);
+  let endTime = new Date(startTime);
+  if (service.duration_unit === 'minutes' && service.duration_value) {
+    endTime.setMinutes(startTime.getMinutes() + service.duration_value);
+  } else if (service.duration_unit === 'hours' && service.duration_value) {
+    endTime.setHours(startTime.getHours() + service.duration_value);
+  } else {
+    throw new Error('不支持或无效的服务时长。');
+  }
+  
+  // 时间冲突检查 B: 预约冲突检查 (使用正确的 .filter() 语法)
+  const { data: conflictingBookings, error: bookingError } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('worker_profile_id', workerProfileId)
+    .in('status', ['confirmed', 'in_progress'])
+    .filter(
+      'tsrange(start_time, end_time)', 
+      'ov', 
+      `[${startTime.toISOString()}, ${endTime.toISOString()})`
+    );
+    
+  if (bookingError || (conflictingBookings && conflictingBookings.length > 0)) {
+      throw new Error('抱歉，该时间段已被预订，请选择其他时间。');
+  }
+
+  const { error: createError } = await supabase.from('bookings').insert({
+    customer_id: user.id,
+    worker_profile_id: workerProfileId,
+    staff_id: staffEntry?.id || null,
+    service_id: serviceId,
+    shop_id: staffEntry?.shop_id || null,
+    start_time: startTime.toISOString(),
+    end_time: endTime.toISOString(),
+    price_at_booking: service.price,
+    duration_at_booking: service.duration_value || 0,
+    status: 'confirmed'
+  });
+
+  if (createError) {
+    throw new Error(`创建预约失败: ${createError.message}`);
+  }
+
+  revalidatePath(`/worker/${workerProfileId}`);
+  return { success: true, message: '预约成功！' };
+}
+
+
+/**
+ * 取消预约 (最终版 - 同时支持 Freeman 和 Staff)
+ * 可以由顾客、工作者、商户或管理员触发
+ */
+export async function cancelBooking(bookingId: string) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { user, profile } = await getUserAndProfile(supabase);
+
+    const { data: booking } = await supabase.from('bookings').select('customer_id, worker_profile_id').eq('id', bookingId).single();
+    if (!booking) throw new Error('找不到预约记录。');
+
+    // 权限检查：只有相关的用户才能取消
+    const isCustomer = profile.role === 'customer' && booking.customer_id === user.id;
+    const isWorker = ['staff', 'freeman'].includes(profile.role) && booking.worker_profile_id === user.id;
+    // (可以添加商户和管理员的逻辑)
+
+    if (!isCustomer && !isWorker) {
+        throw new Error('您无权取消此预约。');
+    }
+
+    const newStatus = isCustomer ? 'cancelled_by_customer' : 'cancelled_by_worker';
+
+    // (在这里可以添加复杂的“取消窗口期”和“信用分”逻辑)
+    // ...
+
+    const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', bookingId);
+    if (error) throw new Error(`取消失败: ${error.message}`);
+    
+    revalidatePath('/my-bookings'); // 刷新顾客的预约列表
+    revalidatePath('/staff-dashboard/bookings'); // 刷新员工的预约列表
+    return { success: true, message: '预约已成功取消。' };
+}
+
+/**
+ * 工作者创建自己的排班 (最终版 - 同时支持 Freeman 和 Staff)
+ */
+export async function createSchedule(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { user } = await getUserAndProfile(supabase);
+
+  // 【核心修改】: 不再需要查询 staff 表，我们直接使用 user.id
+  
+  const startTime = formData.get('start_time') as string;
+  const endTime = formData.get('end_time') as string;
+
+  if (!startTime || !endTime) {
+    return { message: "错误：开始和结束时间不能为空。", success: false };
+  }
+
+  // 【核心修改】: 插入数据时，使用 worker_profile_id
+  const { error } = await supabase.from('schedules').insert({
+    worker_profile_id: user.id, // <-- 排班直接归属于当前登录的用户
+    start_time: startTime,
+    end_time: endTime,
+  });
+
+  if (error) {
+    return { message: `创建排班失败: ${error.message}`, success: false };
+  }
+
+  revalidatePath('/staff-dashboard/schedule');
+  return { message: '排班已成功添加！', success: true };
+}
+
+/**
+ * 工作者删除自己的排班 (最终版 - 同时支持 Freeman 和 Staff)
+ */
+export async function deleteSchedule(scheduleId: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { user } = await getUserAndProfile(supabase);
+  
+  // 【核心修改】: 不再需要查询 staff 表
+
+  // 【核心修改】: 安全检查现在基于 worker_profile_id
+  // 确保该排班记录属于当前登录的用户
+  const { data: schedule, error: fetchError } = await supabase
+    .from('schedules')
+    .select('worker_profile_id')
+    .eq('id', scheduleId)
+    .single();
+
+  if (fetchError || !schedule || schedule.worker_profile_id !== user.id) {
+    throw new Error('您无权删除此排班。');
+  }
+
+  const { error } = await supabase.from('schedules').delete().eq('id', scheduleId);
+  if (error) {
+    throw new Error(`删除排班失败: ${error.message}`);
+  }
+
+  revalidatePath('/staff-dashboard/schedule');
+}
+
+
+/**
+ * 工作者开始服务 (最终版 - 支持 Freeman 和 Staff)
+ */
+export async function startService(bookingId: string) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    
+    const { user } = await getUserAndProfile(supabase);
+
+    // 【核心修正】: 添加安全检查
+    // 1. 获取预约信息，确认它属于当前登录的工作者
+    const { data: booking, error: fetchError } = await supabase
+        .from('bookings')
+        .select('worker_profile_id, status')
+        .eq('id', bookingId)
+        .single();
+
+    if (fetchError || !booking) {
+        throw new Error('找不到该预约记录。');
+    }
+    if (booking.worker_profile_id !== user.id) {
+        throw new Error('您无权操作此预约。');
+    }
+    if (booking.status !== 'confirmed') {
+        throw new Error('只有“已确认”的预约才能开始服务。');
+    }
+
+    // 2. 更新预约状态和实际开始时间
+    const { error } = await supabase.from('bookings').update({
+        status: 'in_progress',
+        actual_start_time: new Date().toISOString()
+    }).eq('id', bookingId);
+
+    if (error) throw new Error(error.message);
+    revalidatePath('/staff-dashboard/bookings');
+}
+
+/**
+ * 工作者完成服务 (并触发积分) (最终版 - 支持 Freeman 和 Staff)
+ */
+export async function completeService(bookingId: string) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    const { user } = await getUserAndProfile(supabase);
+
+    // 【核心修正】: 获取预约信息，我们现在直接使用 worker_profile_id
+    const { data: booking, error: fetchError } = await supabase
+        .from('bookings')
+        .select('worker_profile_id, status')
+        .eq('id', bookingId)
+        .single();
+
+    if (fetchError || !booking) {
+        throw new Error('找不到预约记录。');
+    }
+    if (booking.worker_profile_id !== user.id) {
+        throw new Error('您无权操作此预约。');
+    }
+    if (booking.status !== 'in_progress') {
+        // 只有“服务中”的预约才能被完成，防止重复点击
+        throw new Error('只有“服务中”的预约才能被标记为完成。');
+    }
+
+    // 【核心修正】: 不再需要查询 staff 表
+    const { error } = await supabase.from('bookings').update({
+        status: 'completed',
+        actual_end_time: new Date().toISOString()
+    }).eq('id', bookingId);
+
+    if (error) throw new Error(error.message);
+
+    // 【核心修正】: 调用“积分网关”时，直接使用 booking.worker_profile_id
+    await supabase.rpc('add_contribution_points', {
+        target_user_id: booking.worker_profile_id,
+        points_to_add: 10, // 假设完成一次服务加 10 分
+        reason: 'COMPLETED_BOOKING',
+        booking_ref_id: bookingId
+    });
+
+    revalidatePath('/staff-dashboard/bookings');
+}
+
+/**
+ * 工作者创建长期、可重复的工作规则
+ */
+export async function createAvailabilityRule(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { user } = await getUserAndProfile(supabase);
+
+  // 1. 从表单获取所有数据
+  const startDate = formData.get('start_date') as string;
+  const endDate = formData.get('end_date') as string;
+  const startTime = formData.get('start_time') as string;
+  const endTime = formData.get('end_time') as string;
+  // getAll() 用于获取所有同名（days_of_week）的复选框的值
+  const daysOfWeek = formData.getAll('days_of_week').map(day => parseInt(day as string, 10));
+
+  // 2. 数据验证
+  if (!startDate || !endDate || !startTime || !endTime || daysOfWeek.length === 0) {
+    return { message: "错误：所有字段均为必填项。", success: false };
+  }
+  if (new Date(endDate) < new Date(startDate)) {
+    return { message: "错误：结束日期不能早于开始日期。", success: false };
+  }
+  if (endTime <= startTime) {
+    return { message: "错误：每日结束时间必须晚于开始时间。", success: false };
+  }
+
+  // 3. 将数据插入数据库
+  const { error } = await supabase.from('availability_rules').insert({
+    worker_profile_id: user.id,
+    start_date: startDate,
+    end_date: endDate,
+    start_time: startTime,
+    end_time: endTime,
+    days_of_week: daysOfWeek,
+  });
+
+  if (error) {
+    console.error('Create Rule Error:', error);
+    return { message: `创建规则失败: ${error.message}`, success: false };
+  }
+
+  revalidatePath('/staff-dashboard/schedule');
+  return { message: '新的工作规则已成功添加！', success: true };
+}
+
+
+/**
+ * 工作者为特定日期创建例外（请假或加班）
+ */
+export async function createAvailabilityOverride(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { user } = await getUserAndProfile(supabase);
+
+  // 1. 从表单获取数据
+  const overrideDate = formData.get('override_date') as string;
+  const type = formData.get('type') as 'unavailable' | 'available';
+  const startTime = formData.get('start_time') as string | null;
+  const endTime = formData.get('end_time') as string | null;
+
+  // 2. 数据验证
+  if (!overrideDate || !type) {
+    return { message: "错误：日期和例外类型为必填项。", success: false };
+  }
+  if (type === 'available' && (!startTime || !endTime || endTime <= startTime)) {
+      return { message: "错误：加班必须提供有效的开始和结束时间。", success: false };
+  }
+
+  // 3. 准备要插入的数据
+  const dataToInsert = {
+    worker_profile_id: user.id,
+    override_date: overrideDate,
+    type,
+    start_time: type === 'available' ? startTime : null,
+    end_time: type === 'available' ? endTime : null,
+  };
+
+  // 4. 将数据插入数据库
+  // 使用 upsert 确保一个用户在一天只能有一个例外规则，新的会覆盖旧的
+  const { error } = await supabase
+    .from('availability_overrides')
+    .upsert(dataToInsert, { onConflict: 'worker_profile_id, override_date' });
+
+  if (error) {
+    console.error('Create Override Error:', error);
+    return { message: `创建例外失败: ${error.message}`, success: false };
+  }
+
+  revalidatePath('/staff-dashboard/schedule');
+  return { message: `日期 ${overrideDate} 的例外已成功设置！`, success: true };
+}
+
+
+export async function getAvailability(workerId: string, targetDate: string) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    // 在真实应用中，这里将执行我们讨论过的复杂分层逻辑：
+    // 1. 查询 availability_rules
+    // 2. 查询 availability_overrides
+    // 3. 查询 schedules (一次性排班)
+    // 4. 查询 bookings
+    // 5. 整合计算，返回最终可用的时间段数组
+    
+    // 作为一个简单的起点，我们先只查询一次性排班
+    const { data: oneOffSchedules, error } = await supabase
+        .from('schedules')
+        .select('start_time, end_time')
+        .eq('worker_profile_id', workerId)
+        // 此处需要添加日期过滤逻辑...
+
+    if (error) {
+        console.error("Get Availability Error:", error);
+        return [];
+    }
+
+    // 返回时间段数组，例如: [{ start: "2025-10-16T09:00:00", end: "2025-10-16T12:00:00" }]
+    return oneOffSchedules || [];
+}
+
+// src/lib/actions.ts (添加以下两个删除函数)
+
+/**
+ * 删除一条长期工作规则 (带安全检查)
+ */
+export async function deleteAvailabilityRule(prevState: any, ruleId: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { user } = await getUserAndProfile(supabase);
+
+  // 1. 权限检查：确保规则属于当前用户
+  const { data: rule } = await supabase.from('availability_rules').select('worker_profile_id').eq('id', ruleId).single();
+  if (!rule || rule.worker_profile_id !== user.id) {
+    return { message: "错误：您无权删除此规则。", success: false };
+  }
+
+  // 2. 【核心安全检查】: 调用数据库函数，检查是否存在冲突预约
+  const { data: bookingCount, error: checkError } = await supabase.rpc('check_bookings_in_rule', { rule_id: ruleId });
+  if (checkError || (bookingCount != null && bookingCount > 0)) {
+    return { message: `无法删除：该规则内已存在 ${bookingCount || ''} 个有效预约。`, success: false };
+  }
+
+  // 3. 执行删除
+  const { error } = await supabase.from('availability_rules').delete().eq('id', ruleId);
+  if (error) {
+    return { message: `删除失败: ${error.message}`, success: false };
+  }
+
+  revalidatePath('/staff-dashboard/schedule');
+  return { message: '工作规则已成功删除。', success: true };
+}
+
+
+/**
+ * 删除一个例外日期 (带安全检查)
+ */
+export async function deleteAvailabilityOverride(prevState: any, overrideId: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { user } = await getUserAndProfile(supabase);
+
+  // 1. 权限检查
+  const { data: override } = await supabase.from('availability_overrides').select('worker_profile_id, override_date').eq('id', overrideId).single();
+  if (!override || override.worker_profile_id !== user.id) {
+    return { message: "错误：您无权删除此例外。", success: false };
+  }
+
+  // 2. 【核心安全检查】: 检查该例外日期当天是否存在有效预约
+  const { count, error: checkError } = await supabase
+    .from('bookings')
+    .select('*', { count: 'exact', head: true })
+    .eq('worker_profile_id', user.id)
+    .in('status', ['confirmed', 'in_progress'])
+    .gte('start_time', `${override.override_date}T00:00:00Z`)
+    .lt('start_time', `${override.override_date}T23:59:59Z`);
+
+  if (checkError || (count != null && count > 0)) {
+    return { message: `无法删除：该日期内已存在 ${count} 个有效预约。`, success: false };
+  }
+  
+  // 3. 执行删除
+  const { error } = await supabase.from('availability_overrides').delete().eq('id', overrideId);
+  if (error) {
+    return { message: `删除失败: ${error.message}`, success: false };
+  }
+
+  revalidatePath('/staff-dashboard/schedule');
+  return { message: '例外日期已成功删除。', success: true };
 }

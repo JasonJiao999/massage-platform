@@ -1,45 +1,32 @@
-// src/app/staff-dashboard/layout.tsx
+// src/app/staff-dashboard/layout.tsx (简化版 - 只负责安全)
+
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
+import { ReactNode } from 'react';
 
-export default async function StaffDashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function StaffDashboardLayout({ children }: { children: ReactNode }) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return redirect('/login');
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-
-  // 【核心修改】如果角色不是 'staff' 也不是 'freeman'，则重定向
-  const allowedRoles = ['staff', 'freeman'];
-  if (!profile || !allowedRoles.includes(profile.role)) {
-    return redirect('/');
+  if (!user) {
+    redirect('/login');
   }
 
-  return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      <aside className="w-64 bg-card border-r border-border p-6 flex flex-col">
-        <h1 className="text-xl font-bold mb-8">Staff Console</h1>
-        <nav className="flex-grow">
-          <ul className="space-y-2">
-            <li><Link href="/staff-dashboard/services" className="block py-2 px-3 rounded-md hover:bg-primary/10">My Services</Link></li>
-            <li><Link href="/staff-dashboard/profile" className="block py-2 px-3 rounded-md hover:bg-primary/10">My Profile</Link></li>
-            <li><Link href="/staff-dashboard/schedule" className="block py-2 px-3 rounded-md hover:bg-primary/10 text-gray-500 cursor-not-allowed">My Schedule <span className="text-xs ml-2 bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">Soon</span></Link></li>
-          </ul>
-        </nav>
-        <div className="mt-auto">
-            <p className="text-xs text-foreground/60">Logged in as:</p>
-            <p className="text-sm font-medium truncate">{user.email}</p>
-        </div>
-      </aside>
-      <main className="flex-1 p-6 lg:p-8">{children}</main>
-    </div>
-  );
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  // 【核心修改】: 这里不再渲染 Header，只做权限检查
+  // 如果当前用户不是 'staff' 或 'freeman'，则不允许访问，直接重定向到首页
+  if (!['staff', 'freeman'].includes(profile?.role)) {
+    redirect('/');
+  }
+
+  // 如果权限检查通过，则直接渲染子页面内容
+  return <>{children}</>;
 }

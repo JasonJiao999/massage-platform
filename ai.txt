@@ -1,0 +1,89 @@
+services表策略清单
+
+1-role:admin-Policy Command:SELECT
+alter policy "Allow admins to SELECT ALL services"
+on "public"."services"
+to authenticated
+using (
+  (( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = 'admin'::text)
+);
+
+2-role:anon-Policy Command:SELECT
+alter policy "Allow anonymous visitors to SELECT active services"
+on "public"."services"
+to anon
+using (
+  (EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = services.owner_id) AND (profiles.is_active = true))))
+);
+
+3-role:customer-Policy Command:SELECT
+alter policy "Allow customers to SELECT active services"
+on "public"."services"
+to authenticated
+using (
+  ((( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = 'customer'::text) AND (EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = services.owner_id) AND (profiles.is_active = true)))))
+);
+
+4-role:merchant-Policy Command:SELECT
+alter policy "Allow merchants to SELECT services in their own shop"
+on "public"."services"
+to authenticated
+using (
+  ((( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = 'merchant'::text) AND (shop_id = ( SELECT shops.id
+   FROM shops
+  WHERE (shops.owner_id = auth.uid()))))
+);
+
+5-role:freeman和staff-Policy Command:SELECT
+alter policy "Allow workers to SELECT their own services"
+on "public"."services"
+to authenticated
+using (
+  ((( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = ANY (ARRAY['freeman'::text, 'staff'::text])) AND (auth.uid() = owner_id))
+);
+
+6-role:freeman和staff-Policy Command:INSERT
+alter policy "Allow workers to INSERT their own services"
+on "public"."services"
+to authenticated
+with check (
+  ((( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = ANY (ARRAY['freeman'::text, 'staff'::text])) AND (auth.uid() = owner_id))
+);
+
+7-role:freeman和staff-Policy Command:DELETE
+alter policy "Allow workers to DELETE their own services"
+on "public"."services"
+to authenticated
+using (
+  ((( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = ANY (ARRAY['freeman'::text, 'staff'::text])) AND (auth.uid() = owner_id))
+);
+
+8-role:freeman和staff-Policy Command:UPDATE
+alter policy "Allow workers to UPDATE their own services"
+on "public"."services"
+to authenticated
+using (
+  ((( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = ANY (ARRAY['freeman'::text, 'staff'::text])) AND (auth.uid() = owner_id))
+) with check (
+  ((( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = ANY (ARRAY['freeman'::text, 'staff'::text])) AND (auth.uid() = owner_id))
+);

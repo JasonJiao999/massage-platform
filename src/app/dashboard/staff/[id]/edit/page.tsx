@@ -2,7 +2,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import StaffEditForm from '@/components/StaffEditForm';
+import StaffEditForm from '@/components/MyProfileForm';
 
 export default async function EditStaffPage({ params }: { params: { id: string } }) {
   const cookieStore = cookies();

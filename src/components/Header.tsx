@@ -1,46 +1,24 @@
 // src/components/Header.tsx
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
 
-// 1. 导入我们创建的所有独立的 Header 组件
-import HeaderAdmin from './HeaderAdmin';
-import HeaderMerchant from './HeaderMerchant';
-import HeaderStaff from './HeaderStaff';
-import HeaderCustomer from './HeaderCustomer';
+import type { User } from '@supabase/supabase-js';
+import Link from 'next/link';
+import LogoutButton from './LogoutButton';
 
-export default async function Header() {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-
-  // 2. 获取当前登录用户
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  let role = 'customer'; // 默认角色为 'customer' (适用于未登录的访客)
-
-  // 3. 如果用户已登录，则查询他/她的真实角色
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    
-    // 如果能找到 profile 并且有 role，就使用它
-    if (profile && profile.role) {
-      role = profile.role;
-    }
-  }
-
-  // 4. 【核心逻辑】根据角色，渲染对应的 Header 组件
-  switch (role) {
-    case 'admin':
-      return <HeaderAdmin user={user} />;
-    case 'merchant':
-      return <HeaderMerchant user={user} />;
-    case 'staff':
-      return <HeaderStaff user={user} />;
-    default:
-      // 'customer' 或任何其他未知角色都显示顾客/访客的导航栏
-      return <HeaderCustomer user={user} />;
-  }
+export default function Header({ user }: { user: User | null }) {
+  return (
+    <header className="bg-white border-b">
+      <nav className="container mx-auto px-4 flex justify-between items-center py-4">
+        <Link href="/" className="font-bold text-xl">
+          平台Logo
+        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/#features" className="text-sm font-medium hover:text-blue-600">功能介绍</Link>
+          <Link href="/workers" className="text-sm font-medium hover:text-blue-600">寻找技师</Link>
+          
+          {/* 【核心修正】: 为 LogoutButton 提供 logoutText 属性 */}
+          {user && <LogoutButton logoutText="登出" />}
+        </div>
+      </nav>
+    </header>
+  );
 }
