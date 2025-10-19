@@ -34,7 +34,7 @@ export default function GoogleTranslateWidget() {
         aria-label="Change language"
       >
         <Image
-          src="/icon/language-icon.svg" // <-- 指向您在 public 文件夹中的图标
+          src="/icons/language-icon.svg" // <-- 指向您在 public 文件夹中的图标
           alt="语言切换"
           width={20} // <-- 设置图标宽度
           height={20} // <-- 设置图标高度

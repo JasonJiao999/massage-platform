@@ -1,24 +1,22 @@
-// next.config.mjs (最终修复版)
+// next.config.mjs
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // 【核心修复】: 使用 remotePatterns 来声明所有外部图片源
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'lwtvwliusnzjjrrhjyeq.supabase.co',
+        // 请确保这个域名和您Supabase项目的URL完全一致
+        hostname: 'lwtvwliusnzjjrrhjyeq.supabase.co', 
         port: '',
-        pathname: '/storage/v1/object/public/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'api.dicebear.com',
-        port: '',
-        pathname: '/8.x/initials/svg/**',
+        // 允许加载 public 存储桶下的所有图片
+        pathname: '/storage/v1/object/public/**', 
       },
     ],
   },
-  // 【核心修复】: 完善 CSP 头部配置
+  
+  // 保留您为谷歌翻译设置的 headers 配置
   async headers() {
     return [
       {
@@ -26,8 +24,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            // 在 script-src 中添加 'unsafe-inline' 以允许内联脚本执行
-            // 这是 Next.js 正常运行和谷歌翻译初始化所必需的
+            // 注意：一个更安全的CSP会包含 img-src。暂时我们先保持原样。
             value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' translate.google.com translate.googleapis.com;",
           },
         ],

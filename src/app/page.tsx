@@ -1,67 +1,75 @@
-// src/app/page.tsx (最终版 - 展示 photo_urls[0], nickname, years)
-
+// src/app/page.tsx
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import Image from 'next/image';
 import Link from 'next/link';
+import Image from 'next/image';
+import FavoriteButton from '@/components/FavoriteButton'; 
 
-export default async function Home() {
+export default async function HomePage() {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  // 数据查询逻辑保持不变，因为它已经获取了所有需要的字段 ('*')
-  const { data: workers, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .in('role', ['freeman', 'staff'])
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (error) {
-    console.error("Error fetching workers list:", error);
-    return <p className="text-center text-red-500">加载技师列表时出错。</p>;
+  // --- 数据获取部分保持不变 ---
+  const { data: workers } = await supabase
+    .from('profiles')
+    .select('id, nickname, avatar_url, photo_urls, tags, bio')
+    .in('role', ['staff', 'freeman'])
+    .eq('is_active', true);
+  
+  let favoritedWorkerIds = new Set<string>();
+  if (user) {
+    const { data: favorites } = await supabase
+      .from('favorite_workers')
+      .select('worker_profile_id')
+      .eq('user_id', user.id);
+    
+    if (favorites) {
+      favoritedWorkerIds = new Set(favorites.map(f => f.worker_profile_id));
+    }
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-8 bg-gray-50">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold">探索我们的专业技师</h1>
-        <p className="text-lg text-gray-600 mt-4">找到最适合您的疗愈专家</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl">
-        {workers && workers.length > 0 ? (
-          workers.map((worker) => (
-            // 1. 【核心修改】: 更新 Link 的 href 路径
-            <Link href={`/worker/${worker.id}`} key={worker.id} className="group">
-              <div className="bg-white rounded-lg shadow-md border overflow-hidden transform transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-2">
-                <Image
-                  // 2. 【核心修改】: 图片来源变为 photo_urls 的第一张
-                  // 使用可选链 (?.) 和 || 操作符来安全地处理
-                  // 如果 photo_urls 不存在或为空，则使用默认图片
-                  src={worker.photo_urls?.[0] || '/default-avatar.png'}
-                  alt={worker.nickname || 'Worker'}
-                  width={400}
-                  height={400}
-                  className="w-full h-64 object-cover" // 调整了图片高度以获得更好的视觉效果
-                />
-                <div className="p-5 text-center">
-                  <h2 className="text-xl font-bold text-gray-800">
-                    {worker.nickname}
-                  </h2>
-                  {/* 3. 【核心修改】: 新增显示从业年限的元素 */}
-                  {/* 使用条件渲染，只有当 years 存在且大于0时才显示 */}
-                  {worker.years && worker.years > 0 && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      从业 {worker.years} 年
-                    </p>
-                  )}
+    <main className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold my-8 text-center">探索我们的专业技师</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {workers?.map((worker) => {
+          const displayImage = (worker.photo_urls && worker.photo_urls[0]) 
+                             ? worker.photo_urls[0] 
+                             : worker.avatar_url || '/default-avatar.png';
+
+          return (
+            // 移除了 relative 定位，因为不再需要绝对定位
+            <div key={worker.id} className="group bg-card rounded-lg overflow-hidden border border-border flex flex-col">
+              <Link href={`/worker/${worker.id}`} className="block">
+                <div className="relative w-full aspect-square">
+                  <Image
+                    src={displayImage}
+                    alt={worker.nickname || 'Worker'}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
+              </Link>
+              <div className="p-4 flex flex-col flex-grow">
+                {/* 【核心修改】: 使用 flex 布局将名字和按钮放在一行 */}
+                <div className="flex justify-between items-start gap-2">
+                  <Link href={`/worker/${worker.id}`} className="flex-1 truncate">
+                    <h3 className="font-semibold text-lg group-hover:text-primary">{worker.nickname || '匿名技师'}</h3>
+                  </Link>
+                  {/* 现在按钮在这里，并且始终显示 */}
+                  <FavoriteButton 
+                    workerProfileId={worker.id}
+                    isInitiallyFavorited={favoritedWorkerIds.has(worker.id)}
+                    isLoggedIn={!!user} // 将登录状态传递给按钮
+                  />
+                </div>
+                <p className="text-sm text-foreground/70 truncate mt-1">{worker.bio || '暂无简介'}</p>
               </div>
-            </Link>
-          ))
-        ) : (
-          <p>当前平台还没有可用的技师。</p>
-        )}
+            </div>
+          );
+        })}
       </div>
     </main>
   );

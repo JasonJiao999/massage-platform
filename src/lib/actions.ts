@@ -1195,97 +1195,6 @@ export async function resetPassword(prevState: any, formData: FormData) {
 }
 
 
-export async function updateShopSettings(prevState: any, formData: FormData) {
-  'use server';
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { message: "Error: User not logged in" };
-  
-  const shopId = formData.get('shop_id') as string;
-  if (!shopId) {
-      return { message: "Error: Shop ID is missing." };
-  }
-
-  const { data: shop, error: shopError } = await supabase
-    .from('shops')
-    .select('id, slug')
-    .eq('owner_id', user.id)
-    .eq('id', shopId)
-    .single();
-
-  if (shopError || !shop) {
-    return { message: "Error: Could not find shop or permission denied" };
-  }
-
-  // --- 初始化要更新的数据对象 ---
-  const shopUpdateData: { [key: string]: any } = {};
-  const pageUpdateData: { [key: string]: any } = { shop_id: shopId };
-
-  // --- 文件上传逻辑 (完整版) ---
-  const backgroundImageFile = formData.get('background_image') as File;
-  const heroImageFile = formData.get('hero_image') as File;
-  const featuredVideoFile = formData.get('featured_video') as File;
-
-  // 1. 处理背景图
-  if (backgroundImageFile && backgroundImageFile.size > 0) {
-    const filePath = `${user.id}/${shopId}/background-${Date.now()}`;
-    const { data, error } = await supabase.storage.from('web-media').upload(filePath, backgroundImageFile, { upsert: true });
-    if (error) return { message: `背景图上传失败: ${error.message}` };
-    shopUpdateData.bg_image_url = supabase.storage.from('web-media').getPublicUrl(data.path).data.publicUrl;
-  }
-
-  // 2. 处理广告横幅
-  if (heroImageFile && heroImageFile.size > 0) {
-    const filePath = `${user.id}/${shopId}/hero-${Date.now()}`;
-    const { data, error } = await supabase.storage.from('web-media').upload(filePath, heroImageFile, { upsert: true });
-    if (error) return { message: `横幅图上传失败: ${error.message}` };
-    pageUpdateData.hero_image_url = supabase.storage.from('web-media').getPublicUrl(data.path).data.publicUrl;
-  }
-
-  // 3. 处理特色视频
-  if (featuredVideoFile && featuredVideoFile.size > 0) {
-    if (featuredVideoFile.size > 50 * 1024 * 1024) {
-      return { message: '视频上传失败：文件大小不能超过 50MB。' };
-    }
-    const { data: oldPageData } = await supabase.from('shop_pages').select('featured_video_url').eq('shop_id', shopId).single();
-    if (oldPageData?.featured_video_url) {
-      const oldFilePath = oldPageData.featured_video_url.split('/web-media/')[1];
-      if(oldFilePath) await supabase.storage.from('web-media').remove([oldFilePath]);
-    }
-    const filePath = `${user.id}/${shopId}/featured-video-${Date.now()}`;
-    const { data, error } = await supabase.storage.from('web-media').upload(filePath, featuredVideoFile);
-    if (error) return { message: `视频上传失败: ${error.message}` };
-    pageUpdateData.featured_video_url = supabase.storage.from('web-media').getPublicUrl(data.path).data.publicUrl;
-  }
-  
-  // --- 文本和其他数据处理 (完整版) ---
-  shopUpdateData.name = formData.get('name') as string;
-  shopUpdateData.slug = formData.get('slug') as string;
-  shopUpdateData.description = formData.get('description') as string;
-  shopUpdateData.phone_number = formData.get('phone_number') as string;
-
-  // --- 执行数据库更新 (完整版) ---
-  // 只有在 shopUpdateData 不为空时才更新 shops 表
-  if (Object.keys(shopUpdateData).length > 0) {
-    const { error: updateShopError } = await supabase.from('shops').update(shopUpdateData).eq('id', shopId);
-    if (updateShopError) return { message: `店铺信息更新失败: ${updateShopError.message}` };
-  }
-
-  // 只有在 pageUpdateData 有除了 shop_id 之外的其他字段时才更新 shop_pages 表
-  if (Object.keys(pageUpdateData).length > 1) {
-    const { error: upsertPageError } = await supabase.from('shop_pages').upsert(pageUpdateData, { onConflict: 'shop_id' });
-    if (upsertPageError) return { message: `页面内容更新失败: ${upsertPageError.message}` };
-  }
-
-  revalidatePath('/dashboard/shop');
-  revalidatePath(`/shops/${shop.slug}`);
-  return { message: '店铺信息已成功更新！' };
-}
-
-
-
 export async function deleteShopVideo(prevState: any, formData: FormData) {
     'use server';
     const cookieStore = cookies();
@@ -1324,3 +1233,306 @@ export async function deleteShopVideo(prevState: any, formData: FormData) {
     revalidatePath(`/shops/${shop.slug}`); 
     return { message: "视频已成功删除。" };
 }
+
+
+
+/**
+ * 【新】只更新店铺的文本信息
+ */
+export async function updateShopTextSettings(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { message: "错误: 用户未登录" };
+
+  const shopId = formData.get('shop_id') as string;
+  if (!shopId) return { message: "错误: 缺少店铺ID" };
+
+  const { data: shop, error: shopError } = await supabase
+    .from('shops')
+    .select('id, slug')
+    .eq('owner_id', user.id)
+    .eq('id', shopId)
+    .single();
+
+  if (shopError || !shop) {
+    return { message: "错误: 找不到店铺或权限不足" };
+  }
+
+  const shopUpdateData = {
+    name: formData.get('name') as string,
+    slug: formData.get('slug') as string,
+    description: formData.get('description') as string,
+    phone_number: formData.get('phone_number') as string,
+  };
+
+  const { error: updateShopError } = await supabase.from('shops').update(shopUpdateData).eq('id', shopId);
+
+  if (updateShopError) {
+    return { message: `店铺信息更新失败: ${updateShopError.message}` };
+  }
+
+  revalidatePath('/dashboard/shop');
+  revalidatePath(`/shops/${shopUpdateData.slug}`);
+  return { message: '店铺基础信息已成功更新！' };
+}
+
+
+/**
+ * 【新】上传或更新店铺特色视频
+ */
+export async function uploadShopVideo(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { message: "错误: 用户未登录" };
+  
+  const shopId = formData.get('shop_id') as string;
+  const videoFile = formData.get('featured_video') as File;
+
+  if (!shopId || !videoFile || videoFile.size === 0) {
+    return { message: "错误: 缺少店铺ID或视频文件。" };
+  }
+
+  if (videoFile.size > 50 * 1024 * 1024) {
+    return { message: '视频上传失败：文件大小不能超过 50MB。' };
+  }
+
+  const { data: shop } = await supabase.from('shops').select('slug').eq('id', shopId).single();
+  if (!shop) return { message: "错误: 找不到店铺" };
+  
+  // 先删除旧视频
+  const { data: oldPageData } = await supabase.from('shop_pages').select('featured_video_url').eq('shop_id', shopId).single();
+  if (oldPageData?.featured_video_url) {
+    const oldFilePath = oldPageData.featured_video_url.split('/web-media/')[1];
+    if(oldFilePath) await supabase.storage.from('web-media').remove([oldFilePath]);
+  }
+
+  // 上传新视频
+  const filePath = `${user.id}/${shopId}/featured-video-${Date.now()}`;
+  const { data, error } = await supabase.storage.from('web-media').upload(filePath, videoFile);
+  if (error) return { message: `视频上传失败: ${error.message}` };
+  
+  const publicUrl = supabase.storage.from('web-media').getPublicUrl(data.path).data.publicUrl;
+
+  // 更新数据库
+  const { error: upsertPageError } = await supabase.from('shop_pages').upsert({ shop_id: shopId, featured_video_url: publicUrl }, { onConflict: 'shop_id' });
+  if (upsertPageError) return { message: `页面内容更新失败: ${upsertPageError.message}` };
+
+  revalidatePath('/dashboard/shop');
+  revalidatePath(`/shops/${shop.slug}`);
+  return { message: '特色视频已成功更新！' };
+}
+
+
+/**
+ * 【带诊断日志的重构版】上传或更新店铺图片
+ * 所有图片URL都保存在 shop_pages 表中
+ */
+export async function uploadShopImage(prevState: any, formData: FormData) {
+  'use server';
+  console.log('--- [Action Start] uploadShopImage ---');
+
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 验证用户身份
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    console.error('LOG: User not authenticated.');
+    return { message: "错误: 用户未登录" };
+  }
+  console.log(`LOG: Authenticated user ID: ${user.id}`);
+
+  // 2. 从表单获取并记录数据
+  const shopId = formData.get('shop_id') as string;
+  const imageType = formData.get('image_type') as string;
+  const imageFile = formData.get('image_file') as File;
+
+  console.log(`LOG: Received shop_id: "${shopId}"`);
+  console.log(`LOG: Received image_type: "${imageType}"`);
+  console.log(`LOG: Received file name: "${imageFile?.name}", size: ${imageFile?.size}`);
+
+  if (!shopId || !imageType || !imageFile || imageFile.size === 0) {
+    console.error('LOG: Missing required form data.');
+    return { message: "错误: 缺少必要信息 (店铺ID, 图片类型或文件)" };
+  }
+  
+  // 3. 验证店铺所有权 (这是RLS策略的核心)
+  const { data: shop, error: shopFetchError } = await supabase
+    .from('shops')
+    .select('slug, owner_id') // <-- 同时获取 owner_id 用于日志记录
+    .eq('id', shopId)
+    .single();
+
+  if (shopFetchError || !shop) {
+    console.error(`LOG: Shop not found or fetch error for shop_id "${shopId}". Error:`, shopFetchError?.message);
+    return { message: "错误: 找不到店铺" };
+  }
+  console.log(`LOG: Verified shop owner ID: ${shop.owner_id}. Current user ID is ${user.id}.`);
+
+  // 4. 上传文件到 Storage
+  const filePath = `${user.id}/${shopId}/${imageType}-${Date.now()}`;
+  console.log(`LOG: Uploading to storage path: ${filePath}`);
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('web-media')
+    .upload(filePath, imageFile, { upsert: true });
+
+  if (uploadError) {
+    console.error('LOG: Storage upload failed.', uploadError);
+    return { message: `图片上传失败: ${uploadError.message}` };
+  }
+  console.log('LOG: Storage upload successful.');
+
+  const publicUrl = supabase.storage.from('web-media').getPublicUrl(uploadData.path).data.publicUrl;
+  console.log(`LOG: Public URL generated: ${publicUrl}`);
+
+  // 5. 准备并记录将要写入数据库的数据
+  const dataToUpsert = { 
+    shop_id: shopId, 
+    [imageType]: publicUrl 
+  };
+  console.log('LOG: Preparing to upsert into "shop_pages" with data:', JSON.stringify(dataToUpsert, null, 2));
+
+  // 6. 将URL更新到 shop_pages 表
+  const { error: upsertError } = await supabase
+    .from('shop_pages')
+    .upsert(dataToUpsert, { onConflict: 'shop_id' });
+
+  // 7. 详细记录最终结果
+  if (upsertError) {
+    console.error('LOG: Database upsert failed! This is the source of the RLS error.', upsertError);
+    // 关键错误分析：打印出详细的错误信息
+    console.error(`RLS Error Details: ${upsertError.message}`);
+    
+    // 自动清理上传失败的文件
+    await supabase.storage.from('web-media').remove([filePath]);
+    console.log(`LOG: Rolled back storage upload for path: ${filePath}`);
+    
+    return { message: `数据库更新失败: ${upsertError.message}` };
+  }
+
+  console.log('LOG: Database upsert successful.');
+  
+  // 8. 刷新缓存
+  revalidatePath('/dashboard/shop');
+  revalidatePath(`/shops/${shop.slug}`);
+  console.log('--- [Action End] uploadShopImage ---');
+
+  const imageTypeMap: { [key: string]: string } = {
+    'bg_image_url': '背景图',
+    'hero_image_url': '广告横幅',
+    'cover_image_url': '封面图'
+  };
+  const imageTypeText = imageTypeMap[imageType] || '图片';
+  return { message: `${imageTypeText}已成功更新！` };
+}
+
+// src/lib/actions.ts
+
+// ... (在文件末尾添加以下两个函数)
+
+/**
+ * 将一个工作者添加到用户的收藏列表
+ */
+export async function addFavoriteWorker(workerProfileId: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    // 在实际应用中，前端应该阻止未登录用户点击按钮
+    // 但后端验证是必须的
+    return { success: false, message: '用户未登录' };
+  }
+
+  const { error } = await supabase.from('favorite_workers').insert({
+    user_id: user.id,
+    worker_profile_id: workerProfileId,
+  });
+
+  if (error) {
+    // 可能是因为已经收藏过了 (违反主键约束)
+    console.error('Add favorite error:', error.message);
+    return { success: false, message: '收藏失败' };
+  }
+
+  // 刷新首页和后台页面的缓存
+  revalidatePath('/');
+  revalidatePath('/dashboard');
+  return { success: true, message: '已收藏' };
+}
+
+/**
+ * 从用户的收藏列表中移除一个工作者
+ */
+export async function removeFavoriteWorker(workerProfileId: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, message: '用户未登录' };
+  }
+
+  const { error } = await supabase
+    .from('favorite_workers')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('worker_profile_id', workerProfileId);
+
+  if (error) {
+    console.error('Remove favorite error:', error.message);
+    return { success: false, message: '取消收藏失败' };
+  }
+
+  revalidatePath('/');
+  revalidatePath('/dashboard');
+  return { success: true, message: '已取消收藏' };
+}
+
+
+/**
+ * 顾客更新自己的基础信息 (姓名和联系方式)
+ */
+export async function updateCustomerProfile(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, message: '用户未登录' };
+
+  const fullName = formData.get('full_name') as string;
+  // 【核心修改】: 从表单中获取 bio 字段
+  const bio = formData.get('bio') as string;
+
+  if (!fullName) {
+    return { success: false, message: '姓名不能为空。' };
+  }
+
+  // 【核心修改】: 在 update 方法中同时更新 full_name 和 bio
+  const { error } = await supabase
+    .from('profiles')
+    .update({ 
+      full_name: fullName,
+      bio: bio 
+    })
+    .eq('id', user.id);
+
+  if (error) {
+    return { success: false, message: `更新失败: ${error.message}` };
+  }
+
+  revalidatePath('/dashboard/profile');
+  revalidatePath('/dashboard');
+  return { success: true, message: '您的信息已成功更新！' };
+}
+
+
