@@ -26,7 +26,17 @@ export default async function WorkerDetailPage({ params }: { params: { id: strin
   if (!worker) {
     notFound();
   }
-
+// 【核心修改】: 检查技师是否处于休息状态
+  if (!worker.is_active) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md border">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">{worker.nickname || '该技师'}</h1>
+          <p className="text-lg text-yellow-600">当前正在休息中，暂不接受预约。</p>
+        </div>
+      </div>
+    );
+  }
   // --- 2. 获取可用时间 ---
   const today = new Date();
   const datesToFetch = [today, addDays(today, 1), addDays(today, 2)];

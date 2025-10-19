@@ -7,7 +7,13 @@ export default function HeaderCustomer({ user }: { user: User | null }) {
   return (
     <header className="w-full flex justify-center border-b h-16 bg-card border-border">
       <div className="w-full max-w-6xl flex justify-between items-center p-3 text-sm text-foreground">
-        <Link href="/" className="font-bold hover:underline">Home</Link>
+        <div className="flex items-center gap-4">
+            <Link href="/" className="font-bold hover:underline">Home</Link>
+            {/* 【核心修改】: 如果用户已登录，则显示“我的预约”链接 */}
+            {user && (
+                <Link href="/my-bookings" className="text-foreground/80 hover:underline">我的预约</Link>
+            )}
+        </div>
         <div className="flex items-center gap-4">
           <div id="google_translate_element"></div> {/* <-- 添加翻译插件容器 */}
           {user ? (

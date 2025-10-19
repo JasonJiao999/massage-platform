@@ -21,119 +21,6 @@ async function getUserAndProfile(supabase: any) {
   return { user, profile };
 }
 
-export async function updateShopSettings(prevState: any, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { message: "Error: User not logged in" };
-  const { data: shop, error: shopError } = await supabase.from('shops').select('id, slug').eq('owner_id', user.id).single();
-  if (shopError || !shop) return { message: "Error: Could not find shop or permission denied" };
-  const shopId = shop.id;
-  const name = formData.get('name') as string;
-  const slug = formData.get('slug') as string;
-  const description = formData.get('description') as string;
-  const phone_number = formData.get('phone_number') as string;
-  const tags = formData.get('tags') as string;
-  const facebookUrl = formData.get('facebook_url') as string;
-  const instagramUrl = formData.get('instagram_url') as string;
-  const primaryColor = formData.get('primary_color') as string;
-  const backgroundColor = formData.get('background_color') as string;
-  const tagsArray = tags ? tags.split(',').map(tag => tag.trim()) : [];
-  const socialLinksObject = { facebook: facebookUrl, instagram: instagramUrl };
-  const { error: updateShopError } = await supabase.from('shops').update({ name, slug, description, phone_number, tags: tagsArray, social_links: socialLinksObject }).eq('id', shopId);
-  if (updateShopError) {
-    console.error('Failed to update shop:', updateShopError);
-    return { message: `Failed to update shop info: ${updateShopError.message}` };
-  }
-  const { error: upsertThemeError } = await supabase.from('shop_themes').upsert({ shop_id: shopId, primary_color: primaryColor, background_color: backgroundColor, });
-  if (upsertThemeError) {
-    console.error('Failed to update theme:', upsertThemeError);
-    return { message: `Failed to update shop theme: ${upsertThemeError.message}` };
-  }
-  revalidatePath('/dashboard/shop');
-  revalidatePath(`/shops/${slug}`);
-  return { message: 'Shop info updated successfully!' };
-}
-
-/**
- * 【最终完整版】商户批量邀请员工 (使用 Resend 发送邮件)
- */
-export async function inviteStaffMembers(prevState: any, formData: FormData) {
-  'use server';
-
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-
-  // 1. 验证商户身份并获取店铺信息
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { message: "Error: User is not logged in." };
-
-  const { data: shop } = await supabase.from('shops').select('id, name').eq('owner_id', user.id).single();
-  if (!shop) return { message: "Error: Could not find your shop." };
-
-  // 2. 初始化 Resend 客户端
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  const emailsString = formData.get('emails') as string;
-  if (!emailsString) return { message: "Error: Email addresses cannot be empty." };
-  
-  const emails = emailsString.split(/[\n,]+/).map(email => email.trim()).filter(Boolean);
-  const results = [];
-
-  for (const email of emails) {
-    try {
-      console.log(`[Action] Processing invitation for: ${email}`);
-
-      // 3. 在 'invitations' 表中创建邀请记录
-      const { data: invitation, error: createError } = await supabase
-        .from('invitations')
-        .insert({
-          shop_id: shop.id,
-          email: email,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (createError) throw createError;
-      console.log(`[DB] Created invitation record with ID: ${invitation.id}`);
-
-
-      // 4. 【核心改动】使用 Resend 发送我们自己的邀请邮件
-      const invitationLink = `${process.env.NEXT_PUBLIC_SITE_URL}/invitation/${invitation.id}`;
-      
-      const { data, error: mailError } = await resend.emails.send({
-        from: `Invitation <noreply@${process.env.RESEND_VERIFIED_DOMAIN}>`, // 需要一个已验证的域名
-        to: email,
-        subject: `You have been invited to join ${shop.name}`,
-        html: `
-          <h1>Invitation to Join ${shop.name}</h1>
-          <p>You have been invited to join ${shop.name}'s team on our platform.</p>
-          <p>Please click the link below to accept the invitation:</p>
-          <a href="${invitationLink}">Accept Invitation</a>
-          <p>If you did not expect this invitation, you can safely ignore this email.</p>
-        `,
-      });
-
-      if (mailError) {
-        // 如果邮件发送失败，删除刚才创建的邀请记录
-        await supabase.from('invitations').delete().eq('id', invitation.id);
-        throw mailError;
-      }
-      
-      console.log(`[Email] Successfully sent invitation to ${email}. Message ID: ${data?.id}`);
-      results.push({ email, status: 'success', message: 'Invitation email sent successfully.' });
-
-    } catch (error: any) {
-      console.error(`Error processing email ${email}:`, error);
-      results.push({ email, status: 'error', message: error.message });
-    }
-  }
-
-  revalidatePath('/dashboard/staff/new');
-  return { message: `${results.length} invitations processed.`, results };
-}
-
 
 /**
  * 接受邀请成为店铺员工
@@ -741,7 +628,7 @@ export async function deleteMyService(serviceId: string) {
 
 
 /**
- * 顾客创建新预约
+ * 顾客创建新预约 (增加取消次数检查)
  */
 export async function createBooking(
     serviceId: string,
@@ -757,36 +644,62 @@ export async function createBooking(
     throw new Error('只有顾客才能预订服务。');
   }
 
-  const { data: service } = await supabase.from('services').select('duration_value, duration_unit, price, owner_id').eq('id', serviceId).single();
+  // 【核心修改】: 在创建预约前，检查用户的月度取消次数
+  const { data: customerProfile } = await supabase
+    .from('profiles')
+    .select('monthly_cancellation_count')
+    .eq('id', user.id)
+    .single();
+
+  if (customerProfile && customerProfile.monthly_cancellation_count >= 3) {
+      throw new Error('您的预约功能已被暂停，因为本月取消次数已达上限。次月将自动恢复。');
+  }
+
+  const { data: service } = await supabase
+    .from('services')
+    .select('duration_value, duration_unit, price, owner_id')
+    .eq('id', serviceId)
+    .single();
+
   if (!service || service.owner_id !== workerProfileId) {
     throw new Error('服务与技师不匹配。');
+  }
+  
+  if (!service.duration_value) {
+    throw new Error('服务时长信息不完整，无法计算结束时间。');
   }
 
   const { data: staffEntry } = await supabase.from('staff').select('id, shop_id').eq('user_id', workerProfileId).single();
 
   const startTime = new Date(startTimeStr);
   let endTime = new Date(startTime);
-  if (service.duration_unit === 'minutes' && service.duration_value) {
-    endTime.setMinutes(startTime.getMinutes() + service.duration_value);
-  } else if (service.duration_unit === 'hours' && service.duration_value) {
-    endTime.setHours(startTime.getHours() + service.duration_value);
-  } else {
-    throw new Error('不支持或无效的服务时长。');
+
+  switch (service.duration_unit) {
+    case 'minutes':
+      endTime.setMinutes(startTime.getMinutes() + service.duration_value);
+      break;
+    case 'hours':
+      endTime.setHours(startTime.getHours() + service.duration_value);
+      break;
+    case 'days':
+      endTime.setDate(startTime.getDate() + service.duration_value);
+      break;
+    default:
+      throw new Error('不支持或无效的服务时长单位。');
   }
   
-  // 时间冲突检查 B: 预约冲突检查 (使用正确的 .filter() 语法)
-  const { data: conflictingBookings, error: bookingError } = await supabase
-    .from('bookings')
-    .select('id')
-    .eq('worker_profile_id', workerProfileId)
-    .in('status', ['confirmed', 'in_progress'])
-    .filter(
-      'tsrange(start_time, end_time)', 
-      'ov', 
-      `[${startTime.toISOString()}, ${endTime.toISOString()})`
-    );
-    
-  if (bookingError || (conflictingBookings && conflictingBookings.length > 0)) {
+  const { data: hasConflict, error: conflictError } = await supabase.rpc('check_booking_conflict', {
+    worker_id: workerProfileId,
+    start_t: startTime.toISOString(),
+    end_t: endTime.toISOString()
+  });
+
+  if (conflictError) {
+      console.error('Booking conflict check error:', conflictError);
+      throw new Error('检查时间冲突时发生错误。');
+  }
+
+  if (hasConflict) {
       throw new Error('抱歉，该时间段已被预订，请选择其他时间。');
   }
 
@@ -813,38 +726,65 @@ export async function createBooking(
 
 
 /**
- * 取消预约 (最终版 - 同时支持 Freeman 和 Staff)
- * 可以由顾客、工作者、商户或管理员触发
+ * 顾客或员工取消预约 (更新为月度计数逻辑)
  */
-export async function cancelBooking(bookingId: string) {
-    'use server';
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { user, profile } = await getUserAndProfile(supabase);
+export async function cancelBooking(prevState: any, bookingId: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
 
-    const { data: booking } = await supabase.from('bookings').select('customer_id, worker_profile_id').eq('id', bookingId).single();
-    if (!booking) throw new Error('找不到预约记录。');
+  const { user, profile } = await getUserAndProfile(supabase);
 
-    // 权限检查：只有相关的用户才能取消
-    const isCustomer = profile.role === 'customer' && booking.customer_id === user.id;
-    const isWorker = ['staff', 'freeman'].includes(profile.role) && booking.worker_profile_id === user.id;
-    // (可以添加商户和管理员的逻辑)
+  const { data: booking, error: fetchError } = await supabase
+    .from('bookings')
+    .select('customer_id, worker_profile_id, status')
+    .eq('id', bookingId)
+    .single();
 
-    if (!isCustomer && !isWorker) {
-        throw new Error('您无权取消此预约。');
-    }
+  if (fetchError || !booking) {
+    return { success: false, message: '找不到预约记录。' };
+  }
 
-    const newStatus = isCustomer ? 'cancelled_by_customer' : 'cancelled_by_worker';
+  const isCustomer = profile.role === 'customer' && booking.customer_id === user.id;
+  const isWorker = ['staff', 'freeman'].includes(profile.role) && booking.worker_profile_id === user.id;
 
-    // (在这里可以添加复杂的“取消窗口期”和“信用分”逻辑)
-    // ...
+  if (!isCustomer && !isWorker) {
+    return { success: false, message: '您无权取消此预约。' };
+  }
+  
+  if (booking.status !== 'confirmed') {
+      return { success: false, message: '只有“已确认”的预约才能被取消。' };
+  }
 
-    const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', bookingId);
-    if (error) throw new Error(`取消失败: ${error.message}`);
-    
-    revalidatePath('/my-bookings'); // 刷新顾客的预约列表
-    revalidatePath('/staff-dashboard/bookings'); // 刷新员工的预约列表
-    return { success: true, message: '预约已成功取消。' };
+  // 更新预约状态
+  const newStatus = isCustomer ? 'cancelled_by_customer' : 'cancelled_by_worker';
+  const { error: updateError } = await supabase
+    .from('bookings')
+    .update({ status: newStatus })
+    .eq('id', bookingId);
+
+  if (updateError) {
+    return { success: false, message: `取消失败: ${updateError.message}` };
+  }
+  
+  // 【核心修改】: 为取消方增加月度取消次数
+  const userIdToIncrement = isCustomer ? booking.customer_id : booking.worker_profile_id;
+  
+  if (userIdToIncrement) {
+      const { error: incrementError } = await supabase.rpc('increment_monthly_cancellation_count', {
+          user_id_to_update: userIdToIncrement
+      });
+
+      if (incrementError) {
+          // 即使计数失败，也应认为取消是成功的
+          console.error('Failed to increment cancellation count:', incrementError);
+      }
+  }
+
+  revalidatePath('/my-bookings');
+  revalidatePath('/staff-dashboard/bookings');
+  
+  return { success: true, message: '预约已成功取消。' };
 }
 
 /**
@@ -1125,7 +1065,6 @@ export async function getAvailability(workerId: string, targetDate: string) {
     return oneOffSchedules || [];
 }
 
-// src/lib/actions.ts (添加以下两个删除函数)
 
 /**
  * 删除一条长期工作规则 (带安全检查)
@@ -1195,4 +1134,193 @@ export async function deleteAvailabilityOverride(prevState: any, overrideId: str
 
   revalidatePath('/staff-dashboard/schedule');
   return { message: '例外日期已成功删除。', success: true };
+}
+
+
+/**
+ * 工作者（技师/自由人）切换自己的在线/休息状态
+ */
+export async function toggleMyActiveStatus(prevState: any, currentStatus: boolean) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 获取当前登录的用户信息
+  const { user } = await getUserAndProfile(supabase);
+
+  // 2. 更新 profiles 表中 is_active 字段为当前状态的相反值
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_active: !currentStatus })
+    .eq('id', user.id);
+
+  if (error) {
+    return { success: false, message: `状态更新失败: ${error.message}` };
+  }
+
+  // 3. 刷新相关页面的缓存，确保状态立即生效
+  revalidatePath('/staff-dashboard/profile'); // 刷新技师自己的档案页
+  revalidatePath(`/worker/${user.id}`);      // 刷新该技师的公开预约页
+
+  return { success: true, message: '状态已成功更新！' };
+}
+
+
+export async function resetPassword(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, message: '用户未登录或会话已过期。' };
+  }
+
+  const password = formData.get('password') as string;
+  if (!password || password.length < 6) {
+    return { success: false, message: '密码不能为空且至少需要6位。' };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { success: false, message: `密码重置失败: ${error.message}` };
+  }
+
+  await supabase.auth.signOut();
+  
+  // 【核心修复】: 在 redirect 之前，对中文消息进行 URL 编码
+  const message = encodeURIComponent('密码已成功重置，请重新登录。');
+  redirect(`/login?message=${message}`);
+}
+
+
+export async function updateShopSettings(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { message: "Error: User not logged in" };
+  
+  const shopId = formData.get('shop_id') as string;
+  if (!shopId) {
+      return { message: "Error: Shop ID is missing." };
+  }
+
+  const { data: shop, error: shopError } = await supabase
+    .from('shops')
+    .select('id, slug')
+    .eq('owner_id', user.id)
+    .eq('id', shopId)
+    .single();
+
+  if (shopError || !shop) {
+    return { message: "Error: Could not find shop or permission denied" };
+  }
+
+  // --- 初始化要更新的数据对象 ---
+  const shopUpdateData: { [key: string]: any } = {};
+  const pageUpdateData: { [key: string]: any } = { shop_id: shopId };
+
+  // --- 文件上传逻辑 (完整版) ---
+  const backgroundImageFile = formData.get('background_image') as File;
+  const heroImageFile = formData.get('hero_image') as File;
+  const featuredVideoFile = formData.get('featured_video') as File;
+
+  // 1. 处理背景图
+  if (backgroundImageFile && backgroundImageFile.size > 0) {
+    const filePath = `${user.id}/${shopId}/background-${Date.now()}`;
+    const { data, error } = await supabase.storage.from('web-media').upload(filePath, backgroundImageFile, { upsert: true });
+    if (error) return { message: `背景图上传失败: ${error.message}` };
+    shopUpdateData.bg_image_url = supabase.storage.from('web-media').getPublicUrl(data.path).data.publicUrl;
+  }
+
+  // 2. 处理广告横幅
+  if (heroImageFile && heroImageFile.size > 0) {
+    const filePath = `${user.id}/${shopId}/hero-${Date.now()}`;
+    const { data, error } = await supabase.storage.from('web-media').upload(filePath, heroImageFile, { upsert: true });
+    if (error) return { message: `横幅图上传失败: ${error.message}` };
+    pageUpdateData.hero_image_url = supabase.storage.from('web-media').getPublicUrl(data.path).data.publicUrl;
+  }
+
+  // 3. 处理特色视频
+  if (featuredVideoFile && featuredVideoFile.size > 0) {
+    if (featuredVideoFile.size > 50 * 1024 * 1024) {
+      return { message: '视频上传失败：文件大小不能超过 50MB。' };
+    }
+    const { data: oldPageData } = await supabase.from('shop_pages').select('featured_video_url').eq('shop_id', shopId).single();
+    if (oldPageData?.featured_video_url) {
+      const oldFilePath = oldPageData.featured_video_url.split('/web-media/')[1];
+      if(oldFilePath) await supabase.storage.from('web-media').remove([oldFilePath]);
+    }
+    const filePath = `${user.id}/${shopId}/featured-video-${Date.now()}`;
+    const { data, error } = await supabase.storage.from('web-media').upload(filePath, featuredVideoFile);
+    if (error) return { message: `视频上传失败: ${error.message}` };
+    pageUpdateData.featured_video_url = supabase.storage.from('web-media').getPublicUrl(data.path).data.publicUrl;
+  }
+  
+  // --- 文本和其他数据处理 (完整版) ---
+  shopUpdateData.name = formData.get('name') as string;
+  shopUpdateData.slug = formData.get('slug') as string;
+  shopUpdateData.description = formData.get('description') as string;
+  shopUpdateData.phone_number = formData.get('phone_number') as string;
+
+  // --- 执行数据库更新 (完整版) ---
+  // 只有在 shopUpdateData 不为空时才更新 shops 表
+  if (Object.keys(shopUpdateData).length > 0) {
+    const { error: updateShopError } = await supabase.from('shops').update(shopUpdateData).eq('id', shopId);
+    if (updateShopError) return { message: `店铺信息更新失败: ${updateShopError.message}` };
+  }
+
+  // 只有在 pageUpdateData 有除了 shop_id 之外的其他字段时才更新 shop_pages 表
+  if (Object.keys(pageUpdateData).length > 1) {
+    const { error: upsertPageError } = await supabase.from('shop_pages').upsert(pageUpdateData, { onConflict: 'shop_id' });
+    if (upsertPageError) return { message: `页面内容更新失败: ${upsertPageError.message}` };
+  }
+
+  revalidatePath('/dashboard/shop');
+  revalidatePath(`/shops/${shop.slug}`);
+  return { message: '店铺信息已成功更新！' };
+}
+
+
+
+export async function deleteShopVideo(prevState: any, formData: FormData) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { message: "用户未登录" };
+
+    const shopId = formData.get('shop_id') as string;
+    if (!shopId) return { message: "缺少店铺ID" };
+
+    // 【核心修复】: 在查询时，同时 select 'id' 和 'slug'
+    const { data: shop } = await supabase
+        .from('shops')
+        .select('id, slug') // <-- 修改了这里
+        .eq('owner_id', user.id)
+        .eq('id', shopId)
+        .single();
+        
+    if (!shop) return { message: "权限不足或找不到店铺" };
+
+    // 1. 从数据库获取旧视频URL并删除
+    const { data: pageData } = await supabase.from('shop_pages').select('featured_video_url').eq('shop_id', shopId).single();
+    if (pageData?.featured_video_url) {
+        const oldFilePath = pageData.featured_video_url.split('/web-media/')[1]; // 更稳健地解析路径
+        if(oldFilePath) {
+            await supabase.storage.from('web-media').remove([oldFilePath]);
+        }
+    }
+
+    // 2. 将数据库中的URL字段设置为空
+    await supabase.from('shop_pages').update({ featured_video_url: null }).eq('shop_id', shopId);
+
+    revalidatePath('/dashboard/shop');
+    // 现在 shop.slug 存在了，这一行可以正常工作
+    revalidatePath(`/shops/${shop.slug}`); 
+    return { message: "视频已成功删除。" };
 }

@@ -1,15 +1,15 @@
+// next.config.mjs (最终修复版)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
     remotePatterns: [
-      // 这是我们之前为 Supabase 添加的规则
       {
         protocol: 'https',
         hostname: 'lwtvwliusnzjjrrhjyeq.supabase.co',
         port: '',
         pathname: '/storage/v1/object/public/**',
       },
-      // 【核心修正】在这里添加 dicebear.com 的新规则
       {
         protocol: 'https',
         hostname: 'api.dicebear.com',
@@ -17,6 +17,22 @@ const nextConfig = {
         pathname: '/8.x/initials/svg/**',
       },
     ],
+  },
+  // 【核心修复】: 完善 CSP 头部配置
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            // 在 script-src 中添加 'unsafe-inline' 以允许内联脚本执行
+            // 这是 Next.js 正常运行和谷歌翻译初始化所必需的
+            value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' translate.google.com translate.googleapis.com;",
+          },
+        ],
+      },
+    ];
   },
 };
 

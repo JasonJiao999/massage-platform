@@ -1,4 +1,4 @@
-// src/app/layout.tsx (已修复 props 传递问题)
+// src/app/layout.tsx (已更新版)
 
 import type { Metadata } from 'next';
 import { Inter } from "next/font/google";
@@ -8,6 +8,8 @@ import TopNavigation from '@/components/TopNavigation';
 import Header from "@/components/Header";
 import HeaderStaff from "@/components/HeaderStaff";
 import HeaderMerchant from "@/components/HeaderMerchant";
+import HeaderCustomer from '@/components/HeaderCustomer';
+import { headers } from 'next/headers'; // 1. 导入 headers
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,34 +34,44 @@ export default async function RootLayout({
   
   let roleSpecificHeader;
 
-  // 根据用户角色，选择要渲染的角色专属 Header
   switch (profile?.role) {
     case 'staff':
     case 'freeman':
-      // 【核心修正】: 将 user 对象作为 prop 传递给组件
       roleSpecificHeader = <HeaderStaff user={user} />;
       break;
     case 'merchant':
-      // 【核心修正】: 将 user 对象作为 prop 传递给组件
-      roleSpecificHeader = <HeaderMerchant user={user} />;
+      const { data: shop } = user 
+        ? await supabase.from('shops').select('slug').eq('owner_id', user.id).single() 
+        : { data: null };
+      roleSpecificHeader = <HeaderMerchant user={user} shopSlug={shop?.slug || null} />;
+      break;
+    case 'customer':
+      roleSpecificHeader = <HeaderCustomer user={user} />;
       break;
     default:
-      // 通用 Header 可能也需要 user 信息来判断是否显示“登出”按钮
       roleSpecificHeader = <Header user={user} />;
       break;
   }
 
+  // 2. 【核心修改】: 判断当前路径，决定是否显示顶部导航栏
+  const headersList = headers();
+  // `x-next-pathname` 是 Next.js 内部用来传递当前 URL 路径的头部
+  const pathname = headersList.get('x-next-pathname') || '';
+  const showTopNav = !pathname.startsWith('/shops/');
+
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <div id="top-bar-container" className="sticky top-0 z-50">
-          <TopNavigation>
-            {roleSpecificHeader}
-          </TopNavigation>
-        </div>
+      <body>
+        {/* 3. 【核心修改】: 使用条件渲染 */}
+        {showTopNav && (
+          <div id="top-bar-container" className="sticky top-0 z-50">
+            <TopNavigation>
+              {roleSpecificHeader}
+            </TopNavigation>
+          </div>
+        )}
         <main>{children}</main>
 
-        {/* 2. 【核心修正】: 在 body 闭合标签前，添加 Google 翻译的初始化脚本 */}
         <Script 
           src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
           strategy="afterInteractive" 

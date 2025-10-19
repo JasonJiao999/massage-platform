@@ -1,8 +1,8 @@
-// src/app/dashboard/staff/[id]/edit/page.tsx
+// src/app/dashboard/staff/[id]/edit/page.tsx (最终修复版)
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import StaffEditForm from '@/components/MyProfileForm';
+import { MyProfileForm as StaffEditForm } from '@/components/MyProfileForm';
 
 export default async function EditStaffPage({ params }: { params: { id: string } }) {
   const cookieStore = cookies();
@@ -14,25 +14,34 @@ export default async function EditStaffPage({ params }: { params: { id: string }
   const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', user.id).single();
   if (!shop) return <p>找不到您的店铺。</p>;
 
-  // 使用 select('*') 来获取员工的所有字段信息
-  const { data: staffMember } = await supabase
+  // 查询语句保持不变
+  const { data: staffRelation } = await supabase
     .from('staff')
-    .select('*')
+    .select(`
+      id,
+      profiles (*)
+    `)
     .eq('id', params.id)
     .eq('shop_id', shop.id)
     .single();
 
-  if (!staffMember) {
+  // 【核心修复】: 
+  // 检查 staffRelation.profiles 是否存在且是一个数组，如果是，则取出第一个元素。
+  // 这样可以确保 staffProfile 是一个对象或 null，而不是数组。
+  const staffProfile = staffRelation?.profiles && Array.isArray(staffRelation.profiles)
+    ? staffRelation.profiles[0]
+    : staffRelation?.profiles;
+
+  if (!staffProfile) {
     notFound();
   }
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-6">
-        编辑员工信息: {staffMember.nickname}
+        编辑员工信息: {staffProfile.nickname || '未命名员工'}
       </h1>
-      {/* 将完整的员工数据传递给表单组件 */}
-      <StaffEditForm staff={staffMember} />
+      <StaffEditForm profile={staffProfile} />
     </div>
   );
 }

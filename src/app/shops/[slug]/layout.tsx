@@ -1,10 +1,10 @@
-// src/app/shops/[slug]/layout.tsx
-import { getThemeByShopSlug } from '@/lib/themes';
-import { notFound } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server'; // 导入我们自己的 createClient
-import { cookies } from 'next/headers'; // 导入 cookies
+// src/app/shops/[slug]/layout.tsx (已修复版)
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 
-// (hexToHslParts 函数保持不变，这里省略以保持简洁)
+// 【核心修复】: 导入 React 以使用 CSSProperties 类型
+import React from 'react'; 
+
 function hexToHslParts(hex: string): string | null {
     if (!hex || !hex.startsWith('#')) return null;
     let r = 0, g = 0, b = 0;
@@ -38,7 +38,6 @@ function hexToHslParts(hex: string): string | null {
     return `${h} ${s}% ${l}%`;
 }
 
-// 我们需要修改 getThemeByShopSlug 函数，让它接收 supabase 客户端实例
 async function getThemeByShopSlugWithClient(supabase: any, slug: string) {
   const { data, error } = await supabase
     .from('shops')
@@ -47,7 +46,6 @@ async function getThemeByShopSlugWithClient(supabase: any, slug: string) {
     .single();
 
   if (error || !data || !data.shop_themes) {
-    console.error('Error fetching theme or theme not found:', error);
     return null;
   }
   const theme = Array.isArray(data.shop_themes) ? data.shop_themes[0] : data.shop_themes;
@@ -62,25 +60,28 @@ export default async function ShopLayout({
   children: React.ReactNode;
   params: { slug: string };
 }) {
-  // **核心修正**：遵循正确的 cookies() 调用模式
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  // 调用修改后的函数来获取主题
   const themeData = await getThemeByShopSlugWithClient(supabase, params.slug);
 
-  const themeVariables = {} as React.CSSProperties;
+// 【核心修复】: 扩展 CSSProperties 类型以接受自定义变量
+  const themeVariables: React.CSSProperties & { [key: string]: string } = {};
+  
   if (themeData) {
     if (themeData.primary_color) {
         const hsl = hexToHslParts(themeData.primary_color);
-        if (hsl) themeVariables['--primary'] = hsl;
+        if (hsl) {
+            themeVariables['--primary'] = hsl;
+        }
     }
     if (themeData.background_color) {
         const hsl = hexToHslParts(themeData.background_color);
-        if (hsl) themeVariables['--background'] = hsl;
+        if (hsl) {
+            themeVariables['--background'] = hsl;
+        }
     }
   }
-
   return (
     <div style={themeVariables}>
       {children}

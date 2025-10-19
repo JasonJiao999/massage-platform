@@ -1,4 +1,4 @@
-// src/app/staff-dashboard/profile/page.tsx (显示店铺名称增强版)
+// src/app/staff-dashboard/profile/page.tsx (最终修复版)
 
 import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { JoinShopForm } from '@/components/JoinShopForm';
 import { LeaveShopButton } from '@/components/LeaveShopButton';
 import { MyProfileForm } from '@/components/MyProfileForm';
+import ToggleActiveStatusButton from '@/components/ToggleActiveStatusButton';
 
 export default async function ProfilePage() {
   const cookieStore = cookies();
@@ -16,7 +17,6 @@ export default async function ProfilePage() {
     redirect('/login');
   }
 
-  // 获取完整的个人信息 (这部分保持不变)
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -27,8 +27,6 @@ export default async function ProfilePage() {
     return <p className="p-6 text-red-500">无法加载您的个人资料，请联系管理员。</p>;
   }
   
-  // 1. 【核心修改】: 在查询雇佣关系时，同时获取店铺的名称
-  // 我们使用 Supabase 的关联查询语法 `shops ( name )`
   const { data: staffEntry } = await supabase
     .from('staff')
     .select(`
@@ -39,20 +37,37 @@ export default async function ProfilePage() {
     .single();
 
   const isInShop = !!staffEntry;
-  // 从查询结果中安全地获取店铺名称
-  const shopName = staffEntry?.shops?.name || '未知店铺';
+
+  // 【核心修复】: 使用更简洁、类型更安全的逻辑来提取店铺名称
+  const shopsData = staffEntry?.shops;
+  const shopObject = Array.isArray(shopsData) ? shopsData[0] : shopsData;
+  const shopName = shopObject?.name || '未知店铺';
+
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       <h1 className="text-3xl font-bold">我的仪表盘</h1>
       
+      <div className="p-6 border rounded-lg bg-white shadow">
+          <h2 className="text-xl font-semibold mb-4">工作状态管理</h2>
+          <div className="flex items-center gap-4">
+              <p>
+                  当前状态: 
+                  <span className={`font-bold ${profile.is_active ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {profile.is_active ? '工作中' : '休息中'}
+                  </span>
+              </p>
+              <ToggleActiveStatusButton isActive={profile.is_active ?? true} />
+          </div>
+          <p className="text-xs text-gray-500 mt-2">当您切换为“休息中”，顾客将无法在您的主页上进行预约。</p>
+      </div>
+
       <MyProfileForm profile={profile} />
 
-      <div className="p-6 border rounded-lg">
+      <div className="p-6 border rounded-lg bg-white shadow">
         <h2 className="text-xl font-semibold mb-4">店铺关系管理</h2>
         {isInShop ? (
           <div>
-            {/* 2. 【核心修改】: 在这里显示获取到的店铺名称 */}
             <p className="mb-4 text-gray-700">
               您当前隶属于 “<span className="font-bold text-blue-600">{shopName}</span>” 店铺。
             </p>
