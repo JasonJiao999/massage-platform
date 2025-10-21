@@ -1,28 +1,26 @@
-// src/app/staff-dashboard/bookings/PaginationControls.tsx
+// src/components/PaginationControls.tsx
 'use client';
 
-import { useSearchParams, usePathname } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
-type PaginationProps = {
+interface PaginationProps {
   currentPage: number;
   totalPages: number;
-  pageParamName: string; // 【核心修改】将类型从 'activePage' | 'pastPage' 修改为 string
-};
+}
 
-export default function PaginationControls({ currentPage, totalPages, pageParamName }: PaginationProps) {
+export default function PaginationControls({ currentPage, totalPages }: PaginationProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // 如果总页数小于等于1，则不显示分页控件
   if (totalPages <= 1) {
-    return null;
+    return null; // 如果总页数小于等于1，不显示分页
   }
 
-  // 创建下一页和上一页的链接
   const createPageURL = (pageNumber: number) => {
     const params = new URLSearchParams(searchParams);
-    params.set(pageParamName, pageNumber.toString());
+    params.set('page', pageNumber.toString());
     return `${pathname}?${params.toString()}`;
   };
 
@@ -30,7 +28,7 @@ export default function PaginationControls({ currentPage, totalPages, pageParamN
   const isLastPage = currentPage === totalPages;
 
   return (
-    <div className="flex items-center justify-between mt-4">
+    <div className="flex items-center justify-center space-x-4 mt-12">
       <Link
         href={createPageURL(currentPage - 1)}
         className={`px-4 py-2 text-sm font-medium rounded-md ${isFirstPage ? 'bg-gray-200 text-gray-400 pointer-events-none' : 'bg-white text-gray-700 border hover:bg-gray-50'}`}

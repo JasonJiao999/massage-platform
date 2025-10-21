@@ -38,6 +38,8 @@ export default function BookingManagementClient({
     params.set('page', '1'); // Reset to first page on filter change
     router.push(`?${params.toString()}`);
   };
+  
+  const totalPages = Math.ceil(totalCount / limit);
 
   return (
     <div className="space-y-6">
@@ -102,9 +104,9 @@ export default function BookingManagementClient({
         </div>
       </div>
       <PaginationControls
-        totalItems={totalCount}
         currentPage={currentPage}
-        itemsPerPage={limit}
+        totalPages={totalPages}
+        pageParamName="page"
       />
     </div>
   );

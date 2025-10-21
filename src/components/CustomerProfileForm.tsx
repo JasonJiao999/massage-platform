@@ -34,21 +34,7 @@ export default function CustomerProfileForm({ profile }: { profile: Profile }) {
 
   return (
     <div className="space-y-10">
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-4">您的头像</h3>
-        <div className="flex items-center gap-4">
-          <div className="relative w-24 h-24 rounded-full overflow-hidden">
-            <Image
-              src={'/default-avatar.png'}
-              alt="Default avatar"
-              fill
-              sizes="96px"
-              className="object-cover"
-            />
-          </div>
-           <p className="text-sm text-gray-400">所有用户均使用默认头像。</p>
-        </div>
-      </div>
+      
 
       <form action={updateAction} className="space-y-6">
         <h3 className="text-lg font-semibold text-white">基础信息</h3>

@@ -1,10 +1,12 @@
 // src/lib/themes.ts
 import { createClient } from '@/utils/supabase/server';
 import { unstable_noStore as noStore } from 'next/cache';
+import { cookies } from 'next/headers'; // 【核心修改】1. 导入 cookies 函数
 
 export async function getThemeByShopSlug(slug: string) {
-  noStore(); // 告诉 Next.js 不要缓存这个结果，以保证主题可以实时更新
-  const supabase = createClient();
+  noStore();
+  const cookieStore = cookies(); // 【核心修改】2. 调用 cookies()
+  const supabase = createClient(cookieStore); // 【核心修改】3. 将其作为参数传入
 
   // 我们需要通过 slug 找到 shop，然后关联查询 shop_themes
   const { data, error } = await supabase

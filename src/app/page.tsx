@@ -1,76 +1,90 @@
-// src/app/page.tsx
+// src/app/page.tsx (最终修复版 - 传递完整数据)
+
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import Link from 'next/link';
-import Image from 'next/image';
-import FavoriteButton from '@/components/FavoriteButton'; 
+import WorkerSearchClient from '@/components/WorkerSearchClient';
 
-export default async function HomePage() {
+const ITEMS_PER_PAGE = 30;
+
+// 更新 SearchParams 以包含新的筛选条件
+interface SearchParams {
+  page?: string;
+  q?: string;
+  city?: string;
+  area?: string;
+}
+
+export default async function HomePage({ searchParams }: { searchParams: SearchParams }) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
+  const currentPage = Number(searchParams.page) || 1;
 
+  // --- 1. 获取用户状态 (逻辑不变) ---
   const { data: { user } } = await supabase.auth.getUser();
-
-  // --- 数据获取部分保持不变 ---
-  const { data: workers } = await supabase
-    .from('profiles')
-    .select('id, nickname, avatar_url, photo_urls, tags, bio')
-    .in('role', ['staff', 'freeman'])
-    .eq('is_active', true);
-  
-  let favoritedWorkerIds = new Set<string>();
-  if (user) {
-    const { data: favorites } = await supabase
-      .from('favorite_workers')
-      .select('worker_profile_id')
-      .eq('user_id', user.id);
-    
+  const isLoggedIn = !!user;
+  let favoritesSet = new Set<string>();
+  if (isLoggedIn) {
+    const { data: favorites } = await supabase.from('favorites').select('worker_profile_id').eq('user_id', user.id);
     if (favorites) {
-      favoritedWorkerIds = new Set(favorites.map(f => f.worker_profile_id));
+      favoritesSet = new Set(favorites.map(fav => fav.worker_profile_id));
     }
   }
 
-  return (
-    <main className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold my-8 text-center">探索我们的专业技师</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {workers?.map((worker) => {
-          const displayImage = (worker.photo_urls && worker.photo_urls[0]) 
-                             ? worker.photo_urls[0] 
-                             : worker.avatar_url || '/default-avatar.png';
+  // --- 2. 并行获取所有筛选器数据和总数 ---
+  const [
+    { data: adminTagsData },
+    { data: adminCitiesData },
+    { data: adminAreasData }, // 之前这里叫 locations_admin
+    { data: totalCountData }
+  ] = await Promise.all([
+    supabase.from('tags_admin').select('name').order('sort_order'),
+    supabase.from('cities_admin').select('name, location_id').order('sort_order'),
+    supabase.from('locations_admin').select('name, location_id').order('sort_order'), // 确保查询 location_id
+    supabase.rpc('search_workers_count', {
+        search_term: searchParams.q,
+        city_filter_id: searchParams.city ? Number(searchParams.city) : null,
+        area_filter_id: searchParams.area ? Number(searchParams.area) : null,
+    })
+  ]);
 
-          return (
-            // 移除了 relative 定位，因为不再需要绝对定位
-            <div key={worker.id} className="group bg-card rounded-lg overflow-hidden border border-border flex flex-col">
-              <Link href={`/worker/${worker.id}`} className="block">
-                <div className="relative w-full aspect-square">
-                  <Image
-                    src={displayImage}
-                    alt={worker.nickname || 'Worker'}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </Link>
-              <div className="p-4 flex flex-col flex-grow">
-                {/* 【核心修改】: 使用 flex 布局将名字和按钮放在一行 */}
-                <div className="flex justify-between items-start gap-2">
-                  <Link href={`/worker/${worker.id}`} className="flex-1 truncate">
-                    <h3 className="font-semibold text-lg group-hover:text-primary">{worker.nickname || '匿名技师'}</h3>
-                  </Link>
-                  {/* 现在按钮在这里，并且始终显示 */}
-                  <FavoriteButton 
-                    workerProfileId={worker.id}
-                    isInitiallyFavorited={favoritedWorkerIds.has(worker.id)}
-                    isLoggedIn={!!user} // 将登录状态传递给按钮
-                  />
-                </div>
-                <p className="text-sm text-foreground/70 truncate mt-1">{worker.bio || '暂无简介'}</p>
-              </div>
-            </div>
-          );
-        })}
+  // 【核心修复】确保将完整数据（包括 location_id）传递下去
+  const adminTags = adminTagsData?.map(t => ({ tag: t.name })) || [];
+  const popularCities = adminCitiesData || [];
+  const popularAreas = adminAreasData || []; // 直接使用查询结果
+
+  const totalCount = totalCountData as number || 0;
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+  // --- 3. 获取工作者列表 ---
+  const { data: workers, error: workersError } = await supabase.rpc('search_workers', {
+    search_term: searchParams.q,
+    city_filter_id: searchParams.city ? Number(searchParams.city) : null,
+    area_filter_id: searchParams.area ? Number(searchParams.area) : null,
+    page_num: currentPage,
+    page_size: ITEMS_PER_PAGE
+  });
+  if(workersError) console.error("Error fetching workers:", workersError);
+  
+  // --- 4. 渲染页面 ---
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900">寻找您附近最好的技师</h1>
+        <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+          通过服务、地区、经验等条件进行筛选，找到最适合您的专业按摩服务。
+        </p>
       </div>
+
+      <WorkerSearchClient
+        initialWorkers={workers || []}
+        adminTags={adminTags}
+        popularCities={popularCities}
+        popularAreas={popularAreas}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        isLoggedIn={isLoggedIn}
+        favoritesSet={favoritesSet}
+      />
     </main>
   );
 }

@@ -7,8 +7,8 @@ import { revalidatePath } from 'next/cache';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import { Resend } from 'resend';
-
-
+import sharp from 'sharp'; // 【新】导入 sharp 库
+import { v4 as uuidv4 } from 'uuid';
 
 // Helper function to get the current user and their profile
 async function getUserAndProfile(supabase: any) {
@@ -56,22 +56,32 @@ export async function acceptInvitation(invitationId: string) {
 }
 
 /**
- * 【升级版】更新当前用户的个人资料 (包含所有字段)
+ * 【最终修复版】更新当前用户的个人资料 (包含所有字段 + 地址信息 + 必要的 level 字段)
  */
 export async function updateMyProfile(prevState: any, formData: FormData) {
   'use server';
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  const { user } = await getUserAndProfile(supabase);
-
-  // 1. 获取所有表单字段
+  // 首先，安全地获取已认证的用户和他们的现有 profile
+  const { user, profile } = await getUserAndProfile(supabase); // 使用你已有的辅助函数
+  
+  if (!user || !profile) {
+    return { message: 'Authentication required. Please log in.', success: false };
+  }
+  
+  // 1. 获取所有用户可以修改的表单字段
   const nickname = formData.get('nickname') as string;
   const bio = formData.get('bio') as string;
   const years = formData.get('years') ? parseInt(formData.get('years') as string, 10) : null;
-  const level = formData.get('level') as string;
+  // 注意：我们不再从表单获取 level，因为用户不能修改它
   const tags = formData.get('tags') as string;
   const feature = formData.get('feature') as string;
+  
+  const address_detail = formData.get('address_detail') as string;
+  const province_id = formData.get('province_id') ? Number(formData.get('province_id')) : null;
+  const district_id = formData.get('district_id') ? Number(formData.get('district_id')) : null;
+  const sub_district_id = formData.get('sub_district_id') ? Number(formData.get('sub_district_id')) : null;
   
   // 2. 组装 social_links JSON 对象
   const socialLinks = {
@@ -84,98 +94,35 @@ export async function updateMyProfile(prevState: any, formData: FormData) {
   const tagsArray = tags ? tags.split(',').map(tag => tag.trim()) : [];
   const featureArray = feature ? feature.split(',').map(f => f.trim()) : [];
   
-  // 4. 更新 profiles 表
-  const { error } = await supabase
-    .from('profiles')
-    .update({ 
+  // 4. 组装包含所有字段的更新对象
+  const profileUpdateData = { 
       nickname,
       bio,
       years,
-      level,
+      // 【核心修改】将用户已有的 level 值重新提交，以满足 NOT NULL 约束
+      level: profile.level, 
       tags: tagsArray,
       feature: featureArray,
       social_links: socialLinks,
-    })
+      address_detail,
+      province_id,
+      district_id,
+      sub_district_id,
+  };
+
+  // 5. 更新 profiles 表
+  const { error } = await supabase
+    .from('profiles')
+    .update(profileUpdateData)
     .eq('id', user.id);
 
   if (error) {
+    console.error("Error updating profile:", error);
     return { message: `Update failed: ${error.message}`, success: false };
   }
 
   revalidatePath('/staff-dashboard/profile');
   return { message: '个人资料已成功更新!', success: true };
-}
-
-/**
- * 【新功能】更新当前用户的头像
- */
-export async function updateAvatar(formData: FormData) {
-  'use server';
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-  const { user } = await getUserAndProfile(supabase);
-
-  const file = formData.get('avatar') as File;
-  if (!file || file.size === 0) throw new Error('No file provided.');
-
-  // 【核心修改】: 使用更有条理的文件夹路径
-  const filePath = `${user.id}/avatars/avatar-${Date.now()}`;
-
-  // 【核心修改】: 使用 'web-media' Bucket
-  const { error: uploadError } = await supabase.storage
-    .from('web-media')
-    .upload(filePath, file, { upsert: true });
-
-  if (uploadError) throw uploadError;
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('web-media')
-    .getPublicUrl(filePath);
-
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({ avatar_url: publicUrl })
-    .eq('id', user.id);
-
-  if (updateError) throw updateError;
-  
-  revalidatePath('/staff-dashboard/profile');
-}
-
-/**
- * 【重命名版】为当前用户上传多张照片
- */
-export async function uploadMultipleMyProfilePhotos(formData: FormData) {
-    'use server';
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { user } = await getUserAndProfile(supabase);
-  
-    const files = formData.getAll('photos') as File[];
-    if (!files || files.length === 0) throw new Error('No files to upload.');
-  
-    const { data: profileData, error: profileError } = await supabase.from('profiles').select('photo_urls').eq('id', user.id).single();
-    if (profileError) throw profileError;
-    const existingUrls = profileData.photo_urls || [];
-  
-    // 【核心修改】: 使用 'web-media' Bucket 和 'photos' 子文件夹
-    const uploadPromises = files.map(file => 
-      supabase.storage.from('web-media').upload(`${user.id}/photos/${Date.now()}_${file.name}`, file)
-    );
-    const uploadResults = await Promise.all(uploadPromises);
-  
-    const newUrls = uploadResults.map(result => {
-      if (result.error) throw result.error;
-      const { data } = supabase.storage.from('web-media').getPublicUrl(result.data.path);
-      return data.publicUrl;
-    });
-  
-    const allUrls = [...existingUrls, ...newUrls];
-  
-    const { error: updateError } = await supabase.from('profiles').update({ photo_urls: allUrls }).eq('id', user.id);
-    if (updateError) throw updateError;
-  
-    revalidatePath('/staff-dashboard/profile');
 }
 
 
@@ -1536,3 +1483,149 @@ export async function updateCustomerProfile(prevState: any, formData: FormData) 
 }
 
 
+// --- 辅助函数：处理图片并上传 ---
+async function processAndUploadImage(supabase: any, file: File, bucket: string, path: string): Promise<string> {
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  const image = sharp(buffer);
+  const metadata = await image.metadata();
+
+  // 设置3:4比例的目标尺寸
+  const targetAspectRatio = 3/4; // 宽高比 3:4
+  
+  let targetWidth: number;
+  let targetHeight: number;
+
+  if (metadata.width && metadata.height) {
+    const originalAspectRatio = metadata.width / metadata.height;
+    
+    if (originalAspectRatio > targetAspectRatio) {
+      // 原图比3:4更宽，以高度为基准
+      targetHeight = Math.max(720, Math.min(metadata.height, 1600));
+      targetWidth = Math.round(targetHeight * targetAspectRatio);
+    } else if (originalAspectRatio < targetAspectRatio) {
+      // 原图比3:4更高，以宽度为基准
+      targetWidth = Math.max(540, Math.min(metadata.width, 1200));
+      targetHeight = Math.round(targetWidth / targetAspectRatio);
+    } else {
+      // 原图正好是3:4比例
+      targetWidth = Math.max(540, Math.min(metadata.width, 1200));
+      targetHeight = Math.max(720, Math.min(metadata.height, 1600));
+    }
+  } else {
+    // 默认尺寸：900x1200 (3:4)
+    targetWidth = 900;
+    targetHeight = 1200;
+  }
+
+  const webpBuffer = await image
+    .rotate()
+    .resize({
+      width: targetWidth,
+      height: targetHeight,
+      fit: 'cover', // 使用 cover 来确保填充整个3:4区域，可能会裁剪
+      position: 'centre' // 裁剪时居中对齐
+    })
+    // 【超高质量压缩】
+    .webp({ 
+      quality: 90,
+      lossless: false,
+      effort: 4,
+      alphaQuality: 90,
+      smartSubsample: true
+    })
+    .toBuffer();
+
+  console.log(`3:4比例输出: ${targetWidth}x${targetHeight}, 大小: ${(webpBuffer.length / 1024).toFixed(0)}KB`);
+
+  // 为文件生成一个新的、带 .webp 后缀的名称
+  const fileName = `${uuidv4()}.webp`;
+  const filePath = `${path}/${fileName}`;
+
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(filePath, webpBuffer, {
+      contentType: 'image/webp',
+      upsert: false,
+    });
+
+  if (error) {
+    console.error('Upload Error:', error);
+    throw new Error(`Failed to upload image: ${error.message}`);
+  }
+
+  // 返回新图片的公开 URL
+  const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(filePath);
+  return publicUrl;
+}
+
+// --- 更新头像 ---
+export async function updateAvatar(formData: FormData) {
+  const supabase = createClient(cookies());
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Authentication required.' };
+
+  const avatarFile = formData.get('avatar') as File;
+  if (!avatarFile || avatarFile.size === 0) {
+    return { error: 'No file provided.' };
+  }
+
+  try {
+    const avatarUrl = await processAndUploadImage(supabase, avatarFile, 'avatars', user.id);
+    
+    // 更新 profiles 表中的 avatar_url
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', user.id);
+
+    if (updateError) throw updateError;
+
+    revalidatePath('/staff-dashboard/profile');
+    return { success: true, url: avatarUrl };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+// --- 上传多张个人照片 ---
+export async function uploadMultipleMyProfilePhotos(formData: FormData) {
+  const supabase = createClient(cookies());
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Authentication required.' };
+
+  const photoFiles = formData.getAll('photos') as File[];
+  if (photoFiles.length === 0) return { error: 'No files provided.' };
+
+  try {
+    // 并行处理所有图片
+    const uploadPromises = photoFiles.map(file => 
+      processAndUploadImage(supabase, file, 'web-media', `staff-photos/${user.id}`)
+    );
+    const newPhotoUrls = await Promise.all(uploadPromises);
+
+    // 获取现有的照片 URLs
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('photo_urls')
+      .eq('id', user.id)
+      .single();
+    if (profileError) throw profileError;
+
+    const existingUrls = profile?.photo_urls || [];
+    const updatedUrls = [...existingUrls, ...newPhotoUrls];
+
+    // 更新 profiles 表
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ photo_urls: updatedUrls })
+      .eq('id', user.id);
+
+    if (updateError) throw updateError;
+    
+    revalidatePath('/staff-dashboard/profile');
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
