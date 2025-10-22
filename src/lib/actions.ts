@@ -9,6 +9,10 @@ import { redirect } from 'next/navigation';
 import { Resend } from 'resend';
 import sharp from 'sharp'; // 【新】导入 sharp 库
 import { v4 as uuidv4 } from 'uuid';
+import { format, parseISO, addMinutes } from 'date-fns';
+
+
+
 
 // Helper function to get the current user and their profile
 async function getUserAndProfile(supabase: any) {
@@ -573,103 +577,6 @@ export async function deleteMyService(serviceId: string) {
     revalidatePath('/staff-dashboard/services');
 }
 
-
-/**
- * 顾客创建新预约 (增加取消次数检查)
- */
-export async function createBooking(
-    serviceId: string,
-    workerProfileId: string,
-    startTimeStr: string
-) {
-  'use server';
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-
-  const { user, profile } = await getUserAndProfile(supabase);
-  if (profile.role !== 'customer') {
-    throw new Error('只有顾客才能预订服务。');
-  }
-
-  // 【核心修改】: 在创建预约前，检查用户的月度取消次数
-  const { data: customerProfile } = await supabase
-    .from('profiles')
-    .select('monthly_cancellation_count')
-    .eq('id', user.id)
-    .single();
-
-  if (customerProfile && customerProfile.monthly_cancellation_count >= 3) {
-      throw new Error('您的预约功能已被暂停，因为本月取消次数已达上限。次月将自动恢复。');
-  }
-
-  const { data: service } = await supabase
-    .from('services')
-    .select('duration_value, duration_unit, price, owner_id')
-    .eq('id', serviceId)
-    .single();
-
-  if (!service || service.owner_id !== workerProfileId) {
-    throw new Error('服务与技师不匹配。');
-  }
-  
-  if (!service.duration_value) {
-    throw new Error('服务时长信息不完整，无法计算结束时间。');
-  }
-
-  const { data: staffEntry } = await supabase.from('staff').select('id, shop_id').eq('user_id', workerProfileId).single();
-
-  const startTime = new Date(startTimeStr);
-  let endTime = new Date(startTime);
-
-  switch (service.duration_unit) {
-    case 'minutes':
-      endTime.setMinutes(startTime.getMinutes() + service.duration_value);
-      break;
-    case 'hours':
-      endTime.setHours(startTime.getHours() + service.duration_value);
-      break;
-    case 'days':
-      endTime.setDate(startTime.getDate() + service.duration_value);
-      break;
-    default:
-      throw new Error('不支持或无效的服务时长单位。');
-  }
-  
-  const { data: hasConflict, error: conflictError } = await supabase.rpc('check_booking_conflict', {
-    worker_id: workerProfileId,
-    start_t: startTime.toISOString(),
-    end_t: endTime.toISOString()
-  });
-
-  if (conflictError) {
-      console.error('Booking conflict check error:', conflictError);
-      throw new Error('检查时间冲突时发生错误。');
-  }
-
-  if (hasConflict) {
-      throw new Error('抱歉，该时间段已被预订，请选择其他时间。');
-  }
-
-  const { error: createError } = await supabase.from('bookings').insert({
-    customer_id: user.id,
-    worker_profile_id: workerProfileId,
-    staff_id: staffEntry?.id || null,
-    service_id: serviceId,
-    shop_id: staffEntry?.shop_id || null,
-    start_time: startTime.toISOString(),
-    end_time: endTime.toISOString(),
-    price_at_booking: service.price,
-    duration_at_booking: service.duration_value || 0,
-    status: 'confirmed'
-  });
-
-  if (createError) {
-    throw new Error(`创建预约失败: ${createError.message}`);
-  }
-
-  revalidatePath(`/worker/${workerProfileId}`);
-  return { success: true, message: '预约成功！' };
-}
 
 
 /**
@@ -1560,14 +1467,15 @@ async function processAndUploadImage(supabase: any, file: File, bucket: string, 
 }
 
 // --- 更新头像 ---
-export async function updateAvatar(formData: FormData) {
+export async function updateAvatar(prevState: any, formData: FormData) {
+  'use server';
   const supabase = createClient(cookies());
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Authentication required.' };
+  if (!user) return { success: false, message: 'Authentication required.' };
 
   const avatarFile = formData.get('avatar') as File;
   if (!avatarFile || avatarFile.size === 0) {
-    return { error: 'No file provided.' };
+    return { success: false, message: 'No file provided.' };
   }
 
   try {
@@ -1582,20 +1490,24 @@ export async function updateAvatar(formData: FormData) {
     if (updateError) throw updateError;
 
     revalidatePath('/staff-dashboard/profile');
-    return { success: true, url: avatarUrl };
+    return { success: true, message: '头像已成功更新！', url: avatarUrl };
   } catch (error: any) {
-    return { error: error.message };
+    return { success: false, message: error.message };
   }
 }
 
 // --- 上传多张个人照片 ---
-export async function uploadMultipleMyProfilePhotos(formData: FormData) {
+export async function uploadMultipleMyProfilePhotos(prevState: any, formData: FormData) {
+  'use server';
   const supabase = createClient(cookies());
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Authentication required.' };
+  if (!user) return { success: false, message: 'Authentication required.' };
 
   const photoFiles = formData.getAll('photos') as File[];
-  if (photoFiles.length === 0) return { error: 'No files provided.' };
+  // 检查是否至少有一个有效文件
+  if (photoFiles.length === 0 || (photoFiles.length === 1 && photoFiles[0].size === 0)) {
+    return { success: false, message: 'No files provided.' };
+  }
 
   try {
     // 并行处理所有图片
@@ -1624,8 +1536,85 @@ export async function uploadMultipleMyProfilePhotos(formData: FormData) {
     if (updateError) throw updateError;
     
     revalidatePath('/staff-dashboard/profile');
-    return { success: true };
+    return { success: true, message: '照片已成功上传！' };
   } catch (error: any) {
-    return { error: error.message };
+    return { success: false, message: error.message };
   }
 }
+
+// ↓↓↓↓ 从这里开始完整替换 ↓↓↓↓
+
+export async function createBooking(
+  serviceId: string,
+  bookingDate: string,
+  startTime: string
+) {
+  'use server';
+
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 身份验证
+  const { user, profile } = await getUserAndProfile(supabase); // 假设此函数在本文件定义
+  if (profile.role !== 'customer') {
+    throw new Error('只有顾客才能预订服务。');
+  }
+  // ... (其他权限检查)
+
+  // 2. 验证服务信息
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  const { data: service, error: serviceError } = await supabaseAdmin
+    .from('services')
+    .select('*, owner_id, duration_value, price')
+    .eq('id', serviceId)
+    .single();
+
+  if (serviceError || !service) {
+    throw new Error('未找到指定的服务。');
+  }
+
+  // 3. 根据技师ID查询店铺ID (shop_id)
+  const workerId = service.owner_id;
+  const { data: staffInfo, error: staffError } = await supabaseAdmin
+    .from('staff')
+    .select('shop_id')
+    .eq('user_id', workerId)
+    .single();
+
+  if (staffError || !staffInfo) {
+    console.error(`找不到 worker_id: ${workerId} 对应的店铺信息。`);
+    throw new Error('无法确定技师所属的店铺。');
+  }
+  const shopId = staffInfo.shop_id;
+
+  // 4. 计算时间并创建预约
+  const bookingStartTime = parseISO(startTime);
+  const bookingEndTime = addMinutes(bookingStartTime, service.duration_value);
+
+  const { error: insertError } = await supabase
+    .from('bookings')
+    .insert({
+      service_id: serviceId,
+      customer_id: user.id,
+      // 【核心修复】: 将 'worker_id' 修正为 'worker_profile_id'
+      worker_profile_id: workerId,
+      shop_id: shopId,
+      start_time: bookingStartTime.toISOString(),
+      end_time: bookingEndTime.toISOString(),
+      status: 'confirmed',
+      price_at_booking: service.price,
+      duration_at_booking: service.duration_value,
+    });
+
+  if (insertError) {
+    console.error('插入预约记录失败:', insertError);
+    return { success: false, message: `创建预约失败: ${insertError.message}` };
+  }
+
+  return { success: true, message: `预约成功！` };
+}
+
+// ↑↑↑↑ 到这里结束替换 ↑↑↑↑

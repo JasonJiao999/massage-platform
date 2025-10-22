@@ -3,10 +3,10 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import Image from 'next/image';
-import { 
-  updateMyProfile, 
-  updateAvatar, 
-  uploadMultipleMyProfilePhotos, 
+import {
+  updateMyProfile,
+  updateAvatar,
+  uploadMultipleMyProfilePhotos,
   deleteMyProfilePhoto,
   uploadMultipleMyProfileVideos,
   deleteMyProfileVideo
@@ -46,9 +46,19 @@ function SubmitButton({ text }: { text: string }) {
 
 // 主组件
 export function MyProfileForm({ profile }: { profile: Profile }) {
-  const [state, dispatch] = useFormState(updateMyProfile, { message: '', success: false });
+  // 状态管理：个人资料更新
+  const [profileState, profileDispatch] = useFormState(updateMyProfile, { message: '', success: false });
   const formRef = useRef<HTMLFormElement>(null);
 
+  // 状态管理：头像上传
+  const [avatarState, avatarFormAction] = useFormState(updateAvatar, { success: false, message: '', url: '' });
+  const avatarFormRef = useRef<HTMLFormElement>(null);
+
+  // 状态管理：照片上传
+  const [photosState, photosFormAction] = useFormState(uploadMultipleMyProfilePhotos, { success: false, message: '' });
+  const photosFormRef = useRef<HTMLFormElement>(null);
+
+  // 状态管理：地址选择器
   const [addressIds, setAddressIds] = useState({
       province_id: profile.province_id,
       district_id: profile.district_id,
@@ -59,22 +69,42 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
       setAddressIds(ids);
   };
 
-  const handleFormAction = (formData: FormData) => {
+  // 래퍼 함수: 个人资料表单提交处理
+  const handleProfileFormAction = (formData: FormData) => {
       formData.set('province_id', addressIds.province_id?.toString() || '');
       formData.set('district_id', addressIds.district_id?.toString() || '');
       formData.set('sub_district_id', addressIds.sub_district_id?.toString() || '');
-      dispatch(formData);
+      profileDispatch(formData);
   };
   
+  // Effect：处理表单提交后的反馈
   useEffect(() => {
-    if (state.message) {
-        if (state.success) {
+    if (profileState.message) {
+        if (profileState.success) {
             alert("个人资料已成功更新!");
         } else {
-            alert(`错误: ${state.message}`);
+            alert(`错误: ${profileState.message}`);
         }
     }
-  }, [state]);
+  }, [profileState]);
+
+  useEffect(() => {
+    if (avatarState.message) {
+        alert(avatarState.message);
+        if (avatarState.success) {
+            avatarFormRef.current?.reset(); // 成功后清空文件输入框
+        }
+    }
+  }, [avatarState]);
+
+  useEffect(() => {
+    if (photosState.message) {
+        alert(photosState.message);
+        if (photosState.success) {
+            photosFormRef.current?.reset(); // 成功后清空文件输入框
+        }
+    }
+  }, [photosState]);
 
   // 将数组转换为逗号分隔的字符串用于 input 显示
   const tagsString = profile.tags?.join(', ') || '';
@@ -83,10 +113,9 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
   return (
     <div className="space-y-8">
       {/* 个人资料表单 */}
-      <form ref={formRef} action={handleFormAction} className="p-6 bg-gray-800 rounded-lg shadow-md space-y-6">
+      <form ref={formRef} action={handleProfileFormAction} className="p-6 bg-gray-800 rounded-lg shadow-md space-y-6">
         <h2 className="text-2xl font-bold text-white">编辑个人资料</h2>
         
-        {/* -- 【核心修复】重新加入所有字段的输入框 -- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label htmlFor="nickname" className="block text-sm font-medium text-gray-300">昵称</label>
@@ -110,7 +139,6 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
           <input type="text" id="feature" name="feature" defaultValue={featuresString} className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" placeholder="e.g. Friendly, Strong hands"/>
         </div>
 
-        {/* -- 【核心修复】增加社交媒体链接的输入框 -- */}
         <div className="border-t border-gray-700 pt-6">
             <h3 className="text-xl font-semibold text-white">社交媒体链接</h3>
             <div className="mt-4 space-y-4">
@@ -129,7 +157,6 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
             </div>
         </div>
 
-        {/* 地址信息部分 (保持不变) */}
         <div className="border-t border-gray-700 pt-6">
             <h3 className="text-xl font-semibold text-white">地址信息</h3>
             <div className="mt-4 space-y-4">
@@ -153,19 +180,19 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
         </div>
       </form>
 
-      {/* 头像上传表单 (保持不变) */}
+      {/* 头像上传表单 */}
       <div className="p-6 bg-gray-800 rounded-lg shadow-md space-y-4">
         <h3 className="text-xl font-bold text-white">头像</h3>
         <div className="flex items-center space-x-4">
           <Image src={profile.avatar_url || '/default-avatar.png'} alt="Avatar" width={80} height={80} className="rounded-full" />
-          <form action={updateAvatar}>
+          <form ref={avatarFormRef} action={avatarFormAction}>
             <input type="file" name="avatar" accept="image/*" required className="text-sm" />
             <SubmitButton text="上传头像" />
           </form>
         </div>
       </div>
       
-      {/* 照片库管理 (保持不变) */}
+      {/* 照片库管理 */}
       <div className="p-6 bg-gray-800 rounded-lg shadow-md space-y-4">
         <h3 className="text-xl font-bold text-white">照片库</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -186,14 +213,14 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
             </div>
           ))}
         </div>
-        <form action={handlePhotosSubmit}>
+        <form ref={photosFormRef} action={photosFormAction}>
           <label className="block text-sm font-medium">上传新照片 (可多选)</label>
           <input type="file" name="photos" accept="image/*" multiple required className="mt-1 text-sm" />
           <SubmitButton text="上传照片" />
         </form>
       </div>
 
-      {/* 视频库管理 (保持不变) */}
+      {/* 视频库管理 */}
       <div className="p-6 bg-gray-800 rounded-lg shadow-md space-y-4">
         <h3 className="text-xl font-bold text-white">视频库</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

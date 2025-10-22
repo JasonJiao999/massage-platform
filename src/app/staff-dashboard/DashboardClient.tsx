@@ -1,12 +1,11 @@
-// src/app/staff-dashboard/DashboardClient.tsx
+// src/app/staff-dashboard/DashboardClient.tsx (已更新)
 'use client';
 
 import StatCard from '@/components/StatCard';
-// 建议安装 react-icons: pnpm install react-icons
 import { FaCalendarCheck, FaCalendarDay, FaDollarSign, FaBan, FaRegChartBar, FaRegCalendarAlt } from 'react-icons/fa';
 
-// 定义从服务器传来的数据类型
-type DashboardStats = {
+// 类型定义保持不变，与数据库返回的真实字段完全一致
+export type DashboardStats = {
   today_bookings_count: number;
   tomorrow_bookings_count: number;
   today_revenue: number;
@@ -17,8 +16,19 @@ type DashboardStats = {
 
 export default function DashboardClient({ stats }: { stats: DashboardStats }) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'THB' }).format(amount);
+    return new Intl.NumberFormat('th-TH', { 
+      style: 'currency', 
+      currency: 'THB',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
   };
+
+  // 【核心修改 1】: 移除了不再需要的取消率计算逻辑
+  // const totalBookings = stats.completed_bookings_count + stats.cancelled_by_customer_count;
+  // const cancellation_rate = totalBookings > 0 
+  //   ? (stats.cancelled_by_customer_count / totalBookings) * 100 
+  //   : 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -47,8 +57,9 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
         value={stats.completed_bookings_count}
         icon={<FaCalendarCheck className="text-purple-500" />}
       />
+      {/* 【核心修改 2】: 更新卡片标题和值 */}
       <StatCard 
-        title="客户取消" 
+        title="已取消预约" 
         value={stats.cancelled_by_customer_count}
         icon={<FaBan className="text-red-500" />}
       />
