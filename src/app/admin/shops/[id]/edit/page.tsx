@@ -1,35 +1,28 @@
-// src/app/admin/shops/[id]/edit/page.tsx
-import { createClient as createAdminClient } from '@supabase/supabase-js';
+// 文件路徑: app/admin/shops/[id]/edit/page.tsx
+
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import AdminShopEditForm from '@/components/AdminShopEditForm'; // 1. 导入新创建的表单
+import ShopEditForm from './ShopEditForm'; // 我們將在下一步創建這個文件
 
-export default async function AdminEditShopPage({ params }: { params: { id: string } }) {
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+export default async function ShopEditPage({ params }: { params: { id: string } }) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
 
-  const { data: shop } = await supabaseAdmin
+  const { data: shop, error } = await supabase
     .from('shops')
-    .select(`*, shop_themes(*)`)
+    .select('*')
     .eq('id', params.id)
     .single();
 
-  if (!shop) {
+  if (error || !shop) {
     notFound();
   }
 
-  const theme = Array.isArray(shop.shop_themes) ? shop.shop_themes[0] : shop.shop_themes;
-  const fullShopData = { ...shop, theme };
-
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-white mb-6">
-        Edit Shop (Admin): {shop.name}
-      </h1>
-      {/* 2. 使用真实的表单组件替换占位符 */}
-      <AdminShopEditForm shop={fullShopData} />
+    <div className="p-4 md:p-8">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">編輯店鋪信息</h1>
+      <ShopEditForm shop={shop} />
     </div>
   );
 }

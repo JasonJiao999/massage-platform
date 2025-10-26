@@ -1,55 +1,43 @@
-// src/app/admin/shops/page.tsx
-import { createClient as createAdminClient } from '@supabase/supabase-js';
-import Link from 'next/link';
-import ShopsListClient from './ShopsListClient'; // 我们将创建一个新的客户端组件
+// 文件路徑: app/admin/shops/page.tsx
 
-export default async function AdminShopsPage({
-  searchParams,
-}: {
-  searchParams?: { query?: string };
-}) {
-  const query = searchParams?.query || '';
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
+import ShopsListClient from './ShopsListClient'; // 我們將在下一步修改這個文件
 
-  // 在服务器组件中，我们直接使用 service_role 密钥创建管理员客户端
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-  
-  // 1. 构建基础查询
-  let queryBuilder = supabaseAdmin
-    .from('shops')
-    .select(`
-      id,
-      name,
-      is_active,
-      owner_id,
-      profiles ( email )
-    `)
-    .order('created_at', { ascending: false });
+// 定義搜索參數的類型
+interface SearchParams {
+  query?: string;
+  filter?: 'name' | 'id' | 'owner_id' | 'email';
+}
 
-  // 2. 【核心修正】如果存在搜索词，则分别应用 .ilike() 过滤器
-  if (query) {
-    // 首先根据店铺名称进行模糊搜索
-    queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+export default async function ShopsPage({ searchParams }: { searchParams: SearchParams }) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { query, filter } = searchParams;
+  let shops = [];
+
+  // 只有當提供了搜索關鍵字和篩選條件時，才執行查詢
+  if (query && filter) {
+    let queryBuilder = supabase
+      .from('shops')
+      .select('*, owner:profiles(id, email, nickname)'); // 同時獲取擁有者的信息
+
+    // 根據不同的篩選條件構建查詢
+    if (filter === 'name') {
+      queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+    } else if (filter === 'id') {
+      queryBuilder = queryBuilder.eq('id', query);
+    } else if (filter === 'owner_id') {
+      queryBuilder = queryBuilder.eq('owner_id', query);
+    } else if (filter === 'email') {
+      // 查詢關聯表的字段
+      queryBuilder = queryBuilder.ilike('owner.email', `%${query}%`);
+    }
     
-    // (更高级的按邮箱搜索需要先查询 profiles 表，然后用 owner_id 过滤 shops，
-    //  为保持当前步骤简单，我们暂时只实现按店铺名搜索)
+    const { data } = await queryBuilder;
+    shops = data || [];
   }
 
-  const { data: shops, error } = await queryBuilder;
-
-  if (error) {
-    console.error("Admin Error loading shops:", error);
-    return <p className="text-red-500 p-8">Error loading shops: {error.message}</p>;
-  }
-
-  return (
-    <div>
-      <h1 className="text-2xl font-bold text-white mb-6">Manage All Shops</h1>
-      {/* 将 shops 和 query 数据传递给客户端组件 */}
-      <ShopsListClient shops={shops || []} initialQuery={query} />
-    </div>
-  );
+  return <ShopsListClient initialShops={shops} />;
 }

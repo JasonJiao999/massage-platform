@@ -1,37 +1,22 @@
-// src/components/HeaderMerchant.tsx (已更新版)
-
-import type { User } from '@supabase/supabase-js';
+// 文件路徑: src/components/HeaderMerchant.tsx (已重構為導航卡片)
+'use client';
 import Link from 'next/link';
-import LogoutButton from './LogoutButton';
+import { usePathname } from 'next/navigation';
 
-// 1. 【核心修改】: 更新组件的 props，增加 shopSlug
-export default function HeaderMerchant({ user, shopSlug }: { user: User | null; shopSlug: string | null }) {
+export default function HeaderMerchant({ shopSlug }: { shopSlug: string | null }) {
+  const pathname = usePathname();
+  const navLinks = [
+    { name: '我的店鋪', href: '/dashboard/shop' },
+    { name: '員工管理', href: '/dashboard/staff' },
+    { name: '商戶專屬頁面', href: shopSlug ? `/shops/${shopSlug}` : '#' },
+  ];
   return (
-    <header className="bg-green-600 text-white">
-      <nav className="container mx-auto px-4 flex justify-between items-center py-4">
-        <Link href="/dashboard" className="font-bold text-xl">
-          商户后台
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      {navLinks.map((link) => (
+        <Link key={link.name} href={link.href} className={`block p-4 rounded-lg shadow-sm transition-all ${pathname.startsWith(link.href) ? 'bg-green-600 text-white' : 'bg-white hover:bg-gray-50'}`}>
+          <h3 className="font-bold">{link.name}</h3>
         </Link>
-        <div className="flex items-center gap-6">
-          
-          {/* 2. 【核心修改】: 如果 shopSlug 存在，则渲染链接 */}
-          {shopSlug && (
-            <Link
-              href={`/shops/${shopSlug}`}
-              className="text-sm font-medium hover:underline bg-white/20 px-3 py-1.5 rounded-md"
-              target="_blank" // 在新标签页中打开，方便预览
-              rel="noopener noreferrer"
-            >
-              商户专属页面
-            </Link>
-          )}
-
-          <Link href="/dashboard/shop" className="text-sm font-medium hover:underline">我的店铺</Link>
-          <Link href="/dashboard/staff" className="text-sm font-medium hover:underline">员工管理</Link>
-          
-          {user && <LogoutButton logoutText="登出" />}
-        </div>
-      </nav>
-    </header>
+      ))}
+    </div>
   );
 }

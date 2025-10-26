@@ -1,25 +1,31 @@
-// src/components/HeaderAdmin.tsx
+// 文件路徑: src/components/HeaderAdmin.tsx (已重構為導航卡片)
+'use client';
 import Link from 'next/link';
-import LogoutButton from './LogoutButton';
-import { User } from '@supabase/supabase-js';
+import { usePathname } from 'next/navigation';
+import { FaStore, FaUserShield, FaImage, FaBullhorn } from 'react-icons/fa';
 
-export default function HeaderAdmin({ user }: { user: User | null }) {
+const navLinks = [
+  { title: '商戶信息管理', href: '/admin/shops', icon: FaStore },
+  { title: '用戶信息管理', href: '/admin/users', icon: FaUserShield },
+  { title: '媒體管理', href: '/admin/media', icon: FaImage },
+  { title: '廣告管理', href: '/admin/ads', icon: FaBullhorn },
+];
+
+export default function HeaderAdmin() {
+  const pathname = usePathname();
   return (
-    <header className="w-full flex justify-center border-b h-16 bg-card border-border">
-      <div className="w-full max-w-6xl flex justify-between items-center p-3 text-sm text-foreground">
-        <div>
-          <Link href="/" className="font-bold hover:underline mr-4">Public Site</Link>
-          <Link href="/admin/shops" className="text-foreground/80 hover:underline">Admin Console</Link>
-        </div>
-        <div className="flex items-center gap-4">
-          <div id="google_translate_element"></div> {/* <-- 添加翻译插件容器 */}
-          {user && (
-            <div className="flex items-center gap-4">
-              Hey, {user.email} <LogoutButton logoutText="Logout" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {navLinks.map((link) => {
+        const isActive = pathname.startsWith(link.href);
+        return (
+          <Link key={link.title} href={link.href} className={`block p-4 rounded-lg shadow-sm transition-all ${isActive ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50'}`}>
+            <div className="flex items-center space-x-3">
+              <link.icon className={`h-6 w-6 ${isActive ? 'text-white' : 'text-blue-600'}`} />
+              <div><h3 className="font-bold">{link.title}</h3></div>
             </div>
-          )}
-        </div>
-      </div>
-    </header>
+          </Link>
+        );
+      })}
+    </div>
   );
 }

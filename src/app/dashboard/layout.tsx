@@ -1,25 +1,16 @@
-// src/app/dashboard/layout.tsx
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// 文件路徑: src/app/dashboard/layout.tsx
+import HeaderMerchant from '@/components/HeaderMerchant';
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
+export default async function MerchantLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  // 【核心修复】: 移除所有UI组件，只保留children。
-  // 顶部的导航栏由根布局 (src/app/layout.tsx) 统一提供，这里不再需要。
-  return <>{children}</>;
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: shop } = user ? await supabase.from('shops').select('slug').eq('owner_id', user.id).single() : { data: null };
+  return (
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <HeaderMerchant shopSlug={shop?.slug || null} />
+      <main>{children}</main>
+    </div>
+  );
 }

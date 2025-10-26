@@ -289,22 +289,7 @@ export async function updateL2Category(prevState: any, formData: FormData) {
   return { message: 'Category updated successfully!' };
 }
 
-export async function toggleShopStatus(shopId: string, currentStatus: boolean) {
-  'use server';
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not logged in");
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role !== 'admin') throw new Error("Permission denied: Only admins can perform this action");
-  const supabaseAdmin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  const { error } = await supabaseAdmin.from('shops').update({ is_active: !currentStatus }).eq('id', shopId);
-  if (error) {
-    console.error("Failed to toggle shop status:", error);
-    throw new Error("Operation failed.");
-  }
-  revalidatePath('/admin/shops');
-}
+
 
 export async function updateShopByAdmin(prevState: any, formData: FormData) {
   'use server';
@@ -326,16 +311,7 @@ export async function updateShopByAdmin(prevState: any, formData: FormData) {
   return { message: 'Shop updated successfully by admin!' };
 }
 
-export async function deleteShopByAdmin(shopId: string) {
-  'use server';
-  const supabaseAdmin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  const { error } = await supabaseAdmin.from('shops').delete().eq('id', shopId);
-  if (error) {
-    console.error("Admin failed to delete shop:", error);
-    throw new Error("Failed to delete shop.");
-  }
-  revalidatePath('/admin/shops');
-}
+
 
 export async function createService(prevState: any, formData: FormData) {
   'use server';
@@ -1542,7 +1518,7 @@ export async function uploadMultipleMyProfilePhotos(prevState: any, formData: Fo
   }
 }
 
-// ↓↓↓↓ 从这里开始完整替换 ↓↓↓↓
+
 
 export async function createBooking(
   serviceId: string,
@@ -1617,4 +1593,359 @@ export async function createBooking(
   return { success: true, message: `预约成功！` };
 }
 
-// ↑↑↑↑ 到这里结束替换 ↑↑↑↑
+
+export async function uploadMedia(formData: FormData) {
+  'use server';
+
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 從 FormData 中獲取數據
+  const file = formData.get('file') as File | null;
+  const name = formData.get('name') as string;
+  const asset_type = formData.get('asset_type') as string;
+  const is_active = formData.get('is_active') === 'on'; // 複選框的值是 'on' 或 null
+
+  if (!file || file.size === 0) {
+    return { success: false, message: '請選擇一個文件上傳。' };
+  }
+
+  // 2. 將文件上傳到 Supabase Storage
+  //    為避免文件名衝突，我們創建一個唯一的文件路徑
+  const filePath = `public/${Date.now()}-${file.name}`;
+  
+  // ❗️ 重要提醒: 請確保您在 Supabase 中創建了一個名為 'media_assets' 的存儲桶 (Bucket)
+  // 並且設置了相應的 RLS 策略允許上傳。
+  const { error: uploadError } = await supabase.storage
+    .from('media_assets')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    console.error('Supabase Storage 上傳失敗:', uploadError);
+    return { success: false, message: `文件上傳失敗: ${uploadError.message}` };
+  }
+
+  // 3. 獲取上傳文件的公開 URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('media_assets')
+    .getPublicUrl(filePath);
+
+  if (!publicUrl) {
+    return { success: false, message: '無法獲取文件的公開 URL。' };
+  }
+
+  // 4. 將文件信息插入到 img_admin 表中
+  const { error: insertError } = await supabase
+    .from('img_admin')
+    .insert({
+      url: publicUrl,
+      name,
+      asset_type,
+      is_active,
+    });
+
+  if (insertError) {
+    console.error('數據庫插入失敗:', insertError);
+    return { success: false, message: `數據庫記錄創建失敗: ${insertError.message}` };
+  }
+
+  // 5. 清除路徑緩存，以便新數據可以立即顯示（如果有的話）
+  revalidatePath('/admin/media');
+
+  return { success: true, message: '媒體文件上傳並記錄成功！' };
+}
+
+
+
+export async function deleteMedia(media: { id: string; url: string }) {
+  'use server';
+
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 安全性檢查：確保只有管理員可以執行刪除
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, message: '未授權的操作。' };
+  }
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+  if (profile?.role !== 'admin') {
+    return { success: false, message: '權限不足。' };
+  }
+
+  // 2. 從 URL 中解析出文件在 Storage 中的路徑
+  // Supabase URL 格式: .../storage/v1/object/public/media_assets/public/file.jpg
+  // 我們需要 'public/file.jpg' 這部分
+  const filePath = media.url.split('/media_assets/')[1];
+  if (!filePath) {
+    return { success: false, message: '無效的文件 URL 格式。' };
+  }
+
+  // 3. 從 Supabase Storage 中刪除文件
+  const { error: storageError } = await supabase.storage
+    .from('media_assets')
+    .remove([filePath]);
+
+  if (storageError) {
+    console.error('Storage 文件刪除失敗:', storageError);
+    return { success: false, message: `存儲文件刪除失敗: ${storageError.message}` };
+  }
+
+  // 4. 從 img_admin 數據庫表中刪除記錄
+  const { error: dbError } = await supabase
+    .from('img_admin')
+    .delete()
+    .eq('id', media.id);
+
+  if (dbError) {
+    console.error('數據庫記錄刪除失敗:', dbError);
+    return { success: false, message: `數據庫記錄刪除失敗: ${dbError.message}` };
+  }
+
+  // 5. 清除路徑緩存，觸發頁面數據重新加載
+  revalidatePath('/admin/media');
+
+  return { success: true, message: '媒體文件已成功刪除！' };
+}
+
+
+
+// Action 1: 切換店鋪的激活狀態
+export async function toggleShopStatus(shopId: string, currentStatus: boolean) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 安全性檢查
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
+  if (profile?.role !== 'admin') {
+    return { success: false, message: '權限不足。' };
+  }
+
+  const { error } = await supabase
+    .from('shops')
+    .update({ is_active: !currentStatus }) // 將狀態反轉
+    .eq('id', shopId);
+
+  if (error) {
+    return { success: false, message: `更新失敗: ${error.message}` };
+  }
+
+  revalidatePath('/admin/shops'); // 刷新店鋪列表頁的緩存
+  return { success: true, message: '狀態更新成功！' };
+}
+
+// Action 2: 更新店鋪的完整信息
+export async function updateShopDetails(formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 安全性檢查
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
+  if (profile?.role !== 'admin') {
+    return { success: false, message: '權限不足。' };
+  }
+
+  const shopId = formData.get('id') as string;
+  const rawData = Object.fromEntries(formData.entries());
+  
+  // 準備要更新的數據，這裡您可以根據您的表結構進行調整
+  const shopDataToUpdate = {
+    name: rawData.name,
+    address: rawData.address,
+    phone: rawData.phone,
+    // ... 其他您允許管理員修改的字段
+  };
+
+  const { error } = await supabase
+    .from('shops')
+    .update(shopDataToUpdate)
+    .eq('id', shopId);
+
+  if (error) {
+    return { success: false, message: `店鋪信息更新失敗: ${error.message}` };
+  }
+
+  revalidatePath(`/admin/shops/${shopId}/edit`); // 刷新當前編輯頁
+  revalidatePath('/admin/shops'); // 同時刷新列表頁
+  return { success: true, message: '店鋪信息已成功更新！' };
+}
+
+
+// Action 3: 刪除店鋪
+export async function deleteShop(shopId: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 安全性檢查
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
+  if (profile?.role !== 'admin') {
+    throw new Error('權限不足。');
+  }
+
+  const { error } = await supabase
+    .from('shops')
+    .delete()
+    .eq('id', shopId);
+
+  if (error) {
+    throw new Error(`刪除店鋪失敗: ${error.message}`);
+  }
+
+  // 刪除成功後，跳轉回店鋪列表主頁
+  redirect('/admin/shops');
+}
+
+
+// Action 1: 切換用戶的賬號狀態
+export async function toggleUserAccountStatus(userId: string, currentStatus: boolean) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 安全性檢查
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
+  if (profile?.role !== 'admin') {
+    return { success: false, message: '權限不足。' };
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ acc_active: !currentStatus }) // 確保操作的是 acc_active 字段
+    .eq('id', userId);
+
+  if (error) {
+    return { success: false, message: `更新失敗: ${error.message}` };
+  }
+
+  revalidatePath('/admin/users');
+  return { success: true, message: '用戶賬號狀態更新成功！' };
+}
+
+
+// Action 3: 刪除用戶 Profile
+export async function deleteUser(userId: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 安全性檢查
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
+  if (profile?.role !== 'admin') {
+    throw new Error('權限不足。');
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', userId);
+
+  if (error) {
+    throw new Error(`刪除用戶 Profile 失敗: ${error.message}`);
+  }
+
+  redirect('/admin/users');
+}
+
+
+
+// Action 2: 更新用戶的詳細信息
+export async function updateUserDetails(formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 安全性檢查
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
+  if (profile?.role !== 'admin') {
+    return { success: false, message: '權限不足。' };
+  }
+
+  const userId = formData.get('id') as string;
+  
+  // 【核心修改】: 從 formData 中獲取所有字段的數據
+  const userDataToUpdate = {
+    nickname: formData.get('nickname'),
+    bio: formData.get('bio'),
+    role: formData.get('role'),
+    email: formData.get('email'),
+    phone: formData.get('phone'),
+    avatar_url: formData.get('avatar_url'),
+    // 處理布爾值 (checkbox)
+    is_active: formData.get('is_active') === 'on',
+    acc_active: formData.get('acc_active') === 'on',
+    // 處理可能為空的數字 ID
+    province_id: formData.get('province_id') || null,
+    district_id: formData.get('district_id') || null,
+    sub_district_id: formData.get('sub_district_id') || null,
+  };
+
+  const { error } = await supabase
+    .from('profiles')
+    .update(userDataToUpdate)
+    .eq('id', userId);
+
+  if (error) {
+    console.error('用戶信息更新失敗:', error);
+    return { success: false, message: `用戶信息更新失敗: ${error.message}` };
+  }
+
+  revalidatePath(`/admin/users/${userId}/edit`);
+  revalidatePath('/admin/users');
+
+  return { success: true, message: '用戶信息已成功更新！' };
+}
+
+// 文件路徑: src/lib/actions.ts
+
+// ... (您文件中的其他 import 和函數)
+
+// Action: 設置當前激活的推廣橫幅
+export async function setActiveBanner(bannerId: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 安全性檢查：確保只有管理員可以操作
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
+  if (profile?.role !== 'admin') {
+    return { success: false, message: '權限不足。' };
+  }
+
+  // 2. 使用數據庫事務，確保操作的原子性
+  //    首先，將所有舊的橫幅廣告設為 'is_active = false'
+  const { error: deactivateError } = await supabase
+    .from('img_admin')
+    .update({ is_active: false })
+    .eq('asset_type', 'promo_banner');
+
+  if (deactivateError) {
+    return { success: false, message: `停用舊橫幅失敗: ${deactivateError.message}` };
+  }
+
+  //    然後，將選定的橫幅廣告設為 'is_active = true'
+  const { error: activateError } = await supabase
+    .from('img_admin')
+    .update({ is_active: true })
+    .eq('id', bannerId);
+
+  if (activateError) {
+    return { success: false, message: `激活新橫幅失敗: ${activateError.message}` };
+  }
+
+  // 3. 刷新廣告管理頁面的緩存
+  revalidatePath('/admin/ads');
+  // 4. （重要）刷新根佈局的緩存，讓所有頁面都能看到新的廣告
+  revalidatePath('/', 'layout');
+
+  return { success: true, message: '推廣橫幅已成功更新！' };
+}

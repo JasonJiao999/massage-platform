@@ -1,165 +1,128 @@
-export default function WorkerDetailClient({ worker, services, shop, initialAvailability, fullAddress }: WorkerDetailProps) {
-  const [selectedDate, setSelectedDate] = useState(Object.keys(initialAvailability)[0] || null);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  console.log("--- [客户端日志 - WorkerDetailClient.tsx] ---");
-  console.log("接收到的 fullAddress prop:", fullAddress);
-  console.log("-----------------------------------------");
-  // 【核心修改】: 新增小時和分鐘的狀態
-  const [selectedHour, setSelectedHour] = useState<number | null>(null);
-  const [selectedMinute, setSelectedMinute] = useState<number | null>(null);
-  
-  // 【核心修改】: selectedTime 現在由小時和分鐘共同決定
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [bookingResult, setBookingResult] = useState<{ success: boolean; message: string } | null>(null);
-
-  // 【核心修改】: 使用 useMemo 高效計算可選的小時
-  const availableHours = useMemo(() => {
-    if (!selectedDate || !initialAvailability[selectedDate]) {
-      return [];
-    }
-    const hours = new Set(
-      initialAvailability[selectedDate].map(slot => parseISO(slot.start).getHours())
-    );
-    return Array.from(hours).sort((a, b) => a - b);
-  }, [selectedDate, initialAvailability]);
-
-  // 【核心修改】: 使用 useMemo 高效計算可選的分鐘 (聯動小時)
-  const availableMinutes = useMemo(() => {
-    if (selectedHour === null || !selectedDate || !initialAvailability[selectedDate]) {
-      return [];
-    }
-    const minutes = new Set(
-      initialAvailability[selectedDate]
-        .filter(slot => parseISO(slot.start).getHours() === selectedHour)
-        .map(slot => parseISO(slot.start).getMinutes())
-    );
-    return Array.from(minutes).sort((a, b) => a - b);
-  }, [selectedHour, selectedDate, initialAvailability]);
-  
-  // 【核心修改】: 使用 useEffect 來處理狀態重置
-  useEffect(() => {
-    // 當日期改變時，重置所有時間選擇
-    setSelectedHour(null);
-    setSelectedMinute(null);
-    setSelectedTime(null);
-  }, [selectedDate]);
-
-  useEffect(() => {
-    // 當小時改變時，重置分鐘和最終選擇
-    setSelectedMinute(null);
-    setSelectedTime(null);
-  }, [selectedHour]);
-
-  useEffect(() => {
-    // 當小時和分鐘都選好後，構建最終的 selectedTime
-    if (selectedHour !== null && selectedMinute !== null && selectedDate) {
-      const finalTime = initialAvailability[selectedDate]?.find(slot => {
-        const d = parseISO(slot.start);
-        return d.getHours() === selectedHour && d.getMinutes() === selectedMinute;
-      });
-      setSelectedTime(finalTime?.start || null);
-    }
-  }, [selectedHour, selectedMinute, selectedDate, initialAvailability]);
-
-  const handleBooking = async () => {
-    if (!selectedService || !selectedDate || !selectedTime) {
-      setBookingResult({ success: false, message: "請先選擇服務、日期和時間。" });
-      return;
-    }
-    try {
-      const result = await createBooking(selectedService.id, selectedDate, selectedTime);
-      setBookingResult(result);
-    } catch (error: any) {
-      setBookingResult({ success: false, message: error.message || "發生未知錯誤。" });
-    }
-  };
-
-  const socialLinks = worker.social_links || {};
-
-  return (
-    <div className="container mx-auto px-4 py-8 text-gray-800">
-      {/* --- (左側個人信息部分保持不變) --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-1 space-y-6 text-center md:text-left">
-           {/* ... 您的個人信息JSX代碼 ... */}
-        </div>
-
-        {/* --- (右側服務和預約部分) --- */}
-        <div className="md:col-span-2 space-y-8">
-            <section>
-                <h2 className="text-2xl font-semibold mb-4">提供的服務</h2>
-                {/* ... 您的服務列表JSX代碼 ... */}
-            </section>
-            
-            {selectedService && selectedDate && (
-                <section className="p-6 bg-white rounded-lg shadow-lg border border-gray-200">
-                    <h2 className="text-2xl font-semibold mb-4">選擇預約時間</h2>
-                    {/* 日期選擇按鈕 (保持不變) */}
-                    <div className="flex gap-4 mb-4 border-b pb-4">
-                        {Object.keys(initialAvailability).map(date => (
-                            <button key={date} onClick={() => setSelectedDate(date)} className={`px-4 py-2 rounded-lg text-sm font-medium ${selectedDate === date ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                                {format(parseISO(date), 'MM月dd日')}
-                            </button>
-                        ))}
-                    </div>
-                    
-                    {/* 【核心修改】: 使用下拉菜單替換按鈕網格 */}
-                    <div className="flex items-center gap-4 mt-4">
-                        {/* 小時下拉菜單 */}
-                        <div className="flex-1">
-                          <label htmlFor="hour-select" className="block text-sm font-medium text-gray-700 mb-1">選擇小時</label>
-                          <select 
-                            id="hour-select"
-                            value={selectedHour ?? ''}
-                            onChange={(e) => setSelectedHour(e.target.value ? parseInt(e.target.value) : null)}
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            disabled={availableHours.length === 0}
-                          >
-                            <option value="">-- 小時 --</option>
-                            {availableHours.map(hour => (
-                              <option key={hour} value={hour}>{String(hour).padStart(2, '0')}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <span className="text-2xl font-bold mt-6">:</span>
-                        
-                        {/* 分鐘下拉菜單 */}
-                        <div className="flex-1">
-                          <label htmlFor="minute-select" className="block text-sm font-medium text-gray-700 mb-1">選擇分鐘</label>
-                          <select 
-                            id="minute-select"
-                            value={selectedMinute ?? ''}
-                            onChange={(e) => setSelectedMinute(e.target.value ? parseInt(e.target.value) : null)}
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            disabled={selectedHour === null || availableMinutes.length === 0}
-                          >
-                            <option value="">-- 分鐘 --</option>
-                            {availableMinutes.map(minute => (
-                              <option key={minute} value={minute}>{String(minute).padStart(2, '0')}</option>
-                            ))}
-                          </select>
-                        </div>
-                    </div>
-                    {availableHours.length === 0 && selectedDate && (
-                        <p className="text-center text-gray-500 mt-4">抱歉，{format(parseISO(selectedDate), 'MM月dd日')} 已無可預約時間。</p>
-                    )}
-                    
-                    {/* 確認按鈕 (邏輯更新) */}
-                    <button onClick={handleBooking} disabled={!selectedTime} className="mt-6 w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors">
-                        {selectedTime ? `確認預約 - ${format(parseISO(selectedTime), 'MM月dd日 HH:mm')}` : '請選擇完整時間'}
-                    </button>
-                    {bookingResult && <p className={`mt-4 text-sm font-semibold ${bookingResult.success ? 'text-green-600' : 'text-red-600'}`}>{bookingResult.message}</p>}
-                </section>
-            )}
-        </div>
-
-        {/* --- (照片和視頻集部分保持不變) --- */}
-        <section className="md:col-span-3 space-y-8">
-           {/* ... 您的照片和視頻JSX代碼 ... */}
-        </section>
-
-      </div>
-    </div>
-  );
-}
+.
+├── .gitignore
+├── .nvmrc
+├── ai.txt
+├── eslint.config.mjs
+├── next.config.mjs
+├── package.json
+├── pnpm-lock.yaml
+├── postcss.config.mjs
+├── public
+│   ├── default-avatar.png
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── icons
+│   │   ├── heart-outline.svg
+│   │   ├── heart-solid.svg
+│   │   └── language-icon.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── README.md
+├── rls.txt
+├── schema.sql
+├── src
+│   ├── app
+│   │   ├── admin
+│   │   │   └── shops
+│   │   │       ├── [id]
+│   │   │       │   └── edit
+│   │   │       │       └── page.tsx //编辑商户信息
+│   │   │       ├── ShopsList.tsx
+│   │   │       ├── ShopsListClient.tsx
+│   │   │       └── page.tsx //管理商户信息
+│   │   ├── auth
+│   │   │   └── confirm
+│   │   │       └── route.ts
+│   │   ├── dashboard
+│   │   │   ├── applications
+│   │   │   │   └── page.tsx
+│   │   │   ├── DashboardClient.tsx
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx //后台控制首页 用来区分登录后台用户的身份，默认登录为商户
+│   │   │   ├── profile
+│   │   │   │   └── page.tsx //商户信息
+│   │   │   ├── services
+│   │   │   │   └── page.tsx //商户服务类型
+│   │   │   ├── shop
+│   │   │   │   └── page.tsx //店铺信息
+│   │   │   └── staff
+│   │   │       ├── [id]
+│   │   │       │   └── edit
+│   │   │       │       └── page.tsx //编辑员工信息
+│   │   │       └── page.tsx //员工信息
+│   │   ├── favicon.ico
+│   │   ├── forgot-password
+│   │   │   └── page.tsx //忘记密码
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── login
+│   │   │   └── page.tsx //登录
+│   │   ├── my-bookings
+│   │   │   ├── MyBookingsClient.tsx
+│   │   │   └── page.tsx //我的预约 一般用户查询自己的预约信息
+│   │   ├── page.tsx
+│   │   ├── register
+│   │   │   └── page.tsx //注册
+│   │   ├── reset-password
+│   │   │   └── page.tsx //重置密码
+│   │   ├── shops
+│   │   │   └── [slug]
+│   │   │       ├── layout.tsx
+│   │   │       └── page.tsx //商户专属页面
+│   │   ├── staff-dashboard
+│   │   │   ├── bookings
+│   │   │   │   ├── BookingManagementClient.tsx
+│   │   │   │   ├── PaginationControls.tsx
+│   │   │   │   └── page.tsx //预约信息
+│   │   │   ├── DashboardClient.tsx
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── profile
+│   │   │   │   └── page.tsx //个人信息
+│   │   │   ├── schedule
+│   │   │   │   ├── ScheduleClient.tsx
+│   │   │   │   └── page.tsx //排班信息
+│   │   │   └── services
+│   │   │       ├── StaffServicesClient.tsx
+│   │   │       └── page.tsx //服务信息
+│   │   └── worker
+│   │       └── [id]
+│   │           ├── WorkerDetailClient.tsx
+│   │           └── page.tsx //工作者专属展示页面
+│   ├── components
+│   │   ├── AddressSelector.tsx
+│   │   ├── AdminShopEditForm.tsx
+│   │   ├── CustomerProfileForm.tsx
+│   │   ├── EditServiceModal.tsx
+│   │   ├── FavoriteButton.tsx
+│   │   ├── GoogleTranslateWidget.tsx
+│   │   ├── Header.tsx
+│   │   ├── HeaderAdmin.tsx
+│   │   ├── HeaderCustomer.tsx
+│   │   ├── HeaderMerchant.tsx
+│   │   ├── HeaderStaff.tsx
+│   │   ├── ImageUploader.tsx
+│   │   ├── JoinShopForm.tsx
+│   │   ├── LeaveShopButton.tsx
+│   │   ├── LogoutButton.tsx
+│   │   ├── MyProfileForm.tsx
+│   │   ├── PaginationControls.tsx
+│   │   ├── ShopEditForm.tsx
+│   │   ├── StatCard.tsx
+│   │   ├── ToggleActiveStatusButton.tsx
+│   │   ├── TopNavigation.tsx
+│   │   ├── VideoUploader.tsx
+│   │   ├── WorkerCard.tsx
+│   │   └── WorkerSearchClient.tsx
+│   ├── lib
+│   │   ├── actions.ts
+│   │   ├── availability.ts
+│   │   ├── database.types.ts
+│   │   └── themes.ts
+│   └── utils
+│       └── supabase
+│           ├── client.ts
+│           └── server.ts
+├── tailwind.config.ts
+└── tsconfig.json

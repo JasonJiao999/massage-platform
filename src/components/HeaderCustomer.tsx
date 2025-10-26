@@ -1,38 +1,21 @@
-// src/components/HeaderCustomer.tsx
+// 文件路徑: src/components/HeaderCustomer.tsx (已重構為導航卡片)
+'use client';
 import Link from 'next/link';
-import LogoutButton from './LogoutButton';
-import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
-export default function HeaderCustomer({ profile = {} }: { profile: any }) {
+export default function HeaderCustomer() {
+  const pathname = usePathname();
+  const navLinks = [
+    { name: '我的預約', href: '/customer-dashboard/my-bookings' },
+    { name: '我的信息', href: '/customer-dashboard/profile' },
+  ];
   return (
-    <header className="bg-gray-800 text-white p-4">
-      <div className="container mx-auto flex justify-between items-center">
-
-        <nav className="flex items-center space-x-4">
-          <Link href="/" className="hover:text-gray-300">
-            首页
-          </Link>
-          <Link href="/my-bookings" className="hover:text-gray-300">
-            我的预约
-          </Link>
-          <Link href="/dashboard/profile" className="hover:text-gray-300">
-            我的信息
-          </Link>
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full overflow-hidden relative">
-              <Image
-                // 【核心修改】: 始终使用默认头像
-                src={'/default-avatar.png'}
-                alt="user avatar"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <span>{profile.nickname || profile.full_name || '用户'}</span>
-          </div>
-          <LogoutButton logoutText="退出登录" />
-        </nav>
-      </div>
-    </header>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+      {navLinks.map((link) => (
+        <Link key={link.name} href={link.href} className={`block p-4 rounded-lg shadow-sm transition-all ${pathname.startsWith(link.href) ? 'bg-indigo-600 text-white' : 'bg-white hover:bg-gray-50'}`}>
+          <h3 className="font-bold">{link.name}</h3>
+        </Link>
+      ))}
+    </div>
   );
 }

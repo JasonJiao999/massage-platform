@@ -1,30 +1,23 @@
-// src/components/HeaderStaff.tsx
-import type { User } from '@supabase/supabase-js';
+// 文件路徑: src/components/HeaderStaff.tsx (已重構為導航卡片)
+'use client';
 import Link from 'next/link';
-import LogoutButton from './LogoutButton';
+import { usePathname } from 'next/navigation';
 
-export default function HeaderStaff({ user }: { user: User | null }) {
+export default function HeaderStaff() {
+  const pathname = usePathname();
+  const navLinks = [
+    { name: '我的檔案', href: '/staff-dashboard/profile' },
+    { name: '我的服務', href: '/staff-dashboard/services' },
+    { name: '我的排班', href: '/staff-dashboard/schedule' },
+    { name: '預約管理', href: '/staff-dashboard/bookings' },
+  ];
   return (
-    <header className="bg-blue-600 text-white">
-      <nav className="container mx-auto px-4 flex justify-between items-center py-4">
-        <Link href="/staff-dashboard" className="font-bold text-xl">
-          员工后台
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {navLinks.map((link) => (
+        <Link key={link.name} href={link.href} className={`block p-4 rounded-lg shadow-sm transition-all ${pathname.startsWith(link.href) ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50'}`}>
+          <h3 className="font-bold">{link.name}</h3>
         </Link>
-        <div className="flex items-center gap-6">
-          <Link href="/staff-dashboard/profile" className="text-sm font-medium hover:underline">我的档案</Link>
-          <Link href="/staff-dashboard/services" className="text-sm font-medium hover:underline">我的服务</Link>
-          <Link href="/staff-dashboard/schedule" className="text-sm font-medium hover:underline">我的排班</Link>
-          {/* 【核心修改】: 添加“预约管理”链接 */}
-          <Link href="/staff-dashboard/bookings" className="text-sm font-medium hover:underline">预约管理</Link>
-          
-          {user && (
-            <div className='flex items-center gap-4'>
-              <span className='text-sm'>{user.email}</span>
-              <LogoutButton logoutText="登出" />
-            </div>
-          )}
-        </div>
-      </nav>
-    </header>
+      ))}
+    </div>
   );
 }
