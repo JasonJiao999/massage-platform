@@ -19,7 +19,7 @@ export default async function StaffPage() {
     .single();
 
   if (!shop) {
-    return <div className="p-8">找不到您的店铺信息，请先创建店铺。</div>;
+    return <div className="p-8">Your team information cannot be found. Please create a team first.</div>;
   }
   
   // 【核心修复】: 使用 let 声明变量，并添加更明确的错误捕获
@@ -53,20 +53,20 @@ export default async function StaffPage() {
 
 
   return (
-    <div>
+    <div className="max-w-[1200px] mx-auto gap-[10px]">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white">员工管理</h1>
+        <h1 className="text-2xl font-bold text-white">Team Management</h1>
 
       </div>
 
-      <div className="overflow-x-auto bg-card rounded-lg border border-border">
+      <div className="card bg-primary p-[24px]">
         <table className="min-w-full divide-y divide-border">
           <thead className="bg-background/50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-foreground/80 uppercase tracking-wider">姓名 (Nickname)</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-foreground/80 uppercase tracking-wider">状态 (Status)</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-foreground/80 uppercase tracking-wider">Nickname</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-foreground/80 uppercase tracking-wider">Status</th>
               <th scope="col" className="relative px-6 py-3">
-                <span className="sr-only">编辑</span>
+                <span className="sr-only">Edit</span>
               </th>
             </tr>
           </thead>
@@ -81,13 +81,13 @@ export default async function StaffPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {staffMember.is_active ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">启用</span>
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Enable</span>
                       ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">停用</span>
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Disable</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link href={`/dashboard/staff/${staffMember.id}/edit`} className="text-indigo-400 hover:text-indigo-600">编辑</Link>
+                        <Link href={`/dashboard/staff/${staffMember.id}/edit`} className="btn">Edit</Link>
                     </td>
                   </tr>
                 )
@@ -95,7 +95,7 @@ export default async function StaffPage() {
             ) : (
               <tr>
                 <td colSpan={3} className="px-6 py-4 text-center text-sm text-foreground/60">
-                  暂无员工信息，请点击右上角添加新员工。
+                  No information available. Please click the top right corner to add a new member.
                 </td>
               </tr>
             )}

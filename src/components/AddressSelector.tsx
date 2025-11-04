@@ -144,14 +144,14 @@ export default function AddressSelector({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* 省份选择 */}
       <div>
-        <label htmlFor="province" className="block text-sm font-medium text-gray-300 mb-2">
+        <label htmlFor="province" className="block text-sm font-medium  mb-2">
           Province
         </label>
         <select
           id="province"
           value={selectedProvince}
           onChange={(e) => handleProvinceChange(e.target.value)}
-          className="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
+          className="select m-[10px] w-[94%]"
         >
           <option value="">Select Province</option>
           {provinces.map((p) => (
@@ -164,7 +164,7 @@ export default function AddressSelector({
 
       {/* 市/区选择 */}
       <div>
-        <label htmlFor="district" className="block text-sm font-medium text-gray-300 mb-2">
+        <label htmlFor="district" className="block text-sm font-medium  mb-2">
           District
         </label>
         <select
@@ -172,7 +172,7 @@ export default function AddressSelector({
           value={selectedDistrict}
           onChange={(e) => handleDistrictChange(e.target.value)}
           disabled={!selectedProvince || isPending}
-          className="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 disabled:opacity-50"
+          className="select m-[10px] w-[94%]"
         >
           <option value="">Select District</option>
           {districts.map((d) => (
@@ -185,7 +185,7 @@ export default function AddressSelector({
 
       {/* 分区选择 */}
       <div>
-        <label htmlFor="sub_district" className="block text-sm font-medium text-gray-300 mb-2">
+        <label htmlFor="sub_district" className="block text-sm font-medium mb-2">
           Sub-district
         </label>
         <select
@@ -193,7 +193,7 @@ export default function AddressSelector({
           value={selectedSubDistrict}
           onChange={(e) => handleSubDistrictChange(e.target.value)}
           disabled={!selectedDistrict || isPending}
-          className="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 disabled:opacity-50"
+          className="select m-[10px] w-[94%] text-[var(--foreground)]"
         >
           <option value="">Select Sub-district</option>
           {subDistricts.map((sd) => (

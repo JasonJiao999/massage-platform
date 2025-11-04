@@ -12,7 +12,7 @@ export default async function EditStaffPage({ params }: { params: { id: string }
   if (!user) return redirect('/login');
 
   const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', user.id).single();
-  if (!shop) return <p>找不到您的店铺。</p>;
+  if (!shop) return <p>Your team cannot be found.</p>;
 
   // 查询语句保持不变
   const { data: staffRelation } = await supabase
@@ -37,9 +37,9 @@ export default async function EditStaffPage({ params }: { params: { id: string }
   }
 
   return (
-    <div>
+    <div className="max-w-[1200px] mx-auto gap-[10px]">
       <h1 className="text-2xl font-bold text-white mb-6">
-        编辑员工信息: {staffProfile.nickname || '未命名员工'}
+        Editing information: {staffProfile.nickname || 'Unnamed'}
       </h1>
       <StaffEditForm profile={staffProfile} />
     </div>

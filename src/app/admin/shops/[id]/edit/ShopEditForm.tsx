@@ -12,7 +12,9 @@ type Shop = {
   name: string | null;
   address: string | null;
   phone: string | null;
-  // ... 其他字段
+  description: string | null;
+  slug: string | null;
+  tags: string | null;
 };
 
 export default function ShopEditForm({ shop }: { shop: Shop }) {
@@ -41,7 +43,7 @@ export default function ShopEditForm({ shop }: { shop: Shop }) {
   };
 
   return (
-    <form action={handleSubmit} className="bg-white p-8 rounded-lg shadow-md space-y-6">
+    <form action={handleSubmit} className="card bg-primary rounded-lg p-[24px] my-[20px] text-[var(--foreground)]">
       <input type="hidden" name="id" value={shop.id} />
       
       <div>
@@ -51,7 +53,7 @@ export default function ShopEditForm({ shop }: { shop: Shop }) {
           id="name"
           name="name"
           defaultValue={shop.name || ''}
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+          className="input my-[20px] w-[90%]"
         />
       </div>
       
@@ -62,7 +64,7 @@ export default function ShopEditForm({ shop }: { shop: Shop }) {
           id="address"
           name="address"
           defaultValue={shop.address || ''}
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+          className="input my-[20px] w-[90%]"
         />
       </div>
       
@@ -73,9 +75,11 @@ export default function ShopEditForm({ shop }: { shop: Shop }) {
           id="phone"
           name="phone"
           defaultValue={shop.phone || ''}
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+          className="input my-[20px] w-[90%]"
         />
       </div>
+
+
 
       {/* ... 在這裡添加其他您需要編輯的字段 ... */}
       
@@ -83,7 +87,7 @@ export default function ShopEditForm({ shop }: { shop: Shop }) {
         <button
           type="submit"
           disabled={isPending}
-          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:bg-blue-300"
+          className="btn"
         >
           {isPending ? '正在保存...' : '保存更改'}
         </button>
@@ -91,7 +95,7 @@ export default function ShopEditForm({ shop }: { shop: Shop }) {
           type="button"
           onClick={handleDelete}
           disabled={isPending}
-          className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 disabled:bg-red-300"
+          className="btn"
         >
           {isPending ? '處理中...' : '刪除店鋪'}
         </button>

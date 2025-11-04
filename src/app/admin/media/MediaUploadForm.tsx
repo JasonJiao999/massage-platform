@@ -30,7 +30,7 @@ export default function MediaUploadForm() {
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="name" className="block text-sm font-medium ">
           媒體名稱
         </label>
         <input
@@ -38,20 +38,20 @@ export default function MediaUploadForm() {
           name="name"
           id="name"
           required
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="input my-[20px] w-[90%]"
           placeholder="例如：網站主 Logo"
         />
       </div>
 
       <div>
         <label htmlFor="asset_type" className="block text-sm font-medium text-gray-700">
-          資產類型
+          图片類型
         </label>
         <select
           id="asset_type"
           name="asset_type"
           required
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="select my-[20px] w-[90%] text-[var(--color-secondary)]"
         >
           <option value="logo">Logo</option>
           <option value="promo_banner">推廣橫幅 (Promo Banner)</option>
@@ -69,7 +69,7 @@ export default function MediaUploadForm() {
           name="file"
           id="file"
           required
-          className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+          className=" my-[20px] w-[90%]"
         />
       </div>
 
@@ -90,7 +90,7 @@ export default function MediaUploadForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400"
+          className="btn btn-wide"
         >
           {isSubmitting ? '正在上傳...' : '上傳'}
         </button>

@@ -61,30 +61,30 @@ export default function WorkerSearchClient({
 
   return (
     <div className="space-y-8">
-      <div className="p-6 bg-gray-50 rounded-lg border">
+      <div className="flex flex-wrap justify-center gap-1 mx-[30px] my-[10px]">
         <div className="space-y-4">
-          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
+          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 my-[10px]">
             <input
               type="search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="搜索昵称或标签..."
-              className="w-full p-3 text-lg border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Search by nickname or tag..."
+              className="input"
             />
-            <button type="submit" className="px-5 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">
+            <button type="submit" className="btn">
               <FaSearch className="mr-2"/>
-              搜索
+              AoFiw
             </button>
           </form>
 
           {/* 推荐标签 */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-gray-600">推荐标签:</span>
+          <div className="flex flex-wrap items-center gap-2 my-[10px]">
+            <span className="text-sm font-medium ">Recommended:</span>
             {adminTags.map(({ tag }) => (
               <button 
                 key={tag} 
                 onClick={() => { setSearchTerm(tag); updateFilter({ type: 'q', value: tag }); }}
-                className="px-3 py-1 bg-white border border-gray-300 text-sm text-gray-700 rounded-full hover:bg-gray-100"
+                className="btn"
               >
                 {tag}
               </button>
@@ -93,12 +93,12 @@ export default function WorkerSearchClient({
 
           {/* 热门城市 */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-gray-600">热门城市:</span>
+            <span className="text-sm font-medium ">Popular Cities:</span>
             {popularCities.map(({ name, location_id }) => (
               <button 
                 key={name} 
                 onClick={() => updateFilter({ type: 'city', value: location_id })}
-                className="px-3 py-1 bg-white border border-gray-300 text-sm text-gray-700 rounded-full hover:bg-gray-100"
+                className="btn"
               >
                 {name}
               </button>
@@ -106,13 +106,13 @@ export default function WorkerSearchClient({
           </div>
 
           {/* 热门地区 */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-gray-600">热门地区:</span>
+          <div className="flex flex-wrap items-center gap-2 my-[10px]">
+            <span className="text-sm font-medium ">Popular Areas:</span>
             {popularAreas.map(({ name, location_id }) => (
               <button 
                 key={name} 
                 onClick={() => updateFilter({ type: 'area', value: location_id })}
-                className="px-3 py-1 bg-white border border-gray-300 text-sm text-gray-700 rounded-full hover:bg-gray-100"
+                className="btn"
               >
                 {name}
               </button>
@@ -121,10 +121,13 @@ export default function WorkerSearchClient({
         </div>
       </div>
 
+
+
       {/* 搜索结果列表 */}
       <div>
         {initialWorkers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          // 核心修改：使用 flex 和 flex-wrap 来实现横向排列和自动换行
+          <div className="flex flex-wrap justify-center gap-6">
             {initialWorkers.map(worker => (
               <WorkerCard 
                 key={worker.id} 
@@ -136,11 +139,13 @@ export default function WorkerSearchClient({
           </div>
         ) : (
           <div className="text-center py-16">
-            <h3 className="text-xl font-medium text-gray-700">没有找到符合条件的工作者</h3>
-            <p className="text-gray-500 mt-2">请尝试调整您的搜索词或筛选条件。</p>
+            <h3 className="text-xl font-medium text-gray-700">No data matching the criteria was found.</h3>
+            <p className="text-gray-500 mt-2">Please try adjusting your search terms or filter criteria.</p>
           </div>
         )}
       </div>
+
+
 
       <PaginationControls currentPage={currentPage} totalPages={totalPages} />
     </div>

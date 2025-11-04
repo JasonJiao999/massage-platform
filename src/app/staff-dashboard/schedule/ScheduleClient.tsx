@@ -37,7 +37,7 @@ interface Schedule {
 // 2. 【修复】: 提供了完整的 SubmitButton 组件
 function SubmitButton({ text }: { text: string }) {
   const { pending } = useFormStatus();
-  return <button type="submit" disabled={pending} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400">{pending ? '保存中...' : text}</button>;
+  return <button type="submit" disabled={pending} className="btn w-[150px] mx-auto my-[10px]">{pending ? 'Saving...' : text}</button>;
 }
 
 // --- 表单组件 ---
@@ -45,41 +45,43 @@ function SubmitButton({ text }: { text: string }) {
 // 3. 【修复】: 提供了完整的 CreateRuleForm 组件
 function CreateRuleForm() {
     const [state, dispatch] = useFormState(createAvailabilityRule, { message: '', success: false });
-    const weekDays = [{val: 1, label: '一'}, {val: 2, label: '二'}, {val: 3, label: '三'}, {val: 4, label: '四'}, {val: 5, label: '五'}, {val: 6, label: '六'}, {val: 7, label: '日'}];
+    const weekDays = [{val: 1, label: 'Mon'}, {val: 2, label: 'Tue'}, {val: 3, label: 'Wed'}, {val: 4, label: 'Thu'}, {val: 5, label: 'Fri'}, {val: 6, label: 'Sat'}, {val: 7, label: 'Sun'}];
     return (
-        <form action={dispatch} className="p-6 border rounded-lg space-y-4 bg-white">
-            <h3 className="text-lg font-semibold">1. 添加长期工作规则</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label htmlFor="start_date" className="block text-sm font-medium">开始日期</label>
-                    <input type="date" id="start_date" name="start_date" required className="mt-1 block w-full input" />
-                </div>
-                <div>
-                    <label htmlFor="end_date" className="block text-sm font-medium">结束日期</label>
-                    <input type="date" id="end_date" name="end_date" required className="mt-1 block w-full input" />
-                </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label htmlFor="start_time" className="block text-sm font-medium">每日开始时间</label>
-                    <input type="time" id="start_time" name="start_time" required className="mt-1 block w-full input" />
-                </div>
-                <div>
-                    <label htmlFor="end_time" className="block text-sm font-medium">每日结束时间</label>
-                    <input type="time" id="end_time" name="end_time" required className="mt-1 block w-full input" />
-                </div>
-            </div>
+        <form action={dispatch} className="card bg-primary flex-1 min-w-[300px] w-full max-w-[500px] p-[24px] m-[10px] text-[var(--foreground)]">
+            <h3 className="text-lg font-semibold">1. Create a Long-term Plan</h3>
+   
+<div className="flex flex-wrap ">
+    <div className="flex-1 min-w-[150px]">
+        <label htmlFor="start_date" className="block text-sm font-medium">Start Date</label>
+        <input type="date" id="start_date" name="start_date" required className="input m-[10px] w-[100px]" />
+    </div>
+    <div className="flex-1 min-w-[150px]">
+        <label htmlFor="end_date" className="block text-sm font-medium">End Date</label>
+        <input type="date" id="end_date" name="end_date" required className="input m-[10px] w-[100px]" />
+    </div>
+</div>
+<div className="flex flex-wrap ">
+    <div className="flex-1 min-w-[150px]">
+        <label htmlFor="start_time" className="block text-sm font-medium">Start Time</label>
+        <input type="time" id="start_time" name="start_time" required className="input m-[10px] w-[100px]" />
+    </div>
+    <div className="flex-1 min-w-[150px]">
+        <label htmlFor="end_time" className="block text-sm font-medium">End Time</label>
+        <input type="time" id="end_time" name="end_time" required className="input m-[10px] w-[100px]" />
+    </div>
+</div>  
+
             <div>
-                <label className="block text-sm font-medium">重复星期</label>
+                <label className="block text-sm font-medium">Repeat Week</label>
                 <div className="mt-2 flex gap-2 flex-wrap">
                     {weekDays.map(day => (
                         <label key={day.val} className="flex items-center gap-1 text-sm">
-                            <input type="checkbox" name="days_of_week" value={day.val} className="rounded" /> {day.label}
+                            <input type="checkbox" name="days_of_week" value={day.val} className="checkbox bg-secondary m-[5px] text-[var(--foreground)]" /> {day.label}
                         </label>
                     ))}
                 </div>
             </div>
-            <SubmitButton text="保存规则" />
+            <SubmitButton text="Save" />
             {state?.message && <p className={`mt-2 text-sm ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>}
         </form>
     );
@@ -90,32 +92,32 @@ function CreateOverrideForm() {
     const [state, dispatch] = useFormState(createAvailabilityOverride, { message: '', success: false });
     const [type, setType] = useState<'unavailable' | 'available'>('unavailable');
     return (
-        <form action={dispatch} className="p-6 border rounded-lg space-y-4 bg-white">
-            <h3 className="text-lg font-semibold">2. 设置例外日期 (节假日/加班)</h3>
+        <form action={dispatch} className="card bg-primary flex-1 min-w-[300px] w-full max-w-[500px] p-[24px] m-[10px] text-[var(--foreground)]">
+            <h3 className="text-lg font-semibold">2. Set Holidays/Overtime</h3>
             <div>
-                <label htmlFor="override_date" className="block text-sm font-medium">选择日期</label>
-                <input type="date" id="override_date" name="override_date" required className="mt-1 block w-full input" />
+                <label htmlFor="override_date" className="block text-sm font-medium">Select Date</label>
+                <input type="date" id="override_date" name="override_date" required className="input mx-auto my-[10px] w-[150px]" />
             </div>
             <div>
-                <label className="block text-sm font-medium">例外类型</label>
-                <div className="mt-2 flex gap-4">
-                    <label className="flex items-center gap-1"><input type="radio" name="type" value="unavailable" checked={type === 'unavailable'} onChange={() => setType('unavailable')} /> 休息</label>
-                    <label className="flex items-center gap-1"><input type="radio" name="type" value="available" checked={type === 'available'} onChange={() => setType('available')} /> 加班</label>
+                <label className="block text-sm font-medium">Type</label>
+                <div className="mt-2 flex gap-4 my-[10px]">
+                    <label className="flex items-center gap-1 m-[10px]"><input type="radio" name="type" value="unavailable" checked={type === 'unavailable'} onChange={() => setType('unavailable')} />Holiday</label>
+                    <label className="flex items-center gap-1 m-[10px]"><input type="radio" name="type" value="available" checked={type === 'available'} onChange={() => setType('available')} /> Overtime</label>
                 </div>
             </div>
             {type === 'available' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border-l-4 border-blue-500 bg-blue-50">
-                    <div>
+                <div className="flex flex-wrap gap-4 p-4 bg-blue-50">
+                    <div className="flex-1 min-w-[150px]">
                         <label htmlFor="override_start_time" className="block text-sm font-medium">加班开始时间</label>
-                        <input type="time" id="override_start_time" name="start_time" required className="mt-1 block w-full input" />
+                        <input type="time" id="override_start_time" name="start_time" required className="input mt-[10px] w-[100px]" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-[150px]">
                         <label htmlFor="override_end_time" className="block text-sm font-medium">加班结束时间</label>
-                        <input type="time" id="override_end_time" name="end_time" required className="mt-1 block w-full input" />
+                        <input type="time" id="override_end_time" name="end_time" required className="input mt-[10px] w-[100px]" />
                     </div>
                 </div>
             )}
-            <SubmitButton text="设置例外" />
+            <SubmitButton text="Save" />
             {state?.message && <p className={`mt-2 text-sm ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>}
         </form>
     );
@@ -124,7 +126,7 @@ function CreateOverrideForm() {
 // --- 新增的删除按钮组件 ---
 function DeleteButton() {
     const { pending } = useFormStatus();
-    return <button type="submit" disabled={pending} className="text-sm text-red-600 hover:underline disabled:text-gray-400">{pending ? '删除中...' : '删除'}</button>;
+    return <button type="submit" disabled={pending} className="btn btn-warning">{pending ? 'Delete...' : 'Delete'}</button>;
 }
 
 function DeleteRuleButton({ ruleId }: { ruleId: string }) {
@@ -156,26 +158,36 @@ export default function ScheduleClient({ rules, overrides, schedules }: { rules:
   
   // 5. 【修复】: 提供了完整的 formatDays 辅助函数
   const formatDays = (days: number[]) => {
-    const dayMap = ['一','二','三','四','五','六','日'];
-    return days.sort().map(d => `周${dayMap[d-1]}`).join(', ');
+    const dayMap = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    return days.sort().map(d => `${dayMap[d-1]}`).join(', ');
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-12">
-      <h1 className="text-3xl font-bold">高级排班管理</h1>
+
+    <div className="mx-auto  min-w-[500px] max-w-[1200px]">
+      <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch '>
+      <h2 className="text-xl font-bold text-white">Working time plan</h2>
+      </div>
+<div className="flex flex-wrap gap-4 p-4 bg-blue-50 ">
+    <div className="flex-1 ">
       
       <CreateRuleForm />
       <CreateOverrideForm />
 
+        
+    </div>
+    <div className="card bg-[var(--color-third)] flex-1 min-w-[300px] w-full max-w-[600px] p-[24px] m-[10px]">
+        
+
       {/* --- 显示已有规则 --- */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold border-b pb-2">我的工作规则列表</h2>
+      <div className="min-w-[300px]">
+        <h2 className="text-2xl font-semibold border-b pb-2">My Work Plan</h2>
         {rules.map(rule => (
-            <div key={rule.id} className="p-4 border rounded-lg bg-white flex justify-between items-start">
+            <div key={rule.id} className="p-4 rounded-lg bg-white flex justify-between items-start">
                 <div>
-                    <p><strong>日期范围:</strong> {rule.start_date} 至 {rule.end_date}</p>
-                    <p><strong>每日时段:</strong> {rule.start_time} - {rule.end_time}</p>
-                    <p><strong>重复:</strong> {formatDays(rule.days_of_week)}</p>
+                    <p><strong>Date:</strong> {rule.start_date} ~ {rule.end_date}</p>
+                    <p><strong>Time:</strong> {rule.start_time} ~ {rule.end_time}</p>
+                    <p><strong>Week:</strong> {formatDays(rule.days_of_week)}</p>
                 </div>
                 <DeleteRuleButton ruleId={rule.id} />
             </div>
@@ -184,17 +196,44 @@ export default function ScheduleClient({ rules, overrides, schedules }: { rules:
       
       {/* --- 显示已有例外 --- */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-semibold border-b pb-2">我的例外日期列表</h2>
+        <h2 className="text-2xl font-semibold border-b pb-2">My Holiday/Overtime</h2>
         {overrides.map(override => (
-            <div key={override.id} className="p-4 border rounded-lg bg-white flex justify-between items-start">
-                <div>
-                    <p><strong>日期:</strong> {override.override_date}</p>
-                    <p><strong>类型:</strong> {override.type === 'available' ? `加班 (${override.start_time} - ${override.end_time})` : '休息'}</p>
-                </div>
+            <div key={override.id} className="p-4 border-b rounded-lg bg-white flex justify-between items-start">
+                
+                    <p><strong>Date:</strong> {override.override_date}</p>
+                    <p><strong>Type:</strong> {override.type === 'available' ? `OT (${override.start_time} - ${override.end_time})` : 'Holiday'}</p>
+                
                 <DeleteOverrideButton overrideId={override.id} />
             </div>
         ))}
       </div>
+
     </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+
   );
 }
+
+
+

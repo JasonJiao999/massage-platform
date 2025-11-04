@@ -26,7 +26,7 @@ export default function BookingManagementClient({
       try {
         await action(bookingId);
       } catch (error: any) {
-        alert(`操作失败: ${error.message}`);
+        alert(`Operation failed: ${error.message}`);
       }
     });
   };
@@ -43,42 +43,41 @@ export default function BookingManagementClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+
+      <div className="bg-card  rounded-lg shadow-md max-w-[1200px] min-w-[500px] mx-auto text-[var(--foreground)] my-[10px]">
+        <div className="card overflow-x-auto">
         <select
           onChange={handleFilterChange}
           defaultValue={searchParams.get('filter') || 'all'}
-          className="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-48 p-2.5"
+          className="dropdown w-[200px]"
         >
-          <option value="all">所有状态</option>
-          <option value="confirmed">已确认</option>
-          <option value="in_progress">服务中</option>
-          <option value="completed">已完成</option>
-          <option value="cancelled_by_customer">顾客已取消</option>
-          <option value="cancelled_by_worker">技师已取消</option>
+          <option value="all">All Type</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="in_progress">In_progress</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled_by_customer">Cancelled_by_customer</option>
+          <option value="cancelled_by_worker">Cancelled_by_worker</option>
         </select>
-      </div>
-      <div className="bg-card border border-border rounded-lg shadow-md">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-gray-800">
+          <table className="table bg-primary">
+            <thead className="text-[var(--foreground)]">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">服务项目</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">顾客信息</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">预约时间</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">状态</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">操作</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Service Name</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Customer Info</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Appointment Time</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Appointment State</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Working Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {bookings.map((booking) => (
                 <tr key={booking.id}>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{booking.services?.name || '未知服务'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{booking.services?.name || 'Unknown Service'}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     {/* 【核心修改】: 显示顾客姓名和联系方式 */}
-                    <div className="font-medium text-white">{booking.customer?.full_name || '匿名顾客'}</div>
+                    <div className="font-medium text-white">{booking.customer?.full_name || 'Anonymous customer'}</div>
                     {booking.customer?.bio && (
                       <div className="text-xs text-gray-400 mt-1">
-                        联系方式: {booking.customer.bio}
+                        Info: {booking.customer.bio}
                       </div>
                     )}
                   </td>
@@ -88,13 +87,13 @@ export default function BookingManagementClient({
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-300">{booking.status}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-medium space-x-2">
                     {booking.status === 'confirmed' && (
-                      <button onClick={() => handleAction(startService, booking.id)} disabled={isPending} className="text-green-400 hover:text-green-300 disabled:opacity-50">开始服务</button>
+                      <button onClick={() => handleAction(startService, booking.id)} disabled={isPending} className="btn">Start</button>
                     )}
                     {booking.status === 'in_progress' && (
-                      <button onClick={() => handleAction(completeService, booking.id)} disabled={isPending} className="text-blue-400 hover:text-blue-300 disabled:opacity-50">完成服务</button>
+                      <button onClick={() => handleAction(completeService, booking.id)} disabled={isPending} className="btn">Complete</button>
                     )}
                     {booking.status === 'confirmed' && (
-                       <button onClick={() => { if(confirm('确定要取消这个预约吗？')) handleAction((id) => cancelBooking(null, id), booking.id) }} disabled={isPending} className="text-red-400 hover:text-red-300 disabled:opacity-50">取消预约</button>
+                       <button onClick={() => { if(confirm('Are you sure you want to cancel this appointment?')) handleAction((id) => cancelBooking(null, id), booking.id) }} disabled={isPending} className="btn btn-warning">Cancel</button>
                     )}
                   </td>
                 </tr>

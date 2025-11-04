@@ -31,48 +31,48 @@ function MerchantDashboard({ shop, stats }: { shop: { name: string }, stats: Mer
   };
   
   return (
-    <div className="p-4 md:p-6 lg:p-8 text-white">
-      <h1 className="text-3xl font-bold mb-2">商户仪表盘</h1>
-      <p className="mb-6 text-gray-400">欢迎回来, {shop.name}！</p>
+    <div className="max-w-[1200px] mx-auto gap-[10px]">
+      <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+      <p className="mb-6 text-gray-400">Welcome back, {shop.name}！</p>
       
       {/* 统计卡片网格 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <StatCard 
-          title="今日团队预约" 
-          value={stats.today_team_bookings_count}
-          icon={<FaCalendarDay className="text-blue-500" />} 
-        />
-        <StatCard 
-          title="明日团队预约" 
-          value={stats.tomorrow_team_bookings_count}
-          icon={<FaRegCalendarAlt className="text-blue-500" />}
-        />
-        <StatCard 
-          title="今日团队收入" 
-          value={formatCurrency(stats.today_team_revenue)}
-          icon={<FaDollarSign className="text-green-500" />}
-        />
-        <StatCard 
-          title="本月团队收入" 
-          value={formatCurrency(stats.this_month_team_revenue)}
-          icon={<FaRegChartBar className="text-green-500" />}
-        />
-        <StatCard 
-          title="本月完成预约" 
-          value={stats.this_month_completed_bookings}
-          icon={<FaCalendarCheck className="text-purple-500" />}
-        />
-         <StatCard 
-          title="本月取消预约" 
-          value={stats.this_month_cancelled_bookings}
-          icon={<FaBan className="text-red-500" />}
-        />
-        <StatCard 
-          title="团队人数" 
-          value={stats.team_member_count}
-          icon={<FaUsers className="text-yellow-500" />}
-        />
-      </div>
+    <div className="flex flex-row flex-wrap justify-start gap-4 p-4 mx-auto">
+      <StatCard 
+        title="Today's team booking" 
+        value={stats.today_team_bookings_count}
+        icon={<FaCalendarDay className="text-blue-500" />} 
+      />
+      <StatCard 
+        title="Tomorrow's team bookings" 
+        value={stats.tomorrow_team_bookings_count}
+        icon={<FaRegCalendarAlt className="text-blue-500" />}
+      />
+      <StatCard 
+        title="Today's team income" 
+        value={formatCurrency(stats.today_team_revenue)}
+        icon={<FaDollarSign className="text-green-500" />}
+      />
+      <StatCard 
+        title="Team income this month" 
+        value={formatCurrency(stats.this_month_team_revenue)}
+        icon={<FaRegChartBar className="text-green-500" />}
+      />
+      <StatCard 
+        title="Complete appointments this month" 
+        value={stats.this_month_completed_bookings}
+        icon={<FaCalendarCheck className="text-purple-500" />}
+      />
+       <StatCard 
+        title="Cancel appointments this month" 
+        value={stats.this_month_cancelled_bookings}
+        icon={<FaBan className="text-red-500" />}
+      />
+      <StatCard 
+        title="Team size" 
+        value={stats.team_member_count}
+        icon={<FaUsers className="text-yellow-500" />}
+      />
+    </div>
     </div>
   );
 }
@@ -114,10 +114,10 @@ export default async function DashboardPage() {
         // 如果商户还没有店铺，显示创建店铺的提示
         return (
           <div className="p-8 text-white">
-            <h1 className="text-2xl font-bold mb-4">欢迎, 商户!</h1>
-            <p>您还没有创建店铺。</p>
+            <h1 className="text-2xl font-bold mb-4">Welcome, merchants!</h1>
+            <p>You have not created a team yet.。</p>
             <Link href="/dashboard/shop" className="text-blue-500 hover:underline mt-2 inline-block">
-              立即创建并设置您的店铺
+              Create and set up your team now.
             </Link>
           </div>
         );
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
 
       if (statsError) {
         console.error('Error fetching merchant dashboard stats:', statsError);
-        return <p className="p-6 text-red-500">加载仪表盘数据时出错，请稍后重试。</p>;
+        return <p className="p-6 text-red-500">An error occurred while loading data. Please try again later.</p>;
       }
       
       const defaultStats: MerchantDashboardStats = {

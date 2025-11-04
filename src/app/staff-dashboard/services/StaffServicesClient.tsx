@@ -22,8 +22,8 @@ export interface Service {
 function SubmitButton({ text }: { text: string }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400">
-      {pending ? '提交中...' : text}
+    <button type="submit" disabled={pending} className="btn w-[200px] mx-auto">
+      {pending ? 'Submitting...' : text}
     </button>
   );
 }
@@ -40,41 +40,42 @@ function CreateServiceForm() {
     }, [state]);
 
     return (
-        <form ref={formRef} action={dispatch} className="p-6 border rounded-lg space-y-4 bg-white">
-            <h3 className="text-lg font-semibold">创建新服务</h3>
+        <form ref={formRef} action={dispatch} className="card bg-primary max-w-[1150px] mx-auto gap-4r p-[24px] text-[var(--foreground)]">
+            <h3 className="text-lg font-semibold">Creating a New Service</h3>
             <div>
-                <label htmlFor="name" className="block text-sm font-medium">服务名称</label>
-                <input type="text" id="name" name="name" required className="mt-1 block w-full input" />
+                <label htmlFor="name" className="block text-sm font-medium">Service Name</label>
+                <input type="text" id="name" name="name" required className="input m-[10px] w-[95%]" />
             </div>
             <div>
-                <label htmlFor="description" className="block text-sm font-medium">服务描述</label>
-                <textarea id="description" name="description" rows={3} className="mt-1 block w-full input"></textarea>
+                <label htmlFor="description" className="block text-sm font-medium">Service Description</label>
+                <textarea id="description" name="description" rows={3} className="textarea m-[10px] h-[150px] w-[95%]"></textarea>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label htmlFor="price" className="block text-sm font-medium">价格</label>
-                    <input type="number" id="price" name="price" required step="0.01" className="mt-1 block w-full input" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    <div>
-                        <label htmlFor="duration_value" className="block text-sm font-medium">时长数值</label>
-                        <input type="number" id="duration_value" name="duration_value" required className="mt-1 block w-full input" />
+            <div className="flex flex-wrap gap-4">
+
+                  <div className="flex-1 min-w-[200px]">
+                    <label htmlFor="price" className="block text-sm font-medium">Price(THB)</label>
+                    <input type="number" id="price" name="price" required step="0.01" className="input m-[10px] h-[42px] max-w-[80%]" />
+                  </div>
+                    <div className="flex-1 min-w-[200px]">
+                        <label htmlFor="duration_value" className="block text-sm font-medium">Duration value</label>
+                        <input type="number" id="duration_value" name="duration_value" required className="input m-[10px] h-[42px] max-w-[80%]" />
                     </div>
-                    <div>
-                        <label htmlFor="duration_unit" className="block text-sm font-medium">单位</label>
-                        <select id="duration_unit" name="duration_unit" required className="mt-1 block w-full input">
-                            <option value="minutes">分钟</option>
-                            <option value="hours">小时</option>
-                            <option value="days">天</option>
+                    <div className="flex-1 min-w-[200px]">
+                        <label htmlFor="duration_unit" className="block text-sm font-medium">Time unit</label>
+                        <select id="duration_unit" name="duration_unit" required className="select m-[10px] h-[42px] max-w-[80%] text-[var(--color-secondary)]">
+                            <option value="minutes">Minute</option>
+                            <option value="hours">Hour</option>
+                            
                         </select>
                     </div>
-                </div>
+                    <div className="flex-1 min-w-[200px]">
+                <label htmlFor="type" className="block text-sm font-medium">Create My Category</label>
+                <input type="text" id="type" name="type" className="input m-[10px] h-[42px] max-w-[80%]" />
+                     </div>
+                
             </div>
-            <div>
-                <label htmlFor="type" className="block text-sm font-medium">我的分类</label>
-                <input type="text" id="type" name="type" className="mt-1 block w-full input" />
-            </div>
-            <SubmitButton text="创建服务" />
+
+            <SubmitButton text="Creating a Service"/>
             {state?.message && <p className={`mt-2 text-sm ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>}
         </form>
     );
@@ -85,54 +86,114 @@ export default function StaffServicesClient({ services }: { services: Service[] 
   const [editingService, setEditingService] = useState<Service | null>(null);
 
   const translateUnit = (unit: string | null) => {
-    if (unit === 'minutes') return '分钟';
-    if (unit === 'hours') return '小时';
-    if (unit === 'days') return '天';
+    if (unit === 'minutes') return 'Minutes';
+    if (unit === 'hours') return 'Hours';
+    if (unit === 'days') return 'Days';
     return '';
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8">
-      <h1 className="text-3xl font-bold">我的服务管理</h1>
-
+    <div className=" mx-auto">
+      <div className="mx-auto min-w-[500px] max-w-[1200px]">
+      <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch'>
+      <h2 className="text-xl font-bold text-white">My Service Management</h2>
+      </div>
+      </div>
+      
       <CreateServiceForm />
 
+<div className="p-6 mx-auto space-y-8 min-w-[500px] max-w-[1200px]">
+      <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch'>
+      <h2 className="text-xl font-bold text-white">My Service List</h2>
+      </div>
+      </div>
       <div className="space-y-4">
-        <h2 className="text-2xl font-semibold border-b pb-2">我的服务列表</h2>
+  
         {services && services.length > 0 ? (
           services.map(service => (
-            <div key={service.id} className="p-4 border rounded-lg bg-white flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:shadow-md transition-shadow">
-              <div className="flex-grow">
-                <h3 className="font-bold text-lg">{service.name}</h3>
-                <p className="text-sm text-gray-600 mt-1">{service.description}</p>
-                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2 text-sm">
-                  <span className="font-semibold">价格: ¥{service.price}</span>
-                  {service.duration_value && service.duration_unit && (
-                    <span className="text-gray-700">时长: {service.duration_value} {translateUnit(service.duration_unit)}</span>
-                  )}
-                  {service.type && <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">{service.type}</span>}
-                </div>
-              </div>
-              <div className="flex-shrink-0 flex items-center gap-4">
-                <button 
-                  onClick={() => setEditingService(service)}
-                  className="text-sm text-blue-600 hover:underline font-medium"
-                >
-                  编辑
-                </button>
-                <form action={async () => {
-                    const confirmed = window.confirm(`您确定要永久删除服务 "${service.name}" 吗？此操作无法撤销。`);
-                    if (confirmed) {
-                        await deleteMyService(service.id);
-                    }
-                }}>
-                    <button type="submit" className="text-sm text-red-600 hover:underline font-medium">删除</button>
-                </form>
-              </div>
+  
+            
+            
+            <div key={service.id} className="card bg-[var(--color-third)] max-w-[1150px] mx-auto gap-4r p-[24px] my-[10px]">
+
+<div className="flex items-center justify-between gap-4 mt-2 text-sm ">
+
+  {/* 左侧内容：服务名称 */}
+  <h3 className="font-bold text-lg ">
+    Serviec Name: {service.name}
+  </h3>
+
+  {/* 右侧容器：包裹所有按钮，实现水平排列 */}
+  <div className="flex items-center gap-2 flex-shrink-0">
+    
+    {/* 编辑按钮 */}
+    <button 
+      onClick={() => setEditingService(service)}
+      className="btn"
+    >
+      Edit
+    </button>
+
+    {/* 删除按钮的表单 */}
+    <form action={async () => {
+        const confirmed = window.confirm(`Are you sure you want to permanently delete the service "${service.name}"? This action cannot be undone.`);
+        if (confirmed) {
+            // 建议在这里处理返回的状态，例如显示一个通知
+            const result = await deleteMyService(service.id);
+            if (result && !result.success) {
+              alert(`Error: ${result.message}`);
+            }
+        }
+    }}>
+      <button type="submit" className="btn btn-warning">Delete</button>
+    </form>
+
+  </div>
+
+</div>
+
+
+<div className="flex-grow ">
+
+
+  {/* 主容器：使用 flex 和 flex-wrap 来实现水平排列和自动换行 */}
+  <div className="flex flex-wrap items-stretch gap-4 mt-2 text-sm ">
+
+    {/* Price - 每个项目都设置为 flex-1 和 min-w-[120px] */}
+    <div className="flex-1 min-w-[120px] p-2 rounded-lg flex items-center justify-center bg-[var(--color-third)]">
+      <span>Price: {service.price} THB</span>
+    </div>
+
+    {/* Time */}
+    {service.duration_value && service.duration_unit && (
+      <div className="flex-1 min-w-[120px] p-2  rounded-lg flex items-center justify-center bg-[var(--color-third)]">
+        <span>Time: {service.duration_value} {translateUnit(service.duration_unit)}</span>
+      </div>
+    )}
+
+    {/* Type */}
+    {service.type && (
+      <div className="flex-1 min-w-[120px] p-2  rounded-lg flex items-center justify-center bg-[var(--color-third)]">
+        <span>Type: {service.type}</span>
+      </div>
+    )}
+
+
+    
+  </div>
+</div>
+
+<div className="flex-grow m-[10px]">
+<p className="text-sm  mt-1">{service.description}</p>
+</div>
+
+
+
+
             </div>
           ))
         ) : (
-          <p className="text-gray-500 py-4">您还没有创建任何服务。</p>
+          <p className="text-gray-500 py-4">You haven't created any services yet.</p>
         )}
       </div>
 
@@ -145,3 +206,5 @@ export default function StaffServicesClient({ services }: { services: Service[] 
     </div>
   );
 }
+
+

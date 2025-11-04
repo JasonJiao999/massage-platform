@@ -26,7 +26,7 @@ export default function AdManagementClient({ initialBanners }: { initialBanners:
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {initialBanners.map((banner) => (
-          <div key={banner.id} className={`border-2 rounded-lg shadow-sm overflow-hidden flex flex-col ${banner.is_active ? 'border-green-500' : 'border-gray-200'}`}>
+          <div key={banner.id} className={`card p-[10px] border-2 rounded-lg shadow-sm overflow-hidden flex flex-col ${banner.is_active ? 'border-green-500' : 'border-gray-200'}`}>
             
             {/* 【核心修改】: 我們重構了圖片的顯示方式 */}
             <div className="w-full bg-gray-100">
@@ -53,7 +53,7 @@ export default function AdManagementClient({ initialBanners }: { initialBanners:
               <button
                 onClick={() => handleSetActive(banner.id)}
                 disabled={isPending || banner.is_active}
-                className="mt-4 w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="btn"
               >
                 {isPending ? '設置中...' : '設為激活廣告'}
               </button>

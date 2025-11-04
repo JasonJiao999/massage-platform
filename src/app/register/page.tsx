@@ -28,57 +28,58 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      alert('注册失败: ' + error.message);
+      alert('Registration failed: ' + error.message);
     } else {
-      alert('注册成功！请检查您的邮箱以完成验证。');
+      alert('Registration successful! Please check your email to complete the verification.');
       router.push('/login');
     }
   };
 
   return (
     // ... JSX 部分保持不变，无需修改 ...
-    <div className="flex justify-center items-center h-screen bg-background">
-      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg border border-border shadow-md">
-        <h1 className="text-2xl font-bold text-center text-card-foreground">创建您的账户</h1>
-        <form onSubmit={handleSignUp} className="space-y-6">
+    <div className="flex justify-center items-center h-screen ">
+      <div className="card w-[350px] shadow-sm bg-primary items-center text-[var(--foreground)] p-[24px]">
+        <h1 className="text-2xl font-bold text-center text-card-foreground">Create Account</h1>
+        <form onSubmit={handleSignUp} className='w-[300px]'>
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-card-foreground/80">
-              选择您的身份
+            <label htmlFor="role" className="block text-sm font-medium ">
+              Select character
             </label>
             <select
               id="role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               required
-              className="w-full px-3 py-2 mt-1 text-foreground bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="select text-[var(--color-secondary)] w-[93%] my-[10px]"
             >
-              <option value="customer">顾客 (Customer)</option>
-              <option value="freeman">自由工作者 (Freeman)</option>
-              <option value="staff">店铺员工 (Staff)</option>
-              <option value="merchant">商户 (Merchant)</option>
+              <option value="customer">Customer</option>
+              <option value="freeman">Freeman</option>
+              <option value="merchant">Merchant</option>
             </select>
           </div>
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-card-foreground/80">
-              邮箱地址
+              Email
             </label>
             <input
               id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-              className="w-full px-3 py-2 mt-1 text-foreground bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="input w-[93%] my-[10px]"
             />
           </div>
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-card-foreground/80">
-              密码
+              Password
             </label>
             <input
               id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
-              className="w-full px-3 py-2 mt-1 text-foreground bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="input w-[93%] my-[10px]"
             />
           </div>
-          <button type="submit" className="w-full px-4 py-2 font-semibold text-primary-foreground bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-            注册
+          <div className='flex justify-center items-center my-[10px]'>
+          <button type="submit" className="btn btn-wide">
+            Register
           </button>
+          </div>
         </form>
       </div>
     </div>

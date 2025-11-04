@@ -20,7 +20,7 @@ export default async function AdminMediaPage() {
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="max-w-[1150px] mx-auto gap-4r p-[24px] my-[10px]">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">媒體管理</h1>
         <p className="text-gray-600 mt-1">在這裡上傳和管理網站的 Logo、廣告等媒體資產。</p>
@@ -31,7 +31,7 @@ export default async function AdminMediaPage() {
         
         {/* 左側：上傳表單 */}
         <div className="lg:col-span-1">
-          <div className="bg-white p-8 rounded-lg shadow-md">
+          <div className="card bg-primary rounded-lg p-[24px] my-[20px] text-[var(--foreground)]">
             <h2 className="text-2xl font-semibold mb-6">上傳新媒體</h2>
             <MediaUploadForm />
           </div>

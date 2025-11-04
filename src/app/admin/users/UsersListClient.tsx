@@ -39,33 +39,33 @@ export default function UsersListClient({ initialUsers }: { initialUsers: UserPr
   };
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="max-w-[1150px] mx-auto gap-4r p-[24px] my-[10px]">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">用戶信息管理</h1>
       
-      <form onSubmit={handleSearch} className="bg-white p-6 rounded-lg shadow-md mb-8">
+      <form onSubmit={handleSearch} className="card bg-primary rounded-lg p-[24px] my-[20px]">
         <div className="flex flex-col md:flex-row gap-4">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-grow p-2 border border-gray-300 rounded-md"
+            className="input my-[20px] w-[90%]"
             placeholder="輸入搜索關鍵字..."
           />
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="p-2 border border-gray-300 rounded-md bg-white"
+            className="select my-[20px] w-full"
           >
             <option value="nickname">用戶暱稱</option>
             <option value="email">用戶郵箱</option>
           </select>
-          <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+          <button type="submit" className="btn btn-wide">
             搜索
           </button>
         </div>
       </form>
 
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="card bg-primary rounded-lg p-[24px] text-[var(--foreground)]">
         {searchParams.get('query') ? (
           initialUsers.length > 0 ? (
             <ul className="divide-y divide-gray-200">
@@ -80,10 +80,10 @@ export default function UsersListClient({ initialUsers }: { initialUsers: UserPr
                     <span className={`px-3 py-1 text-xs font-semibold rounded-full ${user.acc_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                       {user.acc_active ? '賬號激活' : '賬號暫停'}
                     </span>
-                    <button onClick={() => handleToggleStatus(user)} disabled={isPending} className="text-sm bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md disabled:opacity-50">
+                    <button onClick={() => handleToggleStatus(user)} disabled={isPending} className="btn h-[46px] mx-[10px]">
                       {isPending ? '處理中...' : (user.acc_active ? '暫停賬號' : '激活賬號')}
                     </button>
-                    <Link href={`/admin/users/${user.id}/edit`} className="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-2 rounded-md">
+                    <Link href={`/admin/users/${user.id}/edit`} className="btn">
                       編輯
                     </Link>
                   </div>

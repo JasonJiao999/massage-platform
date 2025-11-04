@@ -16,7 +16,7 @@ export default async function AdminAdsPage() {
     .order('created_at', { ascending: false });
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="max-w-[1150px] mx-auto gap-4r p-[24px] my-[10px]">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">廣告管理</h1>
         <p className="text-gray-600 mt-1">選擇一個推廣橫幅作為當前全站顯示的廣告。</p>

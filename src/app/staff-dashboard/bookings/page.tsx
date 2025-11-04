@@ -18,9 +18,9 @@ export default async function BookingManagementPage({
 
   if (!user) {
     return (
-      <div className="p-6">
-        <h1 className="text-3xl font-bold mb-6">预约管理</h1>
-        <div className="text-red-500">请先登录以查看预约信息。</div>
+      <div className="text-foreground w-[1200px] mx-auto px-[24px] m-[10px]">
+        <h1 className="text-3xl font-bold mx-[20px]">Appointment Management</h1>
+        <div className="text-red-500">Please log in first.</div>
       </div>
     );
   }
@@ -40,12 +40,12 @@ export default async function BookingManagementPage({
 
     if (profileError || !workerProfile || !['freeman', 'staff'].includes(workerProfile.role as string)) {
       // 为了调试，我们暂时保留这个详细的错误日志
-      console.error("角色验证失败详情:", {
+      console.error("Character verification failed details:", {
         profileError: profileError,
         workerProfile: workerProfile,
         role: workerProfile?.role
       });
-      throw new Error('当前用户不是技师，无法查看预约');
+      throw new Error('The current user is not a worker and cannot view appointments.');
     }
 
     let query = supabase
@@ -67,12 +67,18 @@ export default async function BookingManagementPage({
 
     if (error) {
       console.error('Error fetching bookings:', error);
-      throw new Error('加载预约列表失败，请稍后重试');
+      throw new Error('Loading failed');
     }
 
     return (
-      <div className="p-6 bg-background text-foreground">
-        <h1 className="text-3xl font-bold mb-6">预约管理</h1>
+      <div className="text-foreground w-[1200px] mx-auto px-[24px] mt-[10px]">
+
+ <div className="p-6 mx-auto space-y-8 min-w-[500px] max-w-[1200px]">
+      <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch '>
+      <h2 className="text-xl font-bold text-white">Appointment Management</h2>
+      </div>
+      </div>
+
         <BookingManagementClient
           bookings={bookings || []}
           totalCount={count || 0}
@@ -83,10 +89,15 @@ export default async function BookingManagementPage({
     );
   } catch (error: any) {
     return (
-      <div className="p-6 bg-background text-foreground">
-        <h1 className="text-3xl font-bold mb-6">预约管理</h1>
+      <div className="text-foreground w-[1200px] mx-auto  mt-[10px]">
+         <div className="p-6  mx-auto space-y-8 min-w-[500px] max-w-[1200px]">
+      <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch '>
+      <h2 className="text-xl font-bold text-white">Appointment Management</h2>
+      </div>
+      </div>
+
         <div className="text-red-500 bg-red-100 border border-red-400 rounded-md p-4">
-          <p>加载预约失败: {error.message}</p>
+          <p>Loading failed: {error.message}</p>
         </div>
       </div>
     );

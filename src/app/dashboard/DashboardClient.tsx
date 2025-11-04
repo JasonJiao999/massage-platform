@@ -27,39 +27,39 @@ export default function DashboardClient({ stats }: { stats: MerchantDashboardSta
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="flex flex-row flex-wrap justify-start gap-4 p-4">
       <StatCard 
-        title="今日团队预约" 
+        title="Today's team booking" 
         value={stats.today_team_bookings_count}
         icon={<FaCalendarDay className="text-blue-500" />} 
       />
       <StatCard 
-        title="明日团队预约" 
+        title="Tomorrow's team bookings" 
         value={stats.tomorrow_team_bookings_count}
         icon={<FaRegCalendarAlt className="text-blue-500" />}
       />
       <StatCard 
-        title="今日团队收入" 
+        title="Today's team income" 
         value={formatCurrency(stats.today_team_revenue)}
         icon={<FaDollarSign className="text-green-500" />}
       />
       <StatCard 
-        title="本月团队收入" 
+        title="Team income this month" 
         value={formatCurrency(stats.this_month_team_revenue)}
         icon={<FaRegChartBar className="text-green-500" />}
       />
       <StatCard 
-        title="本月完成预约" 
+        title="Complete appointments this month" 
         value={stats.this_month_completed_bookings}
         icon={<FaCalendarCheck className="text-purple-500" />}
       />
        <StatCard 
-        title="本月取消预约" 
+        title="Cancel appointments this month" 
         value={stats.this_month_cancelled_bookings}
         icon={<FaBan className="text-red-500" />}
       />
       <StatCard 
-        title="团队人数" 
+        title="Team size" 
         value={stats.team_member_count}
         icon={<FaUsers className="text-yellow-500" />}
       />

@@ -30,39 +30,39 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
   //   ? (stats.cancelled_by_customer_count / totalBookings) * 100 
   //   : 0;
 
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <StatCard 
-        title="今日预约数" 
-        value={stats.today_bookings_count}
-        icon={<FaCalendarDay className="text-blue-500" />} 
-      />
-      <StatCard 
-        title="明日预约数" 
-        value={stats.tomorrow_bookings_count}
-        icon={<FaRegCalendarAlt className="text-blue-500" />}
-      />
-      <StatCard 
-        title="今日收入" 
-        value={formatCurrency(stats.today_revenue)}
-        icon={<FaDollarSign className="text-green-500" />}
-      />
-      <StatCard 
-        title="本月收入" 
-        value={formatCurrency(stats.this_month_revenue)}
-        icon={<FaRegChartBar className="text-green-500" />}
-      />
-      <StatCard 
-        title="已完成预约" 
-        value={stats.completed_bookings_count}
-        icon={<FaCalendarCheck className="text-purple-500" />}
-      />
-      {/* 【核心修改 2】: 更新卡片标题和值 */}
-      <StatCard 
-        title="已取消预约" 
-        value={stats.cancelled_by_customer_count}
-        icon={<FaBan className="text-red-500" />}
-      />
-    </div>
-  );
+// DashboardClient.tsx
+return (
+  <div className="flex flex-row flex-wrap justify-start text-[var(--foreground)]">
+    <StatCard 
+      title="Number of orders today" 
+      value={stats.today_bookings_count}
+      icon={<FaCalendarDay className="text-[var(--foreground)]" />} 
+    />
+    <StatCard 
+      title="Tomorrow's orders" 
+      value={stats.tomorrow_bookings_count}
+      icon={<FaRegCalendarAlt className="text-[var(--foreground)]" />}
+    />
+    <StatCard 
+      title="Today's income" 
+      value={formatCurrency(stats.today_revenue)}
+      icon={<FaDollarSign className="text-[var(--foreground)]" />}
+    />
+    <StatCard 
+      title="Monthly income" 
+      value={formatCurrency(stats.this_month_revenue)}
+      icon={<FaRegChartBar className="text-[var(--foreground)]" />}
+    />
+    <StatCard 
+      title="Completed orders" 
+      value={stats.completed_bookings_count}
+      icon={<FaCalendarCheck className="text-[var(--foreground)]" />}
+    />
+    <StatCard 
+      title="Cancelled orders" 
+      value={stats.cancelled_by_customer_count}
+      icon={<FaBan className="text-[var(--foreground)]" />}
+    />
+  </div>
+);
 }

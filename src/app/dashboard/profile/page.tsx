@@ -24,21 +24,21 @@ export default async function CustomerProfilePage() {
   if (error || !profile) {
     return (
       <div className="container mx-auto p-8 text-white">
-        无法加载您的个人信息，请稍后再试。
+        Unable to load your personal information, please try again later.
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-8 max-w-2xl">
+    <div className="max-w-[500px] mx-auto gap-[10px]">
       <header className="mb-10">
-        <h1 className="text-3xl font-bold text-white">我的信息</h1>
+        <h1 className="text-3xl font-bold text-white">My Profile</h1>
         <p className="text-foreground/70 mt-2">
-          在这里管理您的账户信息。
+          Manage your account information here.
         </p>
       </header>
 
-      <div className="p-8 bg-card rounded-lg border border-border">
+      <div className="p-8 bg-card rounded-lg">
         <CustomerProfileForm profile={profile} />
       </div>
     </div>

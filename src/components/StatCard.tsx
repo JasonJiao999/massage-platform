@@ -4,21 +4,21 @@ import React from 'react';
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon?: React.ReactNode; // 可选的图标
+  icon?: React.ReactNode;
 }
 
 export default function StatCard({ title, value, icon }: StatCardProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 flex items-center space-x-4">
-      {icon && (
-        <div className="bg-blue-100 dark:bg-blue-900/50 p-3 rounded-full">
-          {icon}
-        </div>
-      )}
-      <div>
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
-        <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-      </div>
+<div className="stat shadow rounded-lg bg-primary text-[var(--foreground)] w-[200px] min-w-[200px] mx-[10px] my-[10px] flex-shrink-0"
+style={{ borderRadius: '12px' }}
+>
+  {icon && (
+    <div className="stat-figure text-[var(--foreground)]">
+      {icon}
     </div>
+  )}
+  <div className="stat-title whitespace-normal break-words text-[var(--foreground)]">{title}</div>
+  <div className="stat-value text-2xl whitespace-normal break-all text-[var(--foreground)]">{value}</div>
+</div>
   );
 }

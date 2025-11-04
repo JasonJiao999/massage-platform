@@ -20,7 +20,7 @@ export default async function ShopEditPage({ params }: { params: { id: string } 
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="max-w-[1150px] mx-auto gap-4r p-[24px] my-[10px]">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">編輯店鋪信息</h1>
       <ShopEditForm shop={shop} />
     </div>

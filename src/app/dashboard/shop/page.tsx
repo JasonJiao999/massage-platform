@@ -39,7 +39,7 @@ export default async function ShopSettingsPage() {
   if (error || !shopData) {
     // 打印错误可以帮助调试
     if (error) console.error('Shop fetch error:', error.message);
-    return <div>找不到您的店铺信息。请先创建店铺。</div>;
+    return <div>Your information cannot be found. Please create a team first.</div>;
   }
 
   // 从关联查询结果中提取 shop_pages 的数据
@@ -63,8 +63,8 @@ export default async function ShopSettingsPage() {
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6 text-white">编辑店铺信息与主题</h1>
+    <div className="max-w-[1200px] mx-auto gap-[10px]">
+      <h1 className="text-2xl font-bold mb-6 text-white">Editorial Team Information</h1>
       <ShopEditForm settings={settings} />
     </div>
   );

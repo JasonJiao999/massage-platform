@@ -32,17 +32,17 @@ export default function MediaList({ initialMedia }: MediaListProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="card rounded-lg p-[24px] my-[20px]">
       <h2 className="text-2xl font-semibold">已上傳媒體</h2>
       {initialMedia.length === 0 ? (
         <p className="text-gray-500">暫無已上傳的媒體文件。</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mx-auto flex flex-wrap">
           {initialMedia.map((item) => (
-            <div key={item.id} className="border rounded-lg overflow-hidden shadow-sm bg-white flex flex-col">
+            <div key={item.id} className="card bg-primary max-w-[300px] my-[20px] p-[10px] text-[var(--foreground)] mx-[10px]">
               
               {/* 【核心修復】: 我們重構了圖片的顯示方式 */}
-              <div className="w-full bg-gray-100">
+              <div className="w-full">
                 <Image
                   src={item.url}
                   alt={item.name || 'Media asset'}
@@ -54,15 +54,15 @@ export default function MediaList({ initialMedia }: MediaListProps) {
                 />
               </div>
               
-              <div className="p-4 flex flex-col flex-grow">
+              <div className="p-[10px]">
                 <div className="flex-grow">
-                  <p className="font-bold truncate" title={item.name || ''}>{item.name || '未命名'}</p>
-                  <p className="text-sm text-gray-600 capitalize">{item.asset_type.replace('_', ' ')}</p>
+                  <p className="font-bold truncate" title={item.name || ''}>图片名称：{item.name || '未命名'}</p>
+                  <p className="text-sm capitalize">图片类型：{item.asset_type.replace('_', ' ')}</p>
                 </div>
                 <button
                   onClick={() => handleDelete(item)}
                   disabled={deletingId === item.id}
-                  className="mt-4 w-full text-sm text-red-600 bg-red-100 hover:bg-red-200 py-2 px-3 rounded-md transition-colors disabled:bg-gray-200 disabled:text-gray-400"
+                  className="btn"
                 >
                   {deletingId === item.id ? '正在刪除...' : '刪除'}
                 </button>

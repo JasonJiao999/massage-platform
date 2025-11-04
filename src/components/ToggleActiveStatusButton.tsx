@@ -8,10 +8,10 @@ function ButtonContent({ isActive }: { isActive: boolean }) {
     const { pending } = useFormStatus();
 
     if (pending) {
-        return <>正在更新...</>;
+        return <>Updating...</>;
     }
     
-    return isActive ? <>切换为休息状态</> : <>切换为工作状态</>;
+    return isActive ? <>Start Resting</> : <>Start Working</>;
 }
 
 export default function ToggleActiveStatusButton({ isActive }: { isActive: boolean }) {
@@ -23,9 +23,9 @@ export default function ToggleActiveStatusButton({ isActive }: { isActive: boole
     : "bg-green-500 hover:bg-green-600 text-white";
 
   return (
-    <div>
+    <div className='mx-[20px] px-[24px]'>
       <form action={formAction.bind(null, isActive)}>
-        <button type="submit" className={`font-bold py-2 px-4 rounded-md transition-colors disabled:bg-gray-400 ${buttonClass}`}>
+        <button type="submit" className={`btn ${buttonClass}`}>
           <ButtonContent isActive={isActive} />
         </button>
       </form>

@@ -10,7 +10,7 @@ export default async function StaffDashboardPage() {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return <p className="p-6 text-red-500">需要登录才能查看仪表盘。</p>;
+    return <p className="p-6 text-red-500">You need to be logged in to view the dashboard.</p>;
   }
 
   const { data: profile, error: profileError } = await supabase
@@ -20,17 +20,17 @@ export default async function StaffDashboardPage() {
     .single();
   
   if (profileError || !profile) {
-    return <p className="p-6 text-red-500">无法找到您的工作档案。</p>;
+    return <p className="p-6 text-red-500">Your profile cannot be found.</p>;
   }
 
-  // 【核心修复】: 在这里，我们明确地告诉 TypeScript statsData 的类型是 DashboardStats | null
+
   const { data: statsData, error: statsError } = await supabase
     .rpc('get_dashboard_stats', { p_worker_profile_id: profile.id })
-    .single<DashboardStats>(); // <-- 在 .single() 中加入 <DashboardStats>
+    .single<DashboardStats>(); 
 
   if (statsError) {
     console.error('Error fetching dashboard stats:', statsError);
-    return <p className="p-6 text-red-500">加载仪表盘数据时出错，请稍后重试。</p>;
+    return <p className="p-6 text-red-500">An error occurred while loading dashboard data. Please try again later.</p>;
   }
   
   const defaultStats: DashboardStats = {
@@ -45,8 +45,8 @@ export default async function StaffDashboardPage() {
   const stats = statsData || defaultStats;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
-      <h1 className="text-3xl font-bold mb-6 text-white">我的仪表盘</h1>
+    <div className="max-w-[1200px] mx-auto gap-[10px]">
+      <h1 className="text-3xl font-bold mb-6 text-white">Dashboard</h1>
       <DashboardClient stats={stats} />
     </div>
   );

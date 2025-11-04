@@ -11,7 +11,7 @@ const initialState = { message: '', success: false };
 
 function ButtonContent() {
     const { pending } = useFormStatus();
-    return <>{pending ? '正在离开...' : '离开店铺 (成为自由人)'}</>;
+    return <>{pending ? 'Leaving...' : 'End of partnership'}</>;
 }
 
 export function LeaveShopButton() {
@@ -31,7 +31,7 @@ export function LeaveShopButton() {
       <form 
         action={(formData) => {
           const confirmed = window.confirm(
-            '您确定要离开当前店铺吗？离开后您将成为自由职业者，可以加入其他店铺。'
+            'Do you want to end the partnership? After that, you will become a freelance worker.'
           );
           if (confirmed) {
             dispatch(formData);
@@ -40,7 +40,7 @@ export function LeaveShopButton() {
       >
         <button 
           type="submit" 
-          className="bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 disabled:bg-gray-400"
+          className="btn"
         >
           <ButtonContent />
         </button>

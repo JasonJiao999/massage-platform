@@ -30,10 +30,10 @@ const AdminNav = () => {
                 : 'bg-white hover:bg-gray-50 hover:shadow-md'
             }`}
           >
-            <div className="flex items-center space-x-3">
+            <div className="max-w-[1200px] mx-auto flex flex-row gap-[10px] px-[10px]">
               <link.icon className={`h-6 w-6 ${isActive ? 'text-white' : 'text-blue-600'}`} />
               <div>
-                <h3 className="font-bold">{link.title}</h3>
+                <h3 className="btn">{link.title}</h3>
                 <p className={`text-xs ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>{link.description}</p>
               </div>
             </div>

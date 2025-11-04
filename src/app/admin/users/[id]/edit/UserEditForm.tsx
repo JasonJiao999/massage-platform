@@ -49,32 +49,32 @@ export default function UserEditForm({ user }: { user: UserProfile }) {
   };
 
   return (
-    <form action={handleSubmit} className="bg-white p-8 rounded-lg shadow-md space-y-6 max-w-3xl mx-auto">
+    <form action={handleSubmit} className="card bg-primary rounded-lg p-[24px] my-[20px] text-[var(--foreground)]">
       <input type="hidden" name="id" value={user.id} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 暱稱 */}
         <div>
           <label htmlFor="nickname" className="block text-sm font-medium text-gray-700">用戶暱稱</label>
-          <input type="text" id="nickname" name="nickname" defaultValue={user.nickname || ''} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+          <input type="text" id="nickname" name="nickname" defaultValue={user.nickname || ''} className="input my-[20px] w-[90%]" />
         </div>
 
         {/* 郵箱 */}
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700">郵箱</label>
-          <input type="email" id="email" name="email" defaultValue={user.email || ''} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+          <input type="email" id="email" name="email" defaultValue={user.email || ''} className="input my-[20px] w-[90%]" />
         </div>
 
         {/* 電話 */}
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700">電話</label>
-          <input type="tel" id="phone" name="phone" defaultValue={user.phone || ''} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+          <input type="tel" id="phone" name="phone" defaultValue={user.phone || ''} className="input my-[20px] w-[90%]" />
         </div>
 
         {/* 角色 */}
         <div>
           <label htmlFor="role" className="block text-sm font-medium text-gray-700">用戶角色</label>
-          <select id="role" name="role" defaultValue={user.role || ''} className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-white shadow-sm">
+          <select id="role" name="role" defaultValue={user.role || ''} className="select my-[20px] w-[90%] text-[var(--color-secondary)]">
             {roles.map(role => (<option key={role} value={role}>{role}</option>))}
           </select>
         </div>
@@ -82,28 +82,28 @@ export default function UserEditForm({ user }: { user: UserProfile }) {
         {/* 頭像 URL */}
         <div className="md:col-span-2">
           <label htmlFor="avatar_url" className="block text-sm font-medium text-gray-700">頭像 URL</label>
-          <input type="text" id="avatar_url" name="avatar_url" defaultValue={user.avatar_url || ''} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+          <input type="text" id="avatar_url" name="avatar_url" defaultValue={user.avatar_url || ''} className="input my-[20px] w-[90%]" />
         </div>
 
         {/* 個人簡介 */}
         <div className="md:col-span-2">
           <label htmlFor="bio" className="block text-sm font-medium text-gray-700">個人簡介</label>
-          <textarea id="bio" name="bio" rows={4} defaultValue={user.bio || ''} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+          <textarea id="bio" name="bio" rows={4} defaultValue={user.bio || ''} className="textarea my-[20px] w-[90%]" />
         </div>
 
         {/* 地址 ID */}
         <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label htmlFor="province_id" className="block text-sm font-medium text-gray-700">省份 ID</label>
-            <input type="number" id="province_id" name="province_id" defaultValue={user.province_id || ''} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+            <input type="number" id="province_id" name="province_id" defaultValue={user.province_id || ''} className="input my-[20px] w-[90%]" />
           </div>
           <div>
             <label htmlFor="district_id" className="block text-sm font-medium text-gray-700">區域 ID</label>
-            <input type="number" id="district_id" name="district_id" defaultValue={user.district_id || ''} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+            <input type="number" id="district_id" name="district_id" defaultValue={user.district_id || ''} className="input my-[20px] w-[90%]" />
           </div>
           <div>
             <label htmlFor="sub_district_id" className="block text-sm font-medium text-gray-700">街道 ID</label>
-            <input type="number" id="sub_district_id" name="sub_district_id" defaultValue={user.sub_district_id || ''} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+            <input type="number" id="sub_district_id" name="sub_district_id" defaultValue={user.sub_district_id || ''} className="input my-[20px] w-[90%]" />
           </div>
         </div>
 
@@ -131,10 +131,10 @@ export default function UserEditForm({ user }: { user: UserProfile }) {
       </div>
 
       <div className="flex justify-between items-center pt-6 border-t">
-        <button type="submit" disabled={isPending} className="bg-blue-600 text-white px-6 py-2 rounded-md shadow-sm hover:bg-blue-700 disabled:bg-blue-300">
+        <button type="submit" disabled={isPending} className="btn">
           {isPending ? '正在保存...' : '保存更改'}
         </button>
-        <button type="button" onClick={handleDelete} disabled={isPending} className="bg-red-600 text-white px-6 py-2 rounded-md shadow-sm hover:bg-red-700 disabled:bg-red-300">
+        <button type="button" onClick={handleDelete} disabled={isPending} className="btn">
           {isPending ? '處理中...' : '刪除用戶'}
         </button>
       </div>

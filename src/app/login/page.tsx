@@ -21,7 +21,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      alert('登录失败: ' + error.message);
+      alert('Login failed: ' + error.message);
     } else {
       router.push('/');
       router.refresh();
@@ -29,19 +29,19 @@ export default function LoginPage() {
   };
 
   return (
-    // 使用了 --background 变量
-    <div className="flex justify-center items-center h-screen bg-background">
-      {/* 使用了 --card 和 --border 变量 */}
-      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg border border-border shadow-md">
-        {/* 使用了 --card-foreground 变量 */}
-        <h1 className="text-2xl font-bold text-center text-card-foreground">登录您的账户</h1>
-        <form onSubmit={handleSignIn} className="space-y-6">
+   
+    <div className="flex justify-center items-center h-screen ">
+      
+      <div className="card w-[350px] shadow-sm bg-primary items-center text-[var(--foreground)] p-[24px]">
+        
+        <h1 className="text-2xl font-bold text-center">Login Account</h1>
+        <form onSubmit={handleSignIn} className="w-[300px]">
           <div>
-            <label
+            <label 
               htmlFor="email"
-              className="block text-sm font-medium text-card-foreground/80" // 使用了带透明度的文字颜色
+              className="block text-sm font-medium " 
             >
-              邮箱地址
+              Email
             </label>
             <input
               id="email"
@@ -49,16 +49,16 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              // 使用了 --background, --foreground, --border 变量
-              className="w-full px-3 py-2 mt-1 text-foreground bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            
+              className="input w-[93%] my-[10px]"
             />
           </div>
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-card-foreground/80"
+              className="block text-sm font-medium "
             >
-              密码
+              Password
             </label>
             <input
               id="password"
@@ -66,21 +66,23 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 mt-1 text-foreground bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="input w-[93%] bg-pink my-[10px]"
             />
           </div>
+          <div className='flex justify-center items-center my-[10px]'>
           <button
             type="submit"
-            // 使用了 --primary 和 --primary-foreground 变量
-            className="w-full px-4 py-2 font-semibold text-primary-foreground bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+         
+            className="btn btn-wide "
           >
-            登录
+            Login
           </button>
-          <div className="text-center mt-4">
+          </div>
+          <div className="text-center mt-4 my-[10px]">
             <Link href="/forgot-password" 
-              className="text-sm text-gray-400 hover:underline"
+              className="text-sm hover:underline text-[var(--foreground)]"
             >
-              忘记密码？
+              Forget Password
             </Link>
           </div>
         </form>

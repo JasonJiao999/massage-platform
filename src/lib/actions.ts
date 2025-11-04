@@ -7,9 +7,10 @@ import { revalidatePath } from 'next/cache';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import { Resend } from 'resend';
-import sharp from 'sharp'; // 【新】导入 sharp 库
+import sharp from 'sharp'; 
 import { v4 as uuidv4 } from 'uuid';
 import { format, parseISO, addMinutes } from 'date-fns';
+
 
 
 
@@ -126,7 +127,7 @@ export async function updateMyProfile(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/staff-dashboard/profile');
-  return { message: '个人资料已成功更新!', success: true };
+  return { message: 'Successfully updated!', success: true };
 }
 
 
@@ -515,42 +516,71 @@ export async function updateMyService(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/staff-dashboard/services');
-  return { message: '服务已成功更新!', success: true };
+  return { message: 'Successfully updated!', success: true };
 }
 
-// 删除服务信息
+
+
 export async function deleteMyService(serviceId: string) {
     'use server';
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-
+    const supabase = createClient(cookies());
     const { data: { user } } = await supabase.auth.getUser();
+
     if (!user) {
-        throw new Error('You must be logged in to delete a service.');
+        // 返回错误对象，而不是抛出异常
+        return { success: false, message: 'Authentication required. You must be logged in.' };
     }
 
-    // Security Check: Ensure the user owns this service
-    const { data: service, error: ownerError } = await supabase
-        .from('services')
-        .select('owner_id')
-        .eq('id', serviceId)
-        .single();
+    try {
+        // 1. 安全检查：确保用户拥有此服务 (您的原有逻辑)
+        const { data: service, error: ownerError } = await supabase
+            .from('services')
+            .select('owner_id')
+            .eq('id', serviceId)
+            .single();
 
-    if (ownerError || service?.owner_id !== user.id) {
-        throw new Error('You do not have permission to delete this service.');
+        if (ownerError || service?.owner_id !== user.id) {
+            return { success: false, message: 'You do not have permission to delete this service.' };
+        }
+
+        // 2. 【核心逻辑】: 在删除前，检查是否存在关联的预约
+        const { data: existingBookings, error: bookingCheckError } = await supabase
+            .from('bookings') // 假设您的预约表名为 'bookings'
+            .select('id', { count: 'exact' }) // 使用 count 来获取准确数量
+            .eq('service_id', serviceId);
+        
+        if (bookingCheckError) {
+            console.error('Booking Check Error:', bookingCheckError);
+            return { success: false, message: 'Failed to check for existing bookings before deletion.' };
+        }
+        
+        // 如果查询到的预约数量大于 0，则不允许删除
+        if (existingBookings && existingBookings.length > 0) {
+            // **这里是关键：返回一个清晰的错误信息给前端**
+            return { success: false, message: `此服务已经有 ${existingBookings.length} 个订单了，不能删除。` };
+        }
+
+        // 3. 执行删除：只有在通过所有检查后才执行
+        const { error: deleteError } = await supabase
+            .from('services')
+            .delete()
+            .eq('id', serviceId);
+
+        if (deleteError) {
+            // 兜底：如果数据库层面还是出错了，记录日志并返回通用错误
+            console.error('Delete Service Error:', deleteError);
+            return { success: false, message: 'Failed to delete the service due to a database error.' };
+        }
+
+        // 4. 成功后，刷新路径并返回成功信息
+        revalidatePath('/staff-dashboard/services');
+        return { success: true, message: 'Service deleted successfully.' };
+
+    } catch (error: any) {
+        // 捕获任何意外的异常，防止程序崩溃
+        console.error('Unexpected error in deleteMyService:', error);
+        return { success: false, message: error.message || 'An unexpected error occurred.' };
     }
-
-    const { error } = await supabase
-        .from('services')
-        .delete()
-        .eq('id', serviceId);
-
-    if (error) {
-        console.error('Delete Service Error:', error);
-        throw new Error('Failed to delete the service.');
-    }
-
-    revalidatePath('/staff-dashboard/services');
 }
 
 
@@ -572,18 +602,18 @@ export async function cancelBooking(prevState: any, bookingId: string) {
     .single();
 
   if (fetchError || !booking) {
-    return { success: false, message: '找不到预约记录。' };
+    return { success: false, message: 'No appointment record found.' };
   }
 
   const isCustomer = profile.role === 'customer' && booking.customer_id === user.id;
   const isWorker = ['staff', 'freeman'].includes(profile.role) && booking.worker_profile_id === user.id;
 
   if (!isCustomer && !isWorker) {
-    return { success: false, message: '您无权取消此预约。' };
+    return { success: false, message: 'You do not have the right to cancel this reservation.' };
   }
   
   if (booking.status !== 'confirmed') {
-      return { success: false, message: '只有“已确认”的预约才能被取消。' };
+      return { success: false, message: 'Only confirmed reservations can be cancelled.' };
   }
 
   // 更新预约状态
@@ -614,7 +644,7 @@ export async function cancelBooking(prevState: any, bookingId: string) {
   revalidatePath('/my-bookings');
   revalidatePath('/staff-dashboard/bookings');
   
-  return { success: true, message: '预约已成功取消。' };
+  return { success: true, message: 'The appointment was successfully canceled.' };
 }
 
 /**
@@ -633,7 +663,7 @@ export async function createSchedule(prevState: any, formData: FormData) {
   const endTime = formData.get('end_time') as string;
 
   if (!startTime || !endTime) {
-    return { message: "错误：开始和结束时间不能为空。", success: false };
+    return { message: "Error: Start and end times cannot be empty.", success: false };
   }
 
   // 【核心修改】: 插入数据时，使用 worker_profile_id
@@ -644,11 +674,11 @@ export async function createSchedule(prevState: any, formData: FormData) {
   });
 
   if (error) {
-    return { message: `创建排班失败: ${error.message}`, success: false };
+    return { message: `Failed to create a shift schedule: ${error.message}`, success: false };
   }
 
   revalidatePath('/staff-dashboard/schedule');
-  return { message: '排班已成功添加！', success: true };
+  return { message: 'Schedule added successfully！', success: true };
 }
 
 /**
@@ -672,12 +702,12 @@ export async function deleteSchedule(scheduleId: string) {
     .single();
 
   if (fetchError || !schedule || schedule.worker_profile_id !== user.id) {
-    throw new Error('您无权删除此排班。');
+    throw new Error('You do not have permission to delete this schedule');
   }
 
   const { error } = await supabase.from('schedules').delete().eq('id', scheduleId);
   if (error) {
-    throw new Error(`删除排班失败: ${error.message}`);
+    throw new Error(`Failed to delete the schedule: ${error.message}`);
   }
 
   revalidatePath('/staff-dashboard/schedule');
@@ -703,13 +733,13 @@ export async function startService(bookingId: string) {
         .single();
 
     if (fetchError || !booking) {
-        throw new Error('找不到该预约记录。');
+        throw new Error('The appointment record cannot be found.');
     }
     if (booking.worker_profile_id !== user.id) {
-        throw new Error('您无权操作此预约。');
+        throw new Error('You do not have permission to operate this reservation.');
     }
     if (booking.status !== 'confirmed') {
-        throw new Error('只有“已确认”的预约才能开始服务。');
+        throw new Error('Only confirmed reservations can start service.');
     }
 
     // 2. 更新预约状态和实际开始时间
@@ -739,16 +769,18 @@ export async function completeService(bookingId: string) {
         .eq('id', bookingId)
         .single();
 
-    if (fetchError || !booking) {
-        throw new Error('找不到预约记录。');
-    }
-    if (booking.worker_profile_id !== user.id) {
-        throw new Error('您无权操作此预约。');
-    }
-    if (booking.status !== 'in_progress') {
-        // 只有“服务中”的预约才能被完成，防止重复点击
-        throw new Error('只有“服务中”的预约才能被标记为完成。');
-    }
+if (fetchError || !booking) {
+    throw new Error('Booking record not found.');
+}
+
+if (booking.worker_profile_id !== user.id) {
+    throw new Error('You do not have permission to modify this booking.');
+}
+
+if (booking.status !== 'in_progress') {
+    // Only bookings with "in_progress" status can be completed to prevent duplicate actions.
+    throw new Error('Only bookings with "in_progress" status can be marked as completed.');
+}
 
     // 【核心修正】: 不再需要查询 staff 表
     const { error } = await supabase.from('bookings').update({
@@ -810,11 +842,11 @@ export async function createAvailabilityRule(prevState: any, formData: FormData)
 
   if (error) {
     console.error('Create Rule Error:', error);
-    return { message: `创建规则失败: ${error.message}`, success: false };
+    return { message: `Failed to create rule: ${error.message}`, success: false };
   }
 
   revalidatePath('/staff-dashboard/schedule');
-  return { message: '新的工作规则已成功添加！', success: true };
+  return { message: 'New work plan added successfully！', success: true };
 }
 
 
@@ -835,11 +867,12 @@ export async function createAvailabilityOverride(prevState: any, formData: FormD
   const endTime = formData.get('end_time') as string | null;
 
   // 2. 数据验证
-  if (!overrideDate || !type) {
-    return { message: "错误：日期和例外类型为必填项。", success: false };
+if (!overrideDate || !type) {
+    return { message: "Error: Date and exception type are required.", success: false };
   }
+
   if (type === 'available' && (!startTime || !endTime || endTime <= startTime)) {
-      return { message: "错误：加班必须提供有效的开始和结束时间。", success: false };
+      return { message: "Error: For 'available' type, a valid start and end time must be provided where the end time is after the start time.", success: false };
   }
 
   // 3. 准备要插入的数据
@@ -857,15 +890,14 @@ export async function createAvailabilityOverride(prevState: any, formData: FormD
     .from('availability_overrides')
     .upsert(dataToInsert, { onConflict: 'worker_profile_id, override_date' });
 
-  if (error) {
+if (error) {
     console.error('Create Override Error:', error);
-    return { message: `创建例外失败: ${error.message}`, success: false };
+    return { message: `Failed to create exception: ${error.message}`, success: false };
   }
 
   revalidatePath('/staff-dashboard/schedule');
-  return { message: `日期 ${overrideDate} 的例外已成功设置！`, success: true };
+  return { message: `Exception for date ${overrideDate} has been set successfully!`, success: true };
 }
-
 
 export async function getAvailability(workerId: string, targetDate: string) {
     'use server';
@@ -905,26 +937,26 @@ export async function deleteAvailabilityRule(prevState: any, ruleId: string) {
   const supabase = createClient(cookieStore);
   const { user } = await getUserAndProfile(supabase);
 
-  // 1. 权限检查：确保规则属于当前用户
-  const { data: rule } = await supabase.from('availability_rules').select('worker_profile_id').eq('id', ruleId).single();
-  if (!rule || rule.worker_profile_id !== user.id) {
-    return { message: "错误：您无权删除此规则。", success: false };
-  }
+// 1. Permission Check: Ensure the rule belongs to the current user
+const { data: rule } = await supabase.from('availability_rules').select('worker_profile_id').eq('id', ruleId).single();
+if (!rule || rule.worker_profile_id !== user.id) {
+    return { message: "Error: You do not have permission to delete this rule.", success: false };
+}
 
-  // 2. 【核心安全检查】: 调用数据库函数，检查是否存在冲突预约
-  const { data: bookingCount, error: checkError } = await supabase.rpc('check_bookings_in_rule', { rule_id: ruleId });
-  if (checkError || (bookingCount != null && bookingCount > 0)) {
-    return { message: `无法删除：该规则内已存在 ${bookingCount || ''} 个有效预约。`, success: false };
-  }
+// 2. [Core Security Check]: Call the database function to check for conflicting bookings
+const { data: bookingCount, error: checkError } = await supabase.rpc('check_bookings_in_rule', { rule_id: ruleId });
+if (checkError || (bookingCount != null && bookingCount > 0)) {
+    return { message: `Cannot delete: There are ${bookingCount || ''} active bookings within this rule.`, success: false };
+}
 
-  // 3. 执行删除
-  const { error } = await supabase.from('availability_rules').delete().eq('id', ruleId);
-  if (error) {
-    return { message: `删除失败: ${error.message}`, success: false };
-  }
+// 3. Execute Deletion
+const { error } = await supabase.from('availability_rules').delete().eq('id', ruleId);
+if (error) {
+    return { message: `Deletion failed: ${error.message}`, success: false };
+}
 
-  revalidatePath('/staff-dashboard/schedule');
-  return { message: '工作规则已成功删除。', success: true };
+revalidatePath('/staff-dashboard/schedule');
+return { message: 'The availability rule has been successfully deleted.', success: true };
 }
 
 
@@ -940,7 +972,7 @@ export async function deleteAvailabilityOverride(prevState: any, overrideId: str
   // 1. 权限检查
   const { data: override } = await supabase.from('availability_overrides').select('worker_profile_id, override_date').eq('id', overrideId).single();
   if (!override || override.worker_profile_id !== user.id) {
-    return { message: "错误：您无权删除此例外。", success: false };
+    return { message: "Error: You do not have permission to delete this data.", success: false };
   }
 
   // 2. 【核心安全检查】: 检查该例外日期当天是否存在有效预约
@@ -953,17 +985,17 @@ export async function deleteAvailabilityOverride(prevState: any, overrideId: str
     .lt('start_time', `${override.override_date}T23:59:59Z`);
 
   if (checkError || (count != null && count > 0)) {
-    return { message: `无法删除：该日期内已存在 ${count} 个有效预约。`, success: false };
+    return { message: `Deletion failed: ${count} active booking(s) found in the selected date range.`, success: false };
   }
   
   // 3. 执行删除
   const { error } = await supabase.from('availability_overrides').delete().eq('id', overrideId);
   if (error) {
-    return { message: `删除失败: ${error.message}`, success: false };
+    return { message: `Deletion failed: ${error.message}`, success: false };
   }
 
   revalidatePath('/staff-dashboard/schedule');
-  return { message: '例外日期已成功删除。', success: true };
+  return { message: 'Special date deleted successfully.', success: true };
 }
 
 
@@ -985,14 +1017,14 @@ export async function toggleMyActiveStatus(prevState: any, currentStatus: boolea
     .eq('id', user.id);
 
   if (error) {
-    return { success: false, message: `状态更新失败: ${error.message}` };
+    return { success: false, message: `Update Failed ${error.message}` };
   }
 
   // 3. 刷新相关页面的缓存，确保状态立即生效
   revalidatePath('/staff-dashboard/profile'); // 刷新技师自己的档案页
   revalidatePath(`/worker/${user.id}`);      // 刷新该技师的公开预约页
 
-  return { success: true, message: '状态已成功更新！' };
+  return { success: true, message: 'Status updated successfully!' };
 }
 
 
@@ -1101,7 +1133,7 @@ export async function updateShopTextSettings(prevState: any, formData: FormData)
   const { error: updateShopError } = await supabase.from('shops').update(shopUpdateData).eq('id', shopId);
 
   if (updateShopError) {
-    return { message: `店铺信息更新失败: ${updateShopError.message}` };
+    return { message: `Update Failed: ${updateShopError.message}` };
   }
 
   revalidatePath('/dashboard/shop');
@@ -1119,21 +1151,21 @@ export async function uploadShopVideo(prevState: any, formData: FormData) {
   const supabase = createClient(cookieStore);
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { message: "错误: 用户未登录" };
+  if (!user) return { message: "Error: User not logged in." };
   
   const shopId = formData.get('shop_id') as string;
   const videoFile = formData.get('featured_video') as File;
 
   if (!shopId || !videoFile || videoFile.size === 0) {
-    return { message: "错误: 缺少店铺ID或视频文件。" };
+    return { message: "Error: ID or video file missing." };
   }
 
   if (videoFile.size > 50 * 1024 * 1024) {
-    return { message: '视频上传失败：文件大小不能超过 50MB。' };
+    return { message: 'Video upload failed: File size cannot exceed 50MB.' };
   }
 
   const { data: shop } = await supabase.from('shops').select('slug').eq('id', shopId).single();
-  if (!shop) return { message: "错误: 找不到店铺" };
+  if (!shop) return { message: "Error: Data not found" };
   
   // 先删除旧视频
   const { data: oldPageData } = await supabase.from('shop_pages').select('featured_video_url').eq('shop_id', shopId).single();
@@ -1145,13 +1177,13 @@ export async function uploadShopVideo(prevState: any, formData: FormData) {
   // 上传新视频
   const filePath = `${user.id}/${shopId}/featured-video-${Date.now()}`;
   const { data, error } = await supabase.storage.from('web-media').upload(filePath, videoFile);
-  if (error) return { message: `视频上传失败: ${error.message}` };
+  if (error) return { message: `Update Failed: ${error.message}` };
   
   const publicUrl = supabase.storage.from('web-media').getPublicUrl(data.path).data.publicUrl;
 
   // 更新数据库
   const { error: upsertPageError } = await supabase.from('shop_pages').upsert({ shop_id: shopId, featured_video_url: publicUrl }, { onConflict: 'shop_id' });
-  if (upsertPageError) return { message: `页面内容更新失败: ${upsertPageError.message}` };
+  if (upsertPageError) return { message: `Update Failed: ${upsertPageError.message}` };
 
   revalidatePath('/dashboard/shop');
   revalidatePath(`/shops/${shop.slug}`);
@@ -1174,7 +1206,7 @@ export async function uploadShopImage(prevState: any, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     console.error('LOG: User not authenticated.');
-    return { message: "错误: 用户未登录" };
+    return { message: "Error: User not logged in" };
   }
   console.log(`LOG: Authenticated user ID: ${user.id}`);
 
@@ -1189,7 +1221,7 @@ export async function uploadShopImage(prevState: any, formData: FormData) {
 
   if (!shopId || !imageType || !imageFile || imageFile.size === 0) {
     console.error('LOG: Missing required form data.');
-    return { message: "错误: 缺少必要信息 (店铺ID, 图片类型或文件)" };
+    return { message: "Error: Required information missing" };
   }
   
   // 3. 验证店铺所有权 (这是RLS策略的核心)
@@ -1201,7 +1233,7 @@ export async function uploadShopImage(prevState: any, formData: FormData) {
 
   if (shopFetchError || !shop) {
     console.error(`LOG: Shop not found or fetch error for shop_id "${shopId}". Error:`, shopFetchError?.message);
-    return { message: "错误: 找不到店铺" };
+    return { message: "Error: Data not found" };
   }
   console.log(`LOG: Verified shop owner ID: ${shop.owner_id}. Current user ID is ${user.id}.`);
 
@@ -1243,7 +1275,7 @@ export async function uploadShopImage(prevState: any, formData: FormData) {
     await supabase.storage.from('web-media').remove([filePath]);
     console.log(`LOG: Rolled back storage upload for path: ${filePath}`);
     
-    return { message: `数据库更新失败: ${upsertError.message}` };
+    return { message: `Update Failed: ${upsertError.message}` };
   }
 
   console.log('LOG: Database upsert successful.');
@@ -1254,17 +1286,14 @@ export async function uploadShopImage(prevState: any, formData: FormData) {
   console.log('--- [Action End] uploadShopImage ---');
 
   const imageTypeMap: { [key: string]: string } = {
-    'bg_image_url': '背景图',
-    'hero_image_url': '广告横幅',
-    'cover_image_url': '封面图'
+    'bg_image_url': 'Team Photos',
+    'hero_image_url': 'Advertising banner',
+    'cover_image_url': 'Cover image'
   };
-  const imageTypeText = imageTypeMap[imageType] || '图片';
-  return { message: `${imageTypeText}已成功更新！` };
+  const imageTypeText = imageTypeMap[imageType] || 'Photo';
+  return { message: `${imageTypeText}Updated successfully!` };
 }
 
-// src/lib/actions.ts
-
-// ... (在文件末尾添加以下两个函数)
 
 /**
  * 将一个工作者添加到用户的收藏列表
@@ -1337,14 +1366,14 @@ export async function updateCustomerProfile(prevState: any, formData: FormData) 
   const supabase = createClient(cookieStore);
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, message: '用户未登录' };
+  if (!user) return { success: false, message: 'User is not logged in.' };
 
   const fullName = formData.get('full_name') as string;
   // 【核心修改】: 从表单中获取 bio 字段
   const bio = formData.get('bio') as string;
 
   if (!fullName) {
-    return { success: false, message: '姓名不能为空。' };
+    return { success: false, message: 'Name cannot be empty.' };
   }
 
   // 【核心修改】: 在 update 方法中同时更新 full_name 和 bio
@@ -1357,12 +1386,12 @@ export async function updateCustomerProfile(prevState: any, formData: FormData) 
     .eq('id', user.id);
 
   if (error) {
-    return { success: false, message: `更新失败: ${error.message}` };
+    return { success: false, message: `Update Failed: ${error.message}` };
   }
 
   revalidatePath('/dashboard/profile');
   revalidatePath('/dashboard');
-  return { success: true, message: '您的信息已成功更新！' };
+  return { success: true, message: 'Updated successfully!' };
 }
 
 
@@ -1472,49 +1501,70 @@ export async function updateAvatar(prevState: any, formData: FormData) {
   }
 }
 
-// --- 上传多张个人照片 ---
+
+
 export async function uploadMultipleMyProfilePhotos(prevState: any, formData: FormData) {
   'use server';
   const supabase = createClient(cookies());
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, message: 'Authentication required.' };
+  if (!user) {
+    return { success: false, message: 'Authentication required.' };
+  }
 
   const photoFiles = formData.getAll('photos') as File[];
-  // 检查是否至少有一个有效文件
   if (photoFiles.length === 0 || (photoFiles.length === 1 && photoFiles[0].size === 0)) {
-    return { success: false, message: 'No files provided.' };
+    return { success: false, message: 'No files were provided.' };
   }
 
   try {
-    // 并行处理所有图片
+    // 1. 获取用户资料，这次同时查询 photo_urls 和 level 字段
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('photo_urls, level') // <-- 修改点: 同时获取 level
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      throw new Error('Could not retrieve user profile to verify photo count and level.');
+    }
+
+    // 2. 【核心限制逻辑 - 第一部分】根据 level 决定照片上限
+    const userLevel = profile?.level || 0; // 如果 level 为 null，则默认为 0
+    const maxPhotos = userLevel > 10 ? 20 : 6; // <-- 新增: 动态设置上限
+
+    const existingUrls = profile?.photo_urls || [];
+    const totalPhotosAfterUpload = existingUrls.length + photoFiles.length;
+
+    // 3. 【核心限制逻辑 - 第二部分】使用动态上限进行检查
+    if (totalPhotosAfterUpload > maxPhotos) {
+      return { 
+        success: false, 
+        message: `Upload failed. Your current level allows a maximum of ${maxPhotos} photos. You currently have ${existingUrls.length} and tried to upload ${photoFiles.length}.` 
+      };
+    }
+
+    // 4. 如果检查通过，则继续执行上传流程
     const uploadPromises = photoFiles.map(file => 
       processAndUploadImage(supabase, file, 'web-media', `staff-photos/${user.id}`)
     );
     const newPhotoUrls = await Promise.all(uploadPromises);
 
-    // 获取现有的照片 URLs
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('photo_urls')
-      .eq('id', user.id)
-      .single();
-    if (profileError) throw profileError;
-
-    const existingUrls = profile?.photo_urls || [];
     const updatedUrls = [...existingUrls, ...newPhotoUrls];
 
-    // 更新 profiles 表
+    // 5. 更新 profiles 表
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ photo_urls: updatedUrls })
       .eq('id', user.id);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      throw updateError;
+    }
     
     revalidatePath('/staff-dashboard/profile');
-    return { success: true, message: '照片已成功上传！' };
+    return { success: true, message: 'Photos uploaded successfully!' };
   } catch (error: any) {
-    return { success: false, message: error.message };
+    return { success: false, message: error.message || 'An unexpected error occurred.' };
   }
 }
 
@@ -1533,7 +1583,7 @@ export async function createBooking(
   // 1. 身份验证
   const { user, profile } = await getUserAndProfile(supabase); // 假设此函数在本文件定义
   if (profile.role !== 'customer') {
-    throw new Error('只有顾客才能预订服务。');
+    throw new Error('Only customers can book the service.');
   }
   // ... (其他权限检查)
 
@@ -1549,7 +1599,7 @@ export async function createBooking(
     .single();
 
   if (serviceError || !service) {
-    throw new Error('未找到指定的服务。');
+    throw new Error('The specified service was not found.');
   }
 
   // 3. 根据技师ID查询店铺ID (shop_id)
@@ -1561,8 +1611,8 @@ export async function createBooking(
     .single();
 
   if (staffError || !staffInfo) {
-    console.error(`找不到 worker_id: ${workerId} 对应的店铺信息。`);
-    throw new Error('无法确定技师所属的店铺。');
+    console.error(`Cannot find worker_id: ${workerId} The corresponding team information.`);
+    throw new Error('The worker team cannot be determined.');
   }
   const shopId = staffInfo.shop_id;
 
@@ -1586,11 +1636,11 @@ export async function createBooking(
     });
 
   if (insertError) {
-    console.error('插入预约记录失败:', insertError);
-    return { success: false, message: `创建预约失败: ${insertError.message}` };
+    console.error('Appointment creation failed:', insertError);
+    return { success: false, message: `Appointment creation failed: ${insertError.message}` };
   }
 
-  return { success: true, message: `预约成功！` };
+  return { success: true, message: `Reservation successful!` };
 }
 
 
@@ -1607,7 +1657,7 @@ export async function uploadMedia(formData: FormData) {
   const is_active = formData.get('is_active') === 'on'; // 複選框的值是 'on' 或 null
 
   if (!file || file.size === 0) {
-    return { success: false, message: '請選擇一個文件上傳。' };
+    return { success: false, message: 'Please select a file to upload.' };
   }
 
   // 2. 將文件上傳到 Supabase Storage
@@ -1621,8 +1671,8 @@ export async function uploadMedia(formData: FormData) {
     .upload(filePath, file);
 
   if (uploadError) {
-    console.error('Supabase Storage 上傳失敗:', uploadError);
-    return { success: false, message: `文件上傳失敗: ${uploadError.message}` };
+    console.error('Supabase Storage File Upload Failed.:', uploadError);
+    return { success: false, message: `File upload failed.: ${uploadError.message}` };
   }
 
   // 3. 獲取上傳文件的公開 URL
@@ -1631,7 +1681,7 @@ export async function uploadMedia(formData: FormData) {
     .getPublicUrl(filePath);
 
   if (!publicUrl) {
-    return { success: false, message: '無法獲取文件的公開 URL。' };
+    return { success: false, message: 'Unable to obtain the public URL of the file.' };
   }
 
   // 4. 將文件信息插入到 img_admin 表中
@@ -1645,14 +1695,14 @@ export async function uploadMedia(formData: FormData) {
     });
 
   if (insertError) {
-    console.error('數據庫插入失敗:', insertError);
-    return { success: false, message: `數據庫記錄創建失敗: ${insertError.message}` };
+    console.error('Database insertion failed.:', insertError);
+    return { success: false, message: `Database record creation failed.: ${insertError.message}` };
   }
 
   // 5. 清除路徑緩存，以便新數據可以立即顯示（如果有的話）
   revalidatePath('/admin/media');
 
-  return { success: true, message: '媒體文件上傳並記錄成功！' };
+  return { success: true, message: 'Media file uploaded and logged successfully!' };
 }
 
 
@@ -1666,11 +1716,11 @@ export async function deleteMedia(media: { id: string; url: string }) {
   // 1. 安全性檢查：確保只有管理員可以執行刪除
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return { success: false, message: '未授權的操作。' };
+    return { success: false, message: 'Unauthorized operation.' };
   }
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
   if (profile?.role !== 'admin') {
-    return { success: false, message: '權限不足。' };
+    return { success: false, message: 'Insufficient permissions.' };
   }
 
   // 2. 從 URL 中解析出文件在 Storage 中的路徑
@@ -1678,7 +1728,7 @@ export async function deleteMedia(media: { id: string; url: string }) {
   // 我們需要 'public/file.jpg' 這部分
   const filePath = media.url.split('/media_assets/')[1];
   if (!filePath) {
-    return { success: false, message: '無效的文件 URL 格式。' };
+    return { success: false, message: 'Invalid file URL format.' };
   }
 
   // 3. 從 Supabase Storage 中刪除文件
@@ -1687,8 +1737,8 @@ export async function deleteMedia(media: { id: string; url: string }) {
     .remove([filePath]);
 
   if (storageError) {
-    console.error('Storage 文件刪除失敗:', storageError);
-    return { success: false, message: `存儲文件刪除失敗: ${storageError.message}` };
+    console.error('Storage File deletion failed:', storageError);
+    return { success: false, message: `File deletion failed.: ${storageError.message}` };
   }
 
   // 4. 從 img_admin 數據庫表中刪除記錄
@@ -1698,14 +1748,14 @@ export async function deleteMedia(media: { id: string; url: string }) {
     .eq('id', media.id);
 
   if (dbError) {
-    console.error('數據庫記錄刪除失敗:', dbError);
-    return { success: false, message: `數據庫記錄刪除失敗: ${dbError.message}` };
+    console.error('Database record deletion failed:', dbError);
+    return { success: false, message: `Database record deletion failed: ${dbError.message}` };
   }
 
   // 5. 清除路徑緩存，觸發頁面數據重新加載
   revalidatePath('/admin/media');
 
-  return { success: true, message: '媒體文件已成功刪除！' };
+  return { success: true, message: 'The media files have been successfully deleted!' };
 }
 
 
@@ -1720,7 +1770,7 @@ export async function toggleShopStatus(shopId: string, currentStatus: boolean) {
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
   if (profile?.role !== 'admin') {
-    return { success: false, message: '權限不足。' };
+    return { success: false, message: 'Insufficient permissions.' };
   }
 
   const { error } = await supabase
@@ -1729,11 +1779,11 @@ export async function toggleShopStatus(shopId: string, currentStatus: boolean) {
     .eq('id', shopId);
 
   if (error) {
-    return { success: false, message: `更新失敗: ${error.message}` };
+    return { success: false, message: `Update failed: ${error.message}` };
   }
 
   revalidatePath('/admin/shops'); // 刷新店鋪列表頁的緩存
-  return { success: true, message: '狀態更新成功！' };
+  return { success: true, message: 'Update successful!' };
 }
 
 // Action 2: 更新店鋪的完整信息
@@ -1746,7 +1796,7 @@ export async function updateShopDetails(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
   if (profile?.role !== 'admin') {
-    return { success: false, message: '權限不足。' };
+    return { success: false, message: 'Insufficient permissions.' };
   }
 
   const shopId = formData.get('id') as string;
@@ -1755,8 +1805,11 @@ export async function updateShopDetails(formData: FormData) {
   // 準備要更新的數據，這裡您可以根據您的表結構進行調整
   const shopDataToUpdate = {
     name: rawData.name,
-    address: rawData.address,
-    phone: rawData.phone,
+    address_detail: rawData.address_detail,
+    phone_number: rawData.phone_number,
+    slug: rawData.slug,
+    tags: rawData.tags,
+    description: rawData.description,
     // ... 其他您允許管理員修改的字段
   };
 
@@ -1766,12 +1819,12 @@ export async function updateShopDetails(formData: FormData) {
     .eq('id', shopId);
 
   if (error) {
-    return { success: false, message: `店鋪信息更新失敗: ${error.message}` };
+    return { success: false, message: `Information update failed: ${error.message}` };
   }
 
   revalidatePath(`/admin/shops/${shopId}/edit`); // 刷新當前編輯頁
   revalidatePath('/admin/shops'); // 同時刷新列表頁
-  return { success: true, message: '店鋪信息已成功更新！' };
+  return { success: true, message: 'The information has been successfully updated!' };
 }
 
 
@@ -1785,7 +1838,7 @@ export async function deleteShop(shopId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
   if (profile?.role !== 'admin') {
-    throw new Error('權限不足。');
+    throw new Error('Insufficient permissions.');
   }
 
   const { error } = await supabase
@@ -1794,7 +1847,7 @@ export async function deleteShop(shopId: string) {
     .eq('id', shopId);
 
   if (error) {
-    throw new Error(`刪除店鋪失敗: ${error.message}`);
+    throw new Error(`Deleting the team failed: ${error.message}`);
   }
 
   // 刪除成功後，跳轉回店鋪列表主頁
@@ -1812,7 +1865,7 @@ export async function toggleUserAccountStatus(userId: string, currentStatus: boo
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
   if (profile?.role !== 'admin') {
-    return { success: false, message: '權限不足。' };
+    return { success: false, message: 'Insufficient permissions.' };
   }
 
   const { error } = await supabase
@@ -1821,11 +1874,11 @@ export async function toggleUserAccountStatus(userId: string, currentStatus: boo
     .eq('id', userId);
 
   if (error) {
-    return { success: false, message: `更新失敗: ${error.message}` };
+    return { success: false, message: `Update Failed: ${error.message}` };
   }
 
   revalidatePath('/admin/users');
-  return { success: true, message: '用戶賬號狀態更新成功！' };
+  return { success: true, message: 'Update successful!' };
 }
 
 
@@ -1839,7 +1892,7 @@ export async function deleteUser(userId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
   if (profile?.role !== 'admin') {
-    throw new Error('權限不足。');
+    throw new Error('Insufficient permissions.');
   }
 
   const { error } = await supabase
@@ -1848,7 +1901,7 @@ export async function deleteUser(userId: string) {
     .eq('id', userId);
 
   if (error) {
-    throw new Error(`刪除用戶 Profile 失敗: ${error.message}`);
+    throw new Error(`Failed to delete user profile: ${error.message}`);
   }
 
   redirect('/admin/users');
@@ -1866,7 +1919,7 @@ export async function updateUserDetails(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
   if (profile?.role !== 'admin') {
-    return { success: false, message: '權限不足。' };
+    return { success: false, message: 'Insufficient permissions.' };
   }
 
   const userId = formData.get('id') as string;
@@ -1894,19 +1947,17 @@ export async function updateUserDetails(formData: FormData) {
     .eq('id', userId);
 
   if (error) {
-    console.error('用戶信息更新失敗:', error);
-    return { success: false, message: `用戶信息更新失敗: ${error.message}` };
+    console.error('User information update failed:', error);
+    return { success: false, message: `User information update failed: ${error.message}` };
   }
 
   revalidatePath(`/admin/users/${userId}/edit`);
   revalidatePath('/admin/users');
 
-  return { success: true, message: '用戶信息已成功更新！' };
+  return { success: true, message: 'Updated successfully!' };
 }
 
-// 文件路徑: src/lib/actions.ts
 
-// ... (您文件中的其他 import 和函數)
 
 // Action: 設置當前激活的推廣橫幅
 export async function setActiveBanner(bannerId: string) {
@@ -1918,7 +1969,7 @@ export async function setActiveBanner(bannerId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
   if (profile?.role !== 'admin') {
-    return { success: false, message: '權限不足。' };
+    return { success: false, message: 'Insufficient permissions.' };
   }
 
   // 2. 使用數據庫事務，確保操作的原子性
@@ -1929,7 +1980,7 @@ export async function setActiveBanner(bannerId: string) {
     .eq('asset_type', 'promo_banner');
 
   if (deactivateError) {
-    return { success: false, message: `停用舊橫幅失敗: ${deactivateError.message}` };
+    return { success: false, message: `Deactivation of old banner failed: ${deactivateError.message}` };
   }
 
   //    然後，將選定的橫幅廣告設為 'is_active = true'
@@ -1939,7 +1990,7 @@ export async function setActiveBanner(bannerId: string) {
     .eq('id', bannerId);
 
   if (activateError) {
-    return { success: false, message: `激活新橫幅失敗: ${activateError.message}` };
+    return { success: false, message: `Activation of new banner failed: ${activateError.message}` };
   }
 
   // 3. 刷新廣告管理頁面的緩存
@@ -1947,5 +1998,5 @@ export async function setActiveBanner(bannerId: string) {
   // 4. （重要）刷新根佈局的緩存，讓所有頁面都能看到新的廣告
   revalidatePath('/', 'layout');
 
-  return { success: true, message: '推廣橫幅已成功更新！' };
+  return { success: true, message: 'Promotion banner updated successfully!' };
 }
