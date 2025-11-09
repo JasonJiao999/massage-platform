@@ -61,11 +61,21 @@ export default function BookingManagementClient({
           <table className="table bg-primary">
             <thead className="text-[var(--foreground)]">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Service Name</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Customer Info</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Appointment Time</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Appointment State</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Working Status</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Service Name
+                <p>ชื่อบริการ</p>  
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Customer Info
+                  <p>ข้อมูลลูกค้า</p>
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Appointment Time
+                  <p>เวลานัดหมาย</p>
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Appointment State
+                  <p>สถานะการนัดหมาย</p>
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium  uppercase tracking-wider">Working Status
+                  <p>ความคืบหน้าในการทำงาน</p>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

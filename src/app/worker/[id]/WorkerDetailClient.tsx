@@ -1,3 +1,4 @@
+// src/app/worker/[id]/WorkerDetailClient.tsx
 'use client'; 
 
 import Image from 'next/image';
@@ -7,6 +8,8 @@ import { format, parseISO, isSameDay } from 'date-fns';
 import { createBooking } from '@/lib/actions';
 import { FaTwitter, FaInstagram, FaFacebook, FaMapMarkerAlt } from 'react-icons/fa';
 import { HiH2 } from 'react-icons/hi2';
+import { getOrCreateChatRoom } from '@/lib/actions';
+import { FaComments } from 'react-icons/fa'; // 聊天圖標
 
 // --- 接口定義 ---
 interface Profile {
@@ -144,166 +147,104 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
   };
 
   const leftPanelStyle = {
-    width: windowWidth >= 1024 ? '33.333%' : '100%'
+    width: windowWidth >= 1024 ? '35%' : '100%'
   };
 
   const rightPanelStyle = {
-    width: windowWidth >= 1024 ? '66.667%' : '100%'
+    width: windowWidth >= 1024 ? '65%' : '100%'
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 text-gray-800 max-w-[1200px]">
+    <div className="container mx-auto max-w-[1200px] py-[20px]">
       <div style={layoutStyle}>
         
         
         <div style={leftPanelStyle}>
-          
-          {worker.photo_urls && worker.photo_urls.length > 0 && (
-            <div>
-              
-              <div className="flex flex-col items-center">
-                <div className="carousel w-full max-w-[450px] rounded-box mx-[10px] my-[10px]">
-                  {worker.photo_urls.map((url: string, index: number) => (
-                    <div 
-                      key={url} 
-                      id={`slide${index + 1}`} 
-                      className="carousel-item relative w-full"
-                    >
-                      <div className="relative w-full aspect-[3/4] max-h-[600px]">
-                        <Image
-                          src={url}
-                          alt={`Photo ${index + 1} of the worker`}
-                          fill
-                          sizes="450px"
-                          className="object-cover"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-center w-full max-w-[500px] py-2 gap-2">
-                  {worker.photo_urls.map((url: string, index: number) => (
-                    <a 
-                      key={`button-${url}`} 
-                      href={`#slide${index + 1}`} 
-                      className="btn btn-xs"
-                    >
-                      {index + 1}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          
-          {worker.video_urls && worker.video_urls.length > 0 && (
-            <div>
-              
-              <div className="grid grid-cols-1 gap-6 justify-items-center my-[10px]">
-                {worker.video_urls.map((url: string) => (
-                  <div 
-                    key={url} 
-                    className="
-                      shadow-md
-                      overflow-hidden
-                      w-full
-                      max-w-[450px]
-                      max-h-[600px]
-                      aspect-[3/4]
-                      flex items-center justify-center
-                    "
-                    style={{
-                      backgroundColor: 'white',
-                      borderRadius: '0.5rem'
-                    }}
-                  >
-                    <video 
-                      src={url} 
-                      controls 
-                      preload="metadata" 
-                      className="
-                        w-full
-                        h-full
-                        object-cover
-                      " 
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        
-        <div style={rightPanelStyle}>
-         
-<div className='flex flex-wrap justify-center gap-6 text-[var(--foreground)]' data-theme="mytheme">
+<div className='flex flex-wrap justify-center gap-[10px] text-[var(--foreground)]' data-theme="mytheme">
 
 
-<div className="card bg-primary w-[300px] mx-[10px] my-[10px] text-center mb-12">
-  <div className="card-body">
-    <h1 className="card-title">Name</h1>
-    <h2>{worker.nickname}</h2>
+<div className="card bg-primary text-start w-full">
+  <div className="flex flex-col gap-[10px] p-[24px]">
+    <h3>{worker.nickname}</h3>
+<ul className="list-none pl-0">
+{worker.years && <li>Age: {worker.years} Y</li>}
+{shop && shop.slug && shop.name && (
+  <li>
+    Team: <Link 
+            href={`/shops/${shop.slug}`}
+            className='text-[var(--foreground)]'
+          >{shop.name}
+          </Link>
+  </li>
+)}
+<li>District:{fullAddress}</li>
+<li>Address:{worker.address_detail}</li>
+<li>Tags:{worker.tags?.map(tag => <span key={tag}>{tag}</span>)}</li>
+</ul>
+
+{/* --- (*** 這是新添加的聊天按鈕 ***) --- */}
+<form action={getOrCreateChatRoom.bind(null, worker.id)}>
+  <button 
+    type="submit" 
+    className="btn flex items-center mx-auto" 
+  >
+    <FaComments />
+    <span>Chat with {worker.nickname}</span>
+  </button>
+</form>
+
+
   </div>
 </div>
-<div className="card bg-primary  w-[300px] mx-[10px] my-[10px] text-center mb-12">
-  <div className="card-body">
-    <h1 className="card-title">Age</h1>
-    {worker.years && <h2> {worker.years} Y</h2>}
-  </div>
-</div>
-<div className="card bg-primary  w-[300px] mx-[10px] my-[10px] text-center mb-12">
-  <div className="card-body">
-    <h1 className="card-title">Work In</h1>
-      {shop && (
-    <h2>
-      <Link href={`/shops/${shop.slug}`}>{shop.name}</Link>
-    </h2>
-  )}
-  </div>
-</div>
-<div className="card bg-primary w-[300px] mx-[10px] my-[10px] text-center mb-12">
-  <div className="card-body">
-    <h1 className="card-title">Building</h1>
-    <h2>{worker.address_detail}</h2>
-  </div>
-</div>
-{fullAddress && (
-<div className="card bg-primary  w-[620px] mx-[10px] my-[10px] text-center mb-12">
-  <div className="card-body">
-    <h1 className="card-title">District</h1>
-    <h2> {fullAddress}</h2> 
-  </div>
-</div>
-  )}
-<div className="card bg-primary w-[620px] mx-[10px] my-[10px] text-center mb-12">
-  <div className="card-body">
-    <h1 className="card-title">Bio</h1>
-    <h2>{worker.bio}</h2>
-    <div>
-    {socialLinks.facebook && <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer"><FaFacebook /></a>}
-    {socialLinks.instagram && <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer"><FaInstagram /></a>}
-    {socialLinks.twitter && <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer"><FaTwitter /></a>}
-  </div>
-  </div>
-</div>
-<div className="card bg-primary w-[620px] mx-[10px] my-[10px] text-center mb-12">
-  <div className="card-body">
-    <h1 className="card-title">Tags</h1>
-    <h2>{worker.tags?.map(tag => <span key={tag}>{tag}</span>)}</h2> 
-  </div>
-</ div>
 
-  
+<div className="card bg-primary w-full text-start">
+  <div className="card-body">
 
-</div>
+    <p>Bio:{worker.bio}</p>
+<div  className="flex items-center gap-[10px]">
 
 
+    {socialLinks.facebook && (
+      <a 
+        href={socialLinks.facebook} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-[var(--foreground)] hover:text-[var(--color-third)] transition-colors"
+      >
 
+        <FaFacebook size={24} />
+      </a>
+    )}
+
+    {socialLinks.instagram && (
+      <a 
+        href={socialLinks.instagram} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-[var(--foreground)] hover:text-[var(--color-third)] transition-colors"
+      >
+
+        <FaInstagram size={24} />
+      </a>
+    )}
+
+    {socialLinks.twitter && (
+      <a 
+        href={socialLinks.twitter} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-[var(--foreground)] hover:text-[var(--color-third)]  transition-colors"
+      >
+
+        <FaTwitter size={24} />
+      </a>
+    )}
+    </div>
+  </div>
+</div>
 
 {/* 服务列表 */}
-<ul className="menu bg-base-200 rounded-box w-[610px] flex flex-wrap justify-center gap-6 mx-auto">
+<ul className="menu bg-base-200 rounded-box w-full flex flex-wrap justify-center gap-[10px] mx-auto text-[var(--color-secondary)]">
   <li className="menu-title">Service List</li>
   <li>
     {services.map(service => (
@@ -318,9 +259,11 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
         }}
         style={{ cursor: 'pointer' }}
       >
-        <h3 className="w-[100px]">{service.name}</h3>
+        <div  className="w-[250px]">
+        <h3>{service.name}</h3>
         <p>{service.description}</p>
-        <div className="w-[100px]">
+        </div>
+        <div className="w-[120px]">
           <p>Time: {service.duration_value} {service.duration_unit}</p>
           <p>{service.price} THB</p>
         </div>
@@ -328,6 +271,13 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
     ))}
   </li>
 </ul>
+
+</div>
+
+
+
+
+
 
 {/* 预约对话框 */}
 <dialog id="booking_modal" className="modal">
@@ -356,7 +306,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
               key={date} 
               onClick={() => setSelectedDate(date)}
               className={`btn ${
-                selectedDate === date ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+                selectedDate === date ? 'btn-warning' : 'btn-neutral'
               }`}
             >
               {format(parseISO(date), 'MMM dd, yyyy')}
@@ -449,6 +399,90 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
     </div>
   </div>
 </dialog>
+
+        </div>
+
+        
+        <div style={rightPanelStyle}>
+
+
+
+
+                   {worker.photo_urls && worker.photo_urls.length > 0 && (
+            <div className="">
+              
+              <div className="flex flex-col items-center ">
+                <div className="carousel w-full rounded-box">
+                  {worker.photo_urls.map((url: string, index: number) => (
+                    <div 
+                      key={url} 
+                      id={`slide${index + 1}`} 
+                      className="carousel-item relative w-full"
+                    >
+                      <div className="relative w-full aspect-[3/4] max-h-full">
+                        <Image
+                          src={url}
+                          alt={`Photo ${index + 1} of the worker`}
+                          fill
+                          sizes="min-[500px]:max-w-[450px] min-[1200px]:max-w-full"
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-center w-full max-w-[500px] py-2 gap-2">
+                  {worker.photo_urls.map((url: string, index: number) => (
+                    <a 
+                      key={`button-${url}`} 
+                      href={`#slide${index + 1}`} 
+                      className="btn btn-xs"
+                    >
+                      {index + 1}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          
+          {worker.video_urls && worker.video_urls.length > 0 && (
+            <div>
+              
+              <div className="grid grid-cols-1 gap-6 justify-items-center my-[10px]">
+                {worker.video_urls.map((url: string) => (
+                  <div 
+                    key={url} 
+                    className="
+                      shadow-md
+                      overflow-hidden
+                      w-full
+                      mix-w-[450px]
+                      mix-h-[600px]
+                      aspect-[3/4]
+                      flex items-center justify-center
+                    "
+                    style={{
+                      backgroundColor: 'white',
+                      borderRadius: '0.5rem'
+                    }}
+                  >
+                    <video 
+                      src={url} 
+                      controls 
+                      preload="metadata" 
+                      className="
+                        w-full
+                        h-full
+                        object-cover
+                      " 
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
 
         </div>

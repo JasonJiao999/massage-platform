@@ -127,7 +127,9 @@ export default function WorkerSearchClient({
       <div>
         {initialWorkers.length > 0 ? (
           // 核心修改：使用 flex 和 flex-wrap 来实现横向排列和自动换行
-          <div className="flex flex-wrap justify-center gap-6">
+          <div className="flex flex-wrap justify-center max-w-[1200px] mx-auto">
+            <div className='card w-full min-[500px]:max-w-[400px] min-[1200px]:max-w-[1200px] '>
+            <div className='flex flex-wrap justify-start gap-[10px]'>
             {initialWorkers.map(worker => (
               <WorkerCard 
                 key={worker.id} 
@@ -136,6 +138,8 @@ export default function WorkerSearchClient({
                 isFavorited={favoritesSet.has(worker.id)} 
               />
             ))}
+            </div>
+            </div>
           </div>
         ) : (
           <div className="text-center py-16">

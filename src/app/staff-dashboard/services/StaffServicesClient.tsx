@@ -43,25 +43,25 @@ function CreateServiceForm() {
         <form ref={formRef} action={dispatch} className="card bg-primary max-w-[1150px] mx-auto gap-4r p-[24px] text-[var(--foreground)]">
             <h3 className="text-lg font-semibold">Creating a New Service</h3>
             <div>
-                <label htmlFor="name" className="block text-sm font-medium">Service Name</label>
+                <label htmlFor="name" className="block text-sm font-medium">Service Name(ชื่อบริการ เช่น นวด ดูหนัง หรือดื่มกาแฟ)</label>
                 <input type="text" id="name" name="name" required className="input m-[10px] w-[95%]" />
             </div>
             <div>
-                <label htmlFor="description" className="block text-sm font-medium">Service Description</label>
+                <label htmlFor="description" className="block text-sm font-medium">Service Description(การแนะนำเนื้อหาบริการ)</label>
                 <textarea id="description" name="description" rows={3} className="textarea m-[10px] h-[150px] w-[95%]"></textarea>
             </div>
             <div className="flex flex-wrap gap-4">
 
                   <div className="flex-1 min-w-[200px]">
-                    <label htmlFor="price" className="block text-sm font-medium">Price(THB)</label>
+                    <label htmlFor="price" className="block text-sm font-medium">Price(ราคา THB)</label>
                     <input type="number" id="price" name="price" required step="0.01" className="input m-[10px] h-[42px] max-w-[80%]" />
                   </div>
                     <div className="flex-1 min-w-[200px]">
-                        <label htmlFor="duration_value" className="block text-sm font-medium">Duration value</label>
+                        <label htmlFor="duration_value" className="block text-sm font-medium">Duration value(ชั่วโมงทำงาน)</label>
                         <input type="number" id="duration_value" name="duration_value" required className="input m-[10px] h-[42px] max-w-[80%]" />
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                        <label htmlFor="duration_unit" className="block text-sm font-medium">Time unit</label>
+                        <label htmlFor="duration_unit" className="block text-sm font-medium">Time unit(หน่วยเวลา)</label>
                         <select id="duration_unit" name="duration_unit" required className="select m-[10px] h-[42px] max-w-[80%] text-[var(--color-secondary)]">
                             <option value="minutes">Minute</option>
                             <option value="hours">Hour</option>
@@ -69,7 +69,7 @@ function CreateServiceForm() {
                         </select>
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                <label htmlFor="type" className="block text-sm font-medium">Create My Category</label>
+                <label htmlFor="type" className="block text-sm font-medium">Category(ประเภทบริการ)</label>
                 <input type="text" id="type" name="type" className="input m-[10px] h-[42px] max-w-[80%]" />
                      </div>
                 

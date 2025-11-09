@@ -31,8 +31,8 @@ const PromoBanner = ({ banner }: { banner: { url: string; name: string | null } 
   return (
     // 使用 fixed positioning 將橫幅固定在視窗底部
     // h-28 md:h-32 的高度對應 body 上的 pb-28 md:pb-32 padding
-    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] min-w-[470px] h-[200px] z-50">
-
+<div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] z-50 p-[10px]">
+  <div className="relative aspect-[1200/200]">
 <Image
         src={banner.url}
         alt={banner.name || "Promotional Banner"}
@@ -42,6 +42,8 @@ const PromoBanner = ({ banner }: { banner: { url: string; name: string | null } 
         priority
       />
     </div>
+    </div>
+
   );
 };
 

@@ -9,10 +9,12 @@ export default function FavoriteButton({
   workerProfileId,
   isInitiallyFavorited,
   isLoggedIn, // 1. 新增一个 prop 来判断用户是否登录
+  className,
 }: {
   workerProfileId: string;
   isInitiallyFavorited: boolean;
   isLoggedIn: boolean; // 1. 新增 prop 类型
+  className?: string;
 }) {
   const [isPending, startTransition] = useTransition();
   const [isFavorited, setIsFavorited] = useState(isInitiallyFavorited);
@@ -21,7 +23,7 @@ export default function FavoriteButton({
   const handleClick = () => {
     // 如果用户未登录，弹出提示并立即返回
     if (!isLoggedIn) {
-      alert('无法收藏，请注册');
+      alert('Unable to click, please register.');
       return;
     }
 
@@ -43,17 +45,17 @@ export default function FavoriteButton({
 <button
       onClick={handleClick}
       disabled={isPending}
-      // 保持 40x40px 尺寸，并居中内部元素
-      className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
-      aria-label={isFavorited ? '取消收藏' : '添加收藏'}
+      className={`flex items-center justify-center card bg-[var(--color-secondary)]  ${className || ''}`}
+      aria-label={isFavorited ? 'Dislike' : 'Like'}
+      
     >
-      {/* 【核心修复】: 移除父级 div 和 fill, 添加 width 和 height */}
+      {/* 【核心修复】: 移除父级 div 和 fill, 添加 width 和 height   bg-[var(--color-secondary)] */}
       <Image
         src={isFavorited ? '/icons/heart-solid.svg' : '/icons/heart-outline.svg'}
-        alt="收藏图标"
+        alt="Like"
         width={24} // 明确指定宽度 (24px)
         height={24} // 明确指定高度 (24px)
-        className={isFavorited ? 'text-red-500' : 'text-gray-400'}
+        className={`${isFavorited ? 'text-red-500' : 'text-gray-400'} `}
       />
     </button>
   );

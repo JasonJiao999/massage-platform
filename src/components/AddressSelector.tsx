@@ -141,11 +141,11 @@ export default function AddressSelector({
 
   // JSX 渲染部分
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[var(--color-secondary)]">
       {/* 省份选择 */}
       <div>
-        <label htmlFor="province" className="block text-sm font-medium  mb-2">
-          Province
+        <label htmlFor="province" className="block text-sm font-medium  mb-2 text-[var(--foreground)]">
+          Province(จังหวัดหรือเมือง)
         </label>
         <select
           id="province"
@@ -164,8 +164,8 @@ export default function AddressSelector({
 
       {/* 市/区选择 */}
       <div>
-        <label htmlFor="district" className="block text-sm font-medium  mb-2">
-          District
+        <label htmlFor="district" className="block text-sm font-medium  mb-2 text-[var(--foreground)]">
+          District(เขต)
         </label>
         <select
           id="district"
@@ -185,15 +185,15 @@ export default function AddressSelector({
 
       {/* 分区选择 */}
       <div>
-        <label htmlFor="sub_district" className="block text-sm font-medium mb-2">
-          Sub-district
+        <label htmlFor="sub_district" className="block text-sm font-medium mb-2 text-[var(--foreground)]">
+          Sub-district(ตำบล)
         </label>
         <select
           id="sub_district"
           value={selectedSubDistrict}
           onChange={(e) => handleSubDistrictChange(e.target.value)}
           disabled={!selectedDistrict || isPending}
-          className="select m-[10px] w-[94%] text-[var(--foreground)]"
+          className="select m-[10px] w-[94%] "
         >
           <option value="">Select Sub-district</option>
           {subDistricts.map((sd) => (

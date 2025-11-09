@@ -5,7 +5,7 @@ import { useFormState, useFormStatus } from 'react-dom';
 import Image from 'next/image';
 import {
   updateMyProfile,
-  updateAvatar,
+  updateQrUrl,
   uploadMultipleMyProfilePhotos,
   deleteMyProfilePhoto,
   uploadMultipleMyProfileVideos,
@@ -13,14 +13,25 @@ import {
 } from '@/lib/actions';
 import { useState, useRef, useEffect } from 'react';
 import AddressSelector from './AddressSelector';
-import { FaTwitter, FaInstagram, FaFacebook, FaLine,FaTiktok } from 'react-icons/fa';
+import { 
+  FaTwitter, 
+  FaInstagram, 
+  FaFacebook, 
+  FaLine,
+  FaTiktok,
+  FaImages,         // <-- 新增
+  FaMapMarkedAlt    // <-- 新增
+} from 'react-icons/fa';
+import { deleteQrUrl } from '@/lib/actions'; 
 
 // 定义完整的 Profile 类型
 type Profile = {
   id: string;
   nickname: string | null;
   bio: string | null;
-  avatar_url: string | null;
+  qr_url: string[] | null;         
+  gender: string | null;         
+  nationality: string | null;  
   photo_urls: string[] | null;
   video_urls: string[] | null;
   years: number | null;
@@ -32,6 +43,8 @@ type Profile = {
   province_id: number | null;
   district_id: number | null;
   sub_district_id: number | null;
+  points: number | null;         // <-- (积分)
+  referral_code: string | null;  // <-- (推荐码)
 };
 
 // 通用提交按钮
@@ -44,15 +57,109 @@ function SubmitButton({ text }: { text: string }) {
   );
 }
 
+
+// (*** 用這個完整、已修復的函數替換你舊的 ImageUploader 函數 ***)
+
+function ImageUploader({ 
+  currentQrUrl, 
+  formAction, 
+  formRef, 
+  fieldName, 
+  profileId,
+  qrUrlState // <-- (1. 在 props 解構中接收它)
+}: {
+  currentQrUrl?: string | null;
+  formAction: (formData: FormData) => void;
+  formRef: React.RefObject<HTMLFormElement>;
+  fieldName: string;
+  profileId: string;
+  qrUrlState: { success: boolean; message: string; url?: string }; // <-- (2. 在類型定義中聲明它)
+}) {
+  const [preview, setPreview] = useState<string | null>(currentQrUrl ?? null);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // (*** 3. 將 useEffect 放在這裡，在所有 Hook 之後 ***)
+  useEffect(() => {
+    // 如果父組件的 useFormState 狀態變為 'success: true'
+    if (qrUrlState.success) {
+      setFile(null); // <-- 重置 React 狀態
+      setPreview(currentQrUrl ?? null); // 重置預覽
+    }
+    // 我們只在 'qrUrlState' 變化時運行此 effect
+  }, [qrUrlState, currentQrUrl]); // <-- 依賴項是 qrUrlState
+
+
+  // (*** 4. 常規函數定義 ***)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+  };
+
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  
+  // (*** 5. JSX return 語句 ***)
+  return (
+    <form action={formAction} ref={formRef} className="flex flex-col items-center gap-4">
+      
+      {/* 隐藏的 file input，由按钮触发 */}
+      <input
+        type="file"
+        name={fieldName}
+        accept="image/png, image/jpeg, image/webp"
+        onChange={handleFileChange}
+        ref={fileInputRef}
+        className="hidden" 
+      />
+      <input type="hidden" name="profileId" value={profileId} />
+      
+      {/* 3. 新增：可见的“选择文件”按钮 */}
+      {!file && (
+          <button 
+            type="button" 
+            onClick={triggerFileSelect} 
+            className="btn" // 使用你的 'btn' 样式
+          >
+            Choose QR Code
+          </button>
+      )}
+
+      {/* 4. 确认和上传 */}
+      {/* 当文件被选中时，显示文件名和“上传”按钮 */}
+      {file && (
+        <div className='flex flex-col items-center gap-2'>
+          <span className="text-gray-300">已選擇: {file.name}</span>
+          {/* (注意: 確保 SubmitButton 組件已導入) */}
+          <SubmitButton text="Upload QR Code" /> 
+        </div>
+      )}
+    </form>
+  );
+}
+
+
+
 // 主组件
 export function MyProfileForm({ profile }: { profile: Profile }) {
   // 状态管理：个人资料更新
   const [profileState, profileDispatch] = useFormState(updateMyProfile, { message: '', success: false });
   const formRef = useRef<HTMLFormElement>(null);
 
-  // 状态管理：头像上传
-  const [avatarState, avatarFormAction] = useFormState(updateAvatar, { success: false, message: '', url: '' });
-  const avatarFormRef = useRef<HTMLFormElement>(null);
+// 状态管理：QR Code 上传 (*** 修复点 1：重命名变量 ***)
+  const [qrUrlState, qrUrlFormAction] = useFormState(updateQrUrl, { success: false, message: '', url: '' });
+  const qrUrlFormRef = useRef<HTMLFormElement>(null);
+  const MAX_QR_CODES = 3;
+  const currentQrCount = profile.qr_url?.length || 0;
 
   // 状态管理：照片上传
   const [photosState, photosFormAction] = useFormState(uploadMultipleMyProfilePhotos, { success: false, message: '' });
@@ -97,14 +204,15 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
     }
   }, [profileState]);
 
+// (*** 修复点 2：更新 useEffect 以使用新变量名 ***)
   useEffect(() => {
-    if (avatarState.message) {
-        alert(avatarState.message);
-        if (avatarState.success) {
-            avatarFormRef.current?.reset(); // 成功后清空文件输入框
+    if (qrUrlState.message) {
+        alert(qrUrlState.message);
+        if (qrUrlState.success) {
+            qrUrlFormRef.current?.reset(); // 成功后清空文件输入框
         }
     }
-  }, [avatarState]);
+  }, [qrUrlState]); // 依赖项也更新为 qrUrlState
 
   useEffect(() => {
     if (photosState.message) {
@@ -120,7 +228,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
   const featuresString = profile.feature?.join(', ') || '';
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-[1200px]">
       {/* 个人资料表单 */}
 <form 
   ref={formRef} 
@@ -137,7 +245,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
       <h3 className="text-xl font-semibold mb-4">My Profile</h3>
       <div className="space-y-4">
         <div>
-          <label htmlFor="nickname" className="block text-sm font-medium  mb-2">Nickname</label>
+          <label htmlFor="nickname" className="block text-sm font-medium  mb-2">Nickname(ชื่อเล่น)</label>
           <input 
             type="text" 
             id="nickname" 
@@ -147,7 +255,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
           />
         </div>
         <div>
-          <label htmlFor="years" className="block text-sm font-medium  mb-2">Age</label>
+          <label htmlFor="years" className="block text-sm font-medium  mb-2">Age(อายุ)</label>
           <input 
             type="number" 
             id="years" 
@@ -157,10 +265,50 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
           />
         </div>
       </div>
+<div>
+      <label htmlFor="gender" className="block text-sm font-medium mb-2">Gender(เพศ)</label>
+      <select 
+        id="gender" 
+        name="gender" 
+        defaultValue={profile.gender ?? ''}
+        className="select m-[10px] w-[90%] text-[var(--color-secondary)]"
+      >
+        <option value="">Choose...</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+        <option value="prefer_not_to_say">Prefer not to say</option>
+      </select>
+    </div>
+
+    {/* --- 新增：Nationality (下拉选择) --- */}
+    <div>
+      <label htmlFor="nationality" className="block text-sm font-medium mb-2">Nationality(สัญชาติ)</label>
+      <select 
+        id="nationality" 
+        name="nationality" 
+        defaultValue={profile.nationality ?? ''}
+        className="select m-[10px] w-[90%] text-[var(--color-secondary)]"
+      >
+        <option value="">Choose...</option>
+        <option value="Thailand">Thailand</option>
+        <option value="Laos">Laos</option>
+        <option value="Cambodia">Cambodia</option>
+        <option value="Vietnam">Vietnam</option>
+        <option value="Myanmar">Myanmar</option>
+        <option value="Europe">Europe</option>
+        <option value="North America">North America</option>
+        <option value="South America">South America</option>
+        <option value="Africa">Africa</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    
 
       <div className="space-y-4">
         <div>
-          <label htmlFor="tags" className="block text-sm font-medium  mb-2">Tags (separate with commas)</label>
+          <label htmlFor="tags" className="block text-sm font-medium  mb-2">Tags (สามลักษณะคั่นด้วยเครื่องหมายจุลภาค เช่น รูปร่างดี)</label>
           <input 
             type="text" 
             id="tags" 
@@ -171,7 +319,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
           />
         </div>
         <div>
-          <label htmlFor="feature" className="block text-sm font-medium  mb-2">Features (separate with commas)</label>
+          <label htmlFor="feature" className="block text-sm font-medium  mb-2">Features (ประเภทบริการ เช่น นวด)</label>
           <input 
             type="text" 
             id="feature" 
@@ -185,8 +333,8 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
     </div>
 
 <div className="card bg-primary flex-1 min-w-[300px] w-[450px] p-[24px] m-[10px]">
-  <h3 className="text-xl font-semibold  mb-4">Social Media Links</h3>
-      <label htmlFor="bio" className="block text-sm font-medium text-gray-300 mb-2">Bio</label>
+  <h3 className="text-xl font-semibold  mb-4">Personal Profile</h3>
+      <label htmlFor="bio" className="block text-sm font-medium mb-2">Bio(โปรไฟล์ส่วนตัว)</label>
       <textarea 
         id="bio" 
         name="bio" 
@@ -194,6 +342,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
         defaultValue={profile.bio ?? ''} 
         className="textarea m-[10px] h-[70%] w-[90%]"
       ></textarea>
+      
 </div>
 
 </div>
@@ -254,6 +403,33 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
         className="input m-[10px] w-[85%]"
       />
     </div>
+{/* --- 這是新添加的：Google Photos --- */}
+<div>
+  <FaImages className="text-2xl mr-3 flex-shrink-0" />
+  <input 
+    type="url" 
+    id="social_google_photos" 
+    name="social_google_photos" 
+    defaultValue={profile.social_links?.google_photos ?? ''} 
+    className="input m-[10px] w-[85%]"
+    placeholder="https://photos.app.goo.gl/..."
+  />
+</div>
+
+{/* --- 這是新添加的：Google Maps --- */}
+<div>
+  <FaMapMarkedAlt className="text-2xl mr-3 flex-shrink-0" />
+  <input 
+    type="url" 
+    id="social_google_maps" 
+    name="social_google_maps" 
+    defaultValue={profile.social_links?.google_maps ?? ''} 
+    className="input m-[10px] w-[85%]"
+    placeholder="https://maps.app.goo.gl/..."
+  />
+</div>
+
+
   </div>
 </div>
 
@@ -263,7 +439,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
       <div className="space-y-4">
         <div>
           <label htmlFor="address_detail" className="block text-sm font-medium  mb-2">
-            Building Name
+            Building Name(ที่อยู่ที่ทำงาน)
           </label>
           <input 
             id="address_detail" 
@@ -285,20 +461,70 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
   </div>
 
 </form>
+<div className="card bg-primary text-[var(--foreground)] pt-[10px] pb-[20px] m-[10px]">
+{/* --- 這是「QR 碼管理」的完整卡片 (已更新，帶有 3 個限制) --- */}
+  <div className="flex flex-col min-[800px]:flex-row gap-[10px] w-full h-full">
+    <div className="flex flex-col text-center flex-1 min-w-[300px] md:min-w-0">
+      {currentQrCount < MAX_QR_CODES ? (
+        <>
+          <h3 className="text-xl font-semibold mb-[50px]">Upload New QR Code ({MAX_QR_CODES - currentQrCount} remaining)</h3>
+          <ImageUploader
+            formAction={qrUrlFormAction} 
+            formRef={qrUrlFormRef}       
+            fieldName="qr_url"
+            profileId={profile.id}
+            qrUrlState={qrUrlState}
+          />
+          <div className="divider my-6"></div>
+        </>
+      ) : (
 
-      {/* 头像上传表单 
-      <div className="p-6 bg-gray-800 rounded-lg shadow-md space-y-4">
-        <h3 className="text-xl font-bold text-white">头像</h3>
-        <div className="flex items-center space-x-4">
-          <Image src={profile.avatar_url || '/default-avatar.png'} alt="Avatar" width={80} height={80} className="rounded-full" />
-          <form ref={avatarFormRef} action={avatarFormAction}>
-            <input type="file" name="avatar" accept="image/*" required className="text-sm" />
-            <SubmitButton text="上传头像" />
-          </form>
+        <div className="mb-6 text-center">
+          <p className="font-bold">Maximum QR Codes Reached</p>
+          <p className="text-sm">Please delete an old QR code to upload a new one.</p>
         </div>
+      )}
+</div>
+    <div className="flex flex-col text-center flex-1 min-w-[300px] md:min-w-0">
+      <h3 className="text-xl font-semibold mb-4">Current QR Codes ({currentQrCount}/{MAX_QR_CODES})</h3>
+      <div className="flex flex-wrap justify-center gap-[20px]">
+        
+
+        {profile.qr_url && profile.qr_url.length > 0 ? (
+          profile.qr_url.map((qrUrl: string, index: number) => (
+            <div key={index} className="relative flex justify-center ">
+              <Image
+                src={qrUrl}
+                alt={`QR Code ${index + 1}`}
+                width={120}
+                height={120}
+                className="card object-cover rounded-md"
+              />
+              
+       
+              <form action={deleteQrUrl.bind(null, qrUrl)}>
+                <button 
+                  type="submit"
+                  className="absolute bottom-0  -translate-x-1/2 btn btn-xs"
+                  aria-label="Delete QR Code"
+                >
+                  &times;
+                </button>
+              </form>
+
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-400">No QR Codes uploaded yet.</p>
+        )}
       </div>
-      */}
-      
+</div>
+    </div>
+    {/* --- 卡片結束 --- */}
+</div>
+
+
+
       {/* 照片库管理 */}
       <div className="p-6 bg-gray-800 rounded-lg shadow-md space-y-4">
 
@@ -340,7 +566,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
         className="card w-full h-full object-cover rounded-lg "
       />
       <form action={deleteMyProfilePhoto.bind(null, url)} className="absolute top-[20px] right-[20px]">
-        <button type="submit" className="p-1 bg-red-600 text-white rounded-full opacity-75 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center text-sm">&times;</button>
+        <button type="submit" className="btn btn-xs">&times;</button>
       </form>
     </div>
   ))}
@@ -348,7 +574,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
 
 
 
-      </div>
+</div>
 
       {/* 视频库管理 */}
       <div className="p-6 bg-gray-800 rounded-lg shadow-md space-y-4">

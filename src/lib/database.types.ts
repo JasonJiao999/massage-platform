@@ -189,6 +189,71 @@ export type Database = {
           },
         ]
       }
+      chat_rooms: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_rooms_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_rooms_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cities_admin: {
+        Row: {
+          id: number
+          location_id: number
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          id?: number
+          location_id: number
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          id?: number
+          location_id?: number
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cities_admin_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_logs: {
         Row: {
           created_at: string
@@ -299,80 +364,263 @@ export type Database = {
           },
         ]
       }
+      img_admin: {
+        Row: {
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string | null
+          url: string
+        }
+        Insert: {
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string | null
+          url: string
+        }
+        Update: {
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          id: number
+          level: number
+          name_en: string
+          parent_id: number | null
+          postcode: string | null
+        }
+        Insert: {
+          id?: number
+          level: number
+          name_en: string
+          parent_id?: number | null
+          postcode?: string | null
+        }
+        Update: {
+          id?: number
+          level?: number
+          name_en?: string
+          parent_id?: number | null
+          postcode?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locations_admin: {
+        Row: {
+          id: number
+          location_id: number | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          id?: number
+          location_id?: number | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          id?: number
+          location_id?: number | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_admin_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          chat_room_id: string
+          content: string
+          created_at: string
+          id: number
+          sender_id: string
+        }
+        Insert: {
+          chat_room_id: string
+          content: string
+          created_at?: string
+          id?: number
+          sender_id: string
+        }
+        Update: {
+          chat_room_id?: string
+          content?: string
+          created_at?: string
+          id?: number
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_chat_room_id_fkey"
+            columns: ["chat_room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
-          avatar_url: string | null
+          acc_active: boolean
+          address_detail: string | null
           bio: string | null
-          contribution_score: number
           created_at: string
-          daily_points_cache: number
+          district_id: number | null
           email: string | null
           feature: string[] | null
           full_name: string | null
+          gender: Database["public"]["Enums"]["gender_enum"] | null
           id: string
           is_active: boolean | null
           last_point_gain_at: string | null
           level: number
           monthly_cancellation_count: number
+          nationality:
+            | Database["public"]["Enums"]["nationality_region_enum"]
+            | null
           nickname: string | null
           photo_urls: string[] | null
-          profiles: string | null
+          points: number
+          province_id: number | null
+          qr_url: string | null
           referral_code: string | null
+          referred_by: string | null
           role: string | null
           social_links: Json | null
+          sub_district_id: number | null
           tags: string[] | null
+          tel: string | null
           video_urls: string[] | null
           years: number | null
         }
         Insert: {
-          avatar_url?: string | null
+          acc_active?: boolean
+          address_detail?: string | null
           bio?: string | null
-          contribution_score?: number
           created_at?: string
-          daily_points_cache?: number
+          district_id?: number | null
           email?: string | null
           feature?: string[] | null
           full_name?: string | null
+          gender?: Database["public"]["Enums"]["gender_enum"] | null
           id: string
           is_active?: boolean | null
           last_point_gain_at?: string | null
           level?: number
           monthly_cancellation_count?: number
+          nationality?:
+            | Database["public"]["Enums"]["nationality_region_enum"]
+            | null
           nickname?: string | null
           photo_urls?: string[] | null
-          profiles?: string | null
+          points?: number
+          province_id?: number | null
+          qr_url?: string | null
           referral_code?: string | null
+          referred_by?: string | null
           role?: string | null
           social_links?: Json | null
+          sub_district_id?: number | null
           tags?: string[] | null
+          tel?: string | null
           video_urls?: string[] | null
           years?: number | null
         }
         Update: {
-          avatar_url?: string | null
+          acc_active?: boolean
+          address_detail?: string | null
           bio?: string | null
-          contribution_score?: number
           created_at?: string
-          daily_points_cache?: number
+          district_id?: number | null
           email?: string | null
           feature?: string[] | null
           full_name?: string | null
+          gender?: Database["public"]["Enums"]["gender_enum"] | null
           id?: string
           is_active?: boolean | null
           last_point_gain_at?: string | null
           level?: number
           monthly_cancellation_count?: number
+          nationality?:
+            | Database["public"]["Enums"]["nationality_region_enum"]
+            | null
           nickname?: string | null
           photo_urls?: string[] | null
-          profiles?: string | null
+          points?: number
+          province_id?: number | null
+          qr_url?: string | null
           referral_code?: string | null
+          referred_by?: string | null
           role?: string | null
           social_links?: Json | null
+          sub_district_id?: number | null
           tags?: string[] | null
+          tel?: string | null
           video_urls?: string[] | null
           years?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_sub_district_id_fkey"
+            columns: ["sub_district_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referrals: {
         Row: {
@@ -751,48 +999,57 @@ export type Database = {
       }
       shops: {
         Row: {
-          address: string | null
+          address_detail: string | null
           badges: string[] | null
           category_L1_id: string | null
           created_at: string
           description: string | null
+          district_id: number | null
           id: string
           is_active: boolean | null
           name: string | null
           owner_id: string | null
           phone_number: string | null
+          province_id: number | null
           slug: string | null
           social_links: Json | null
+          sub_district_id: number | null
           tags: string[] | null
         }
         Insert: {
-          address?: string | null
+          address_detail?: string | null
           badges?: string[] | null
           category_L1_id?: string | null
           created_at?: string
           description?: string | null
+          district_id?: number | null
           id?: string
           is_active?: boolean | null
           name?: string | null
           owner_id?: string | null
           phone_number?: string | null
+          province_id?: number | null
           slug?: string | null
           social_links?: Json | null
+          sub_district_id?: number | null
           tags?: string[] | null
         }
         Update: {
-          address?: string | null
+          address_detail?: string | null
           badges?: string[] | null
           category_L1_id?: string | null
           created_at?: string
           description?: string | null
+          district_id?: number | null
           id?: string
           is_active?: boolean | null
           name?: string | null
           owner_id?: string | null
           phone_number?: string | null
+          province_id?: number | null
           slug?: string | null
           social_links?: Json | null
+          sub_district_id?: number | null
           tags?: string[] | null
         }
         Relationships: [
@@ -804,10 +1061,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "shops_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shops_owner_id_fkey1"
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shops_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shops_sub_district_id_fkey"
+            columns: ["sub_district_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
             referencedColumns: ["id"]
           },
         ]
@@ -851,45 +1129,138 @@ export type Database = {
           },
         ]
       }
+      tags_admin: {
+        Row: {
+          id: number
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          id?: number
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          id?: number
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      add_contribution_points: {
+      add_contribution_point: {
         Args: {
-          booking_ref_id?: string
-          details?: string
+          booking_ref_id: number
+          details: string
           points_to_add: number
           reason: string
           target_user_id: string
         }
         Returns: undefined
       }
+      add_points_and_level_up: {
+        Args: { points_to_add: number; user_id: string }
+        Returns: undefined
+      }
       check_booking_conflict: {
         Args: { end_t: string; start_t: string; worker_id: string }
         Returns: boolean
       }
-      check_bookings_in_rule: {
-        Args: { rule_id: string }
-        Returns: number
+      check_bookings_in_rule: { Args: { rule_id: string }; Returns: number }
+      delete_old_chat_rooms: { Args: never; Returns: undefined }
+      generate_referral_code: { Args: never; Returns: string }
+      get_dashboard_stats: {
+        Args: { p_worker_profile_id: string }
+        Returns: {
+          cancelled_by_customer_count: number
+          completed_bookings_count: number
+          this_month_revenue: number
+          today_bookings_count: number
+          today_revenue: number
+          tomorrow_bookings_count: number
+        }[]
+      }
+      get_merchant_dashboard_stats: {
+        Args: { p_owner_id: string }
+        Returns: {
+          team_member_count: number
+          this_month_cancelled_bookings: number
+          this_month_completed_bookings: number
+          this_month_team_revenue: number
+          today_team_bookings_count: number
+          today_team_revenue: number
+          tomorrow_team_bookings_count: number
+        }[]
+      }
+      get_popular_tags: {
+        Args: { limit_count: number }
+        Returns: {
+          count: number
+          tag: string
+        }[]
       }
       increment_monthly_cancellation_count: {
         Args: { user_id_to_update: string }
         Returns: undefined
       }
       is_shop_owner: {
-        Args:
-          | { shop_id_to_check: string }
-          | { shop_id_to_check: string; user_id_to_check: string }
+        Args: { shop_id_to_check: string; user_id_to_check: string }
         Returns: boolean
       }
-      reset_all_cancellation_counts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      reset_all_cancellation_counts: { Args: never; Returns: undefined }
+      search_workers: {
+        Args: {
+          area_filter_id?: number
+          city_filter_id?: number
+          page_num?: number
+          page_size?: number
+          search_term?: string
+        }
+        Returns: {
+          address_detail: string
+          avatar_url: string
+          bio: string
+          created_at: string
+          district_id: number
+          district_name: string
+          feature: string[]
+          id: string
+          is_active: boolean
+          level: number
+          nickname: string
+          photo_urls: string[]
+          province_id: number
+          province_name: string
+          social_links: Json
+          sub_district_id: number
+          sub_district_name: string
+          tags: string[]
+          years: number
+        }[]
       }
+      search_workers_count: {
+        Args: {
+          area_filter_id?: number
+          city_filter_id?: number
+          search_term?: string
+        }
+        Returns: number
+      }
+      update_past_bookings_status: { Args: never; Returns: undefined }
     }
     Enums: {
+      asset_type:
+        | "logo"
+        | "promo_video"
+        | "promo_image"
+        | "promo_banner"
+        | "pm_guest"
+        | "pm_merchants"
+        | "pm_worker"
       booking_status:
         | "confirmed"
         | "in_progress"
@@ -897,6 +1268,18 @@ export type Database = {
         | "cancelled_by_customer"
         | "cancelled_by_worker"
         | "no_show"
+      gender_enum: "male" | "female" | "other" | "prefer_not_to_say"
+      nationality_region_enum:
+        | "Thailand"
+        | "Laos"
+        | "Cambodia"
+        | "Vietnam"
+        | "Myanmar"
+        | "Europe"
+        | "North America"
+        | "South America"
+        | "Africa"
+        | "Other"
       override_type: "unavailable" | "available"
     }
     CompositeTypes: {
@@ -1025,6 +1408,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      asset_type: [
+        "logo",
+        "promo_video",
+        "promo_image",
+        "promo_banner",
+        "pm_guest",
+        "pm_merchants",
+        "pm_worker",
+      ],
       booking_status: [
         "confirmed",
         "in_progress",
@@ -1032,6 +1424,19 @@ export const Constants = {
         "cancelled_by_customer",
         "cancelled_by_worker",
         "no_show",
+      ],
+      gender_enum: ["male", "female", "other", "prefer_not_to_say"],
+      nationality_region_enum: [
+        "Thailand",
+        "Laos",
+        "Cambodia",
+        "Vietnam",
+        "Myanmar",
+        "Europe",
+        "North America",
+        "South America",
+        "Africa",
+        "Other",
       ],
       override_type: ["unavailable", "available"],
     },

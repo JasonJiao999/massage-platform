@@ -44,7 +44,7 @@ export default function MediaUploadForm() {
       </div>
 
       <div>
-        <label htmlFor="asset_type" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="asset_type" className="block text-sm font-medium ">
           图片類型
         </label>
         <select
@@ -57,11 +57,14 @@ export default function MediaUploadForm() {
           <option value="promo_banner">推廣橫幅 (Promo Banner)</option>
           <option value="promo_image">推廣圖片 (Promo Image)</option>
           <option value="promo_video">推廣視頻 (Promo Video)</option>
+          <option value="pm_guest">访客页广告</option>
+          <option value="pm_merchants">商户页广告</option>
+          <option value="pm_worker">工作者页广告</option>
         </select>
       </div>
 
       <div>
-        <label htmlFor="file" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="file" className="block text-sm font-medium ">
           選擇文件
         </label>
         <input

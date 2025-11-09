@@ -63,6 +63,7 @@ export default async function ProfilePage() {
               <ToggleActiveStatusButton isActive={profile.is_active ?? true} />
           </div>
           <p className="text-xs mt-2">When you switch to "Resting", customers will not be able to make reservations on your profile.</p>
+          <p>(เมื่อคุณสลับเป็น "พักผ่อน" ลูกค้าจะไม่สามารถทำการจองบนโปรไฟล์ของคุณได้)</p>
       </div>
 
       <MyProfileForm profile={profile} />
@@ -71,15 +72,17 @@ export default async function ProfilePage() {
         <h2 className="text-xl font-semibold mb-4">Partner Relationship Management</h2>
         {isInShop ? (
           <div>
-            <p className="mb-4 text-gray-700">
-              You and “<span className="font-bold text-blue-600">{shopName}</span>” are partners.
+            <p className="mb-4 ">
+              You and “<span className="font-bold">{shopName}</span>” are partners.(คุณและ “<span className="font-bold">{shopName}</span>” เป็นหุ้นส่วนกัน)
             </p>
-            <p>If you want to end the partnership, you will become an independent worker.</p>
+            <p>If you want to end the partnership, you will become an independent worker.(หากคุณต้องการยุติความร่วมมือ คุณจะกลายเป็นคนงานอิสระ)</p>
+
+
             <LeaveShopButton />
           </div>
         ) : (
           <div>
-            <p className="mb-4 text-gray-700">You are currently a freeman</p>
+            <p className="mb-4 text-gray-700">You are currently a freeman.(ตอนนี้คุณเป็นผู้ประกอบอาชีพอิสระแล้ว)</p>
             <JoinShopForm />
           </div>
         )}

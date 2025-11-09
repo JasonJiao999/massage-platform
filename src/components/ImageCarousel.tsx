@@ -49,11 +49,11 @@ export default function ImageCarousel({ images }: ImageCarouselProps) {
       {/* --- 核心修改 START --- */}
       {/* 文字浮层 (已修复垂直居中) */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center bg-black/30 p-4">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-white shadow-lg">
-          Looking for beautiful girls
+        <h1 className="text-4xl md:text-5xl font-extrabold text-white shadow-lg"> {/* --- 主标题--- */}
+           
         </h1>
-        <p className="mt-4 text-lg text-gray-200 max-w-2xl mx-auto">
-          Filter by service, region, experience, and more to find the professional services that best suit your needs.
+        <p className="mt-4 text-lg text-gray-200 max-w-2xl mx-auto">  {/* --- 副标题 --- */}
+          
         </p>
       </div>
       {/* --- 核心修改 END --- */}

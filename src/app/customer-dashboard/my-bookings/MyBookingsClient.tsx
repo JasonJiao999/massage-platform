@@ -15,7 +15,7 @@ type Booking = {
   status: string;
   price_at_booking: number;
   services: { name: string | null; duration_value: number | null; duration_unit: string | null; } | null;
-  worker: { nickname: string | null; avatar_url: string | null; } | null;
+  worker: { nickname: string | null; qr_url: string | null; } | null;
   shops: { name: string | null; slug: string | null; } | null;
 };
 
@@ -26,9 +26,9 @@ function CancelButton() {
         <button 
             type="submit" 
             disabled={pending} 
-            className="text-xs font-medium text-red-600 hover:underline disabled:text-gray-400 disabled:no-underline"
+            className="btn"
         >
-            {pending ? '处理中...' : '取消预约'}
+            {pending ? 'Processing...' : 'Cancel'}
         </button>
     );
 }
@@ -43,40 +43,37 @@ function BookingCard({ booking }: { booking: Booking }) {
   const formatTime = (date: Date) => date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 
   const translateUnit = (unit: string | null) => {
-    if (unit === 'minutes') return '分钟';
-    if (unit === 'hours') return '小时';
+    if (unit === 'minutes') return 'minutes';
+    if (unit === 'hours') return 'hours';
     return '';
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-md border overflow-hidden ${isPast ? 'opacity-70' : ''}`}>
-      <div className="p-5">
+    <div className={`rounded-lg  overflow-hidden ${isPast ? 'opacity-70' : ''}`}>
+      <div className="card bg-[var(--color-third)] p-[24px] text-[var(--color-secondary)] w-[340px] h-[400px]">
         <div className="flex justify-between items-start mb-3">
-          <h3 className="text-xl font-bold text-gray-800">{booking.services?.name || '未知服务'}</h3>
-          <span className="text-lg font-semibold text-green-600">¥{booking.price_at_booking}</span>
+          <h3 className="text-xl font-bold">{booking.services?.name || 'Unknown'}</h3>
+
         </div>
         
-        <div className="space-y-3 text-sm text-gray-600">
-          <p><strong>日期:</strong> {formatDate(startTime)}</p>
-          <p><strong>时间:</strong> {formatTime(startTime)} - {formatTime(new Date(booking.end_time))}</p>
-          <p><strong>时长:</strong> {booking.services?.duration_value} {translateUnit(booking.services?.duration_unit ?? null)}</p>
-          <p><strong>状态:</strong> <span className="font-medium text-blue-600">{booking.status}</span></p>
+        <div className="space-y-3 text-sm">
+          <p><strong>Fee:</strong>{booking.price_at_booking} THB</p>
+          <p><strong>Date:</strong> {formatDate(startTime)}</p>
+          <p><strong>Time:</strong> {formatTime(startTime)} - {formatTime(new Date(booking.end_time))}</p>
+          <p><strong>Duration:</strong> {booking.services?.duration_value} {translateUnit(booking.services?.duration_unit ?? null)}</p>
+          <p><strong>State:</strong> <span className="font-medium ">{booking.status}</span></p>
+          <p><strong>Worker:</strong>{booking.worker?.nickname || 'Unknown worker'}</p>
+
         </div>
 
         <div className="border-t mt-4 pt-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image
-              src={booking.worker?.avatar_url || '/default-avatar.png'}
-              alt={booking.worker?.nickname || '技师'}
-              width={40}
-              height={40}
-              className="rounded-full object-cover"
-            />
-            <div>
-              <p className="font-semibold text-gray-800">{booking.worker?.nickname || '未知技师'}</p>
-              {booking.shops && (
-                <Link href={`/shops/${booking.shops.slug}`} className="text-xs text-blue-500 hover:underline">
-                  {booking.shops.name || '未知店铺'}
+ 
+            <div className='my-[15px]'>
+              Team:
+            {booking.shops && (
+                <Link href={`/shops/${booking.shops.slug}`} className="">
+                  {booking.shops.name || 'Unknown team'}
                 </Link>
               )}
             </div>
@@ -113,24 +110,30 @@ export default function MyBookingsClient({ bookings }: { bookings: Booking[] }) 
   }, [bookings]);
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">我的预约</h1>
-        <section>
-          <h2 className="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2">未来的预约</h2>
+    <main className=" h-screen">
+      <div className="flex-1 min-w-[300px] max-w-[1200px] m-[10px] mx-auto">
+        <h1 className="text-3xl md:text-4xl font-bold  ">My Booking</h1>
+        <h2 className="card bg-primary text-[var(--foreground)] p-[24px]">Future Bookings</h2>
+        <section className="my-[10px] w-full flex justify-center">
+          <div className='card w-full min-[500px]:max-w-[390px] min-[1200px]:max-w-[1200px]'>
           {upcomingBookings.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-wrap justify-start gap-[18px]">
               {upcomingBookings.map(booking => <BookingCard key={booking.id} booking={booking} />)}
             </div>
-          ) : <p className="text-gray-500">您当前没有未来的预约。</p>}
+          ) : <p className="font-semibold p-[24px]">You currently have no future bookings.</p>}
+          </div>
         </section>
-        <section className="mt-12">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2">历史预约</h2>
+
+        <h2 className="card bg-primary text-[var(--foreground)] p-[24px] ">Record</h2>
+        <section className="w-full flex justify-center">
+          <div className='card w-full min-[500px]:max-w-[390px] min-[1200px]:max-w-[1200px]'>
+
           {pastBookings.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-wrap justify-start gap-[18px]">
               {pastBookings.map(booking => <BookingCard key={booking.id} booking={booking} />)}
             </div>
-          ) : <p className="text-gray-500">您还没有历史预约记录。</p>}
+          ) : <p className="font-semibold p-[24px]">You have not recorded anything.</p>}
+          </div>
         </section>
       </div>
     </main>

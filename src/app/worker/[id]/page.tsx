@@ -9,7 +9,7 @@ import WorkerDetailClient from './WorkerDetailClient';
 // (接口定義 TimeRange 保持不變)
 interface TimeRange { start: Date; end: Date; }
 
-// (generateAvailability 函數保持不變，因為它已經正常工作)
+
 async function generateAvailability(
   workerId: string,
   serviceDuration: number,
@@ -17,7 +17,7 @@ async function generateAvailability(
 ) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
-  // ... 此函數內部所有邏輯保持不變 ...
+ 
   const availability: { [key: string]: { start: string; end: string }[] } = {};
   const today = startOfDay(new Date());
   const endDate = addDays(today, daysToCheck);

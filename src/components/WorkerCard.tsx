@@ -8,7 +8,7 @@ import FavoriteButton from './FavoriteButton';
 type Worker = {
   id: string;
   nickname: string | null;
-  avatar_url: string | null;
+  qr_url: string | null;
   photo_urls: string[] | null;
   years: number | null;
   tags: string[] | null;
@@ -25,11 +25,11 @@ interface WorkerCardProps {
 // 增强版本 - 更明确的样式控制
 // WorkerCard.tsx - 强样式版本
 export default function WorkerCard({ worker, isLoggedIn, isFavorited }: WorkerCardProps) {
-  const cardImage = worker.photo_urls?.[0] || worker.avatar_url || '/default-avatar.png';
+  const cardImage = worker.photo_urls?.[0] || worker.qr_url || '/default-qr.png';
 
   return (
     <div 
-      className="relative w-[280px] bg-white rounded-lg shadow-md overflow-hidden flex flex-col m-[10px]"
+      className="card w-full bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-[500px]:max-w-[400px] min-[1200px]:max-w-[280px]"
       style={{
         backgroundColor: 'white',
         borderRadius: '10px',

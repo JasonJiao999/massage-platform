@@ -32,7 +32,7 @@ export default async function MyBookingsPage() {
       ),
       worker:profiles!bookings_worker_profile_id_fkey (
         nickname,
-        avatar_url
+        qr_url
       ),
       shops (
         name,
@@ -44,7 +44,7 @@ export default async function MyBookingsPage() {
 
   if (error) {
     console.error('Error fetching bookings:', error);
-    return <p className="p-8 text-red-500">加载预约信息时出错，请稍后再试。</p>;
+    return <p className="p-8 text-red-500">An error occurred while loading appointment information. Please try again later.</p>;
   }
 
   const transformedBookings = bookings.map(booking => ({

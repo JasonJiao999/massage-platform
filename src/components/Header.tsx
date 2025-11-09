@@ -148,10 +148,10 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
           </div>
 
           {/* 5. 修改移動端漢堡菜單區域 */}
-          <div className="md:hidden relative" ref={mobileMenuRef}>
+          <div className="md:hidden relative bg-white" ref={mobileMenuRef}>
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)} 
-              className="mx-[20px] rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className="btn btn-square mx-[20px] hover:text-gray-900 hover:bg-gray-100"
             >
               <span className="sr-only">Open menu</span>
               

@@ -48,31 +48,31 @@ function CreateRuleForm() {
     const weekDays = [{val: 1, label: 'Mon'}, {val: 2, label: 'Tue'}, {val: 3, label: 'Wed'}, {val: 4, label: 'Thu'}, {val: 5, label: 'Fri'}, {val: 6, label: 'Sat'}, {val: 7, label: 'Sun'}];
     return (
         <form action={dispatch} className="card bg-primary flex-1 min-w-[300px] w-full max-w-[500px] p-[24px] m-[10px] text-[var(--foreground)]">
-            <h3 className="text-lg font-semibold">1. Create a Long-term Plan</h3>
+            <h3 className="text-lg font-semibold">1. Create a Long-term Plan(แผนระยะยาว)</h3>
    
 <div className="flex flex-wrap ">
     <div className="flex-1 min-w-[150px]">
-        <label htmlFor="start_date" className="block text-sm font-medium">Start Date</label>
+        <label htmlFor="start_date" className="block text-sm font-medium">Start Date(วันที่เริ่มต้น)</label>
         <input type="date" id="start_date" name="start_date" required className="input m-[10px] w-[100px]" />
     </div>
     <div className="flex-1 min-w-[150px]">
-        <label htmlFor="end_date" className="block text-sm font-medium">End Date</label>
+        <label htmlFor="end_date" className="block text-sm font-medium">End Date(วันที่สิ้นสุด)</label>
         <input type="date" id="end_date" name="end_date" required className="input m-[10px] w-[100px]" />
     </div>
 </div>
 <div className="flex flex-wrap ">
     <div className="flex-1 min-w-[150px]">
-        <label htmlFor="start_time" className="block text-sm font-medium">Start Time</label>
+        <label htmlFor="start_time" className="block text-sm font-medium">Start Time(เวลาเริ่มต้น)</label>
         <input type="time" id="start_time" name="start_time" required className="input m-[10px] w-[100px]" />
     </div>
     <div className="flex-1 min-w-[150px]">
-        <label htmlFor="end_time" className="block text-sm font-medium">End Time</label>
+        <label htmlFor="end_time" className="block text-sm font-medium">End Time(เวลาสิ้นสุด)</label>
         <input type="time" id="end_time" name="end_time" required className="input m-[10px] w-[100px]" />
     </div>
 </div>  
 
             <div>
-                <label className="block text-sm font-medium">Repeat Week</label>
+                <label className="block text-sm font-medium">Repeat Week(กำหนดวันทำงานรายสัปดาห์)</label>
                 <div className="mt-2 flex gap-2 flex-wrap">
                     {weekDays.map(day => (
                         <label key={day.val} className="flex items-center gap-1 text-sm">
@@ -94,15 +94,16 @@ function CreateOverrideForm() {
     return (
         <form action={dispatch} className="card bg-primary flex-1 min-w-[300px] w-full max-w-[500px] p-[24px] m-[10px] text-[var(--foreground)]">
             <h3 className="text-lg font-semibold">2. Set Holidays/Overtime</h3>
+            <p>(กำหนดวันพักผ่อน/วันล่วงเวลา)</p>
             <div>
-                <label htmlFor="override_date" className="block text-sm font-medium">Select Date</label>
+                <label htmlFor="override_date" className="block text-sm font-medium">Select Date(เลือกวันที่)</label>
                 <input type="date" id="override_date" name="override_date" required className="input mx-auto my-[10px] w-[150px]" />
             </div>
             <div>
-                <label className="block text-sm font-medium">Type</label>
+                <label className="block text-sm font-medium">Type(พิมพ์)</label>
                 <div className="mt-2 flex gap-4 my-[10px]">
-                    <label className="flex items-center gap-1 m-[10px]"><input type="radio" name="type" value="unavailable" checked={type === 'unavailable'} onChange={() => setType('unavailable')} />Holiday</label>
-                    <label className="flex items-center gap-1 m-[10px]"><input type="radio" name="type" value="available" checked={type === 'available'} onChange={() => setType('available')} /> Overtime</label>
+                    <label className="flex items-center gap-1 m-[10px]"><input type="radio" name="type" value="unavailable" checked={type === 'unavailable'} onChange={() => setType('unavailable')} />Holiday(วันพักผ่อน)</label>
+                    <label className="flex items-center gap-1 m-[10px]"><input type="radio" name="type" value="available" checked={type === 'available'} onChange={() => setType('available')} /> Overtime(วันล่วงเวลา)</label>
                 </div>
             </div>
             {type === 'available' && (

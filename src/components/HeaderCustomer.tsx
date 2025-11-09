@@ -6,14 +6,16 @@ import { usePathname } from 'next/navigation';
 export default function HeaderCustomer() {
   const pathname = usePathname();
   const navLinks = [
-    { name: '我的預約', href: '/customer-dashboard/my-bookings' },
-    { name: '我的信息', href: '/customer-dashboard/profile' },
+    { name: 'Favorites', href: '/customer-dashboard/' },
+    { name: 'Messages', href: '/customer-dashboard/messages' },
+    { name: 'Booking', href: '/customer-dashboard/my-bookings' },
+
   ];
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+    <div className="w-[1200px] mx-auto gap-[10px] my-[10px] flex items-center ">
       {navLinks.map((link) => (
         <Link key={link.name} href={link.href} className={`block p-4 rounded-lg shadow-sm transition-all ${pathname.startsWith(link.href) ? 'bg-indigo-600 text-white' : 'bg-white hover:bg-gray-50'}`}>
-          <h3 className="font-bold">{link.name}</h3>
+          <h3 className="btn">{link.name}</h3>
         </Link>
       ))}
     </div>

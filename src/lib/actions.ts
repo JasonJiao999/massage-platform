@@ -82,17 +82,28 @@ export async function updateMyProfile(prevState: any, formData: FormData) {
   // 注意：我们不再从表单获取 level，因为用户不能修改它
   const tags = formData.get('tags') as string;
   const feature = formData.get('feature') as string;
-  
   const address_detail = formData.get('address_detail') as string;
   const province_id = formData.get('province_id') ? Number(formData.get('province_id')) : null;
   const district_id = formData.get('district_id') ? Number(formData.get('district_id')) : null;
   const sub_district_id = formData.get('sub_district_id') ? Number(formData.get('sub_district_id')) : null;
-  
+  const genderValue = formData.get('gender') as string;
+  const nationalityValue = formData.get('nationality') as string;
+
+  // 將 "" (空字符串) 轉換為你指定的默認值
+  const gender = genderValue === "" ? 'female' : genderValue;
+  const nationality = nationalityValue === "" ? 'Thailand' : nationalityValue;
+
   // 2. 组装 social_links JSON 对象
   const socialLinks = {
     twitter: formData.get('social_twitter') as string,
     instagram: formData.get('social_instagram') as string,
     facebook: formData.get('social_facebook') as string,
+    line: formData.get('social_line') as string, 
+    tiktok: formData.get('social_tiktok') as string,
+    google_photos: formData.get('social_google_photos') as string,
+    google_maps: formData.get('social_google_maps') as string,
+    wechat: formData.get('social_wechat') as string,
+    whatsapp: formData.get('social_whatsapp') as string,
   };
 
   // 3. 将字符串转换为数组
@@ -104,7 +115,8 @@ export async function updateMyProfile(prevState: any, formData: FormData) {
       nickname,
       bio,
       years,
-      // 【核心修改】将用户已有的 level 值重新提交，以满足 NOT NULL 约束
+      gender: gender,
+      nationality: nationality,   
       level: profile.level, 
       tags: tagsArray,
       feature: featureArray,
@@ -127,7 +139,7 @@ export async function updateMyProfile(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/staff-dashboard/profile');
-  return { message: 'Successfully updated!', success: true };
+  return { message: 'Successfully updated!', success: true, url: '...' };
 }
 
 
@@ -1357,40 +1369,66 @@ export async function removeFavoriteWorker(workerProfileId: string) {
 }
 
 
-/**
- * 顾客更新自己的基础信息 (姓名和联系方式)
- */
+
+
+
+// (你可能還需要 getUserAndProfile 輔助函數)
+//import { getUserAndProfile } from '@/utils/supabase/getUserAndProfile';
+
+
 export async function updateCustomerProfile(prevState: any, formData: FormData) {
   'use server';
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
+  // 1. 身份驗證 (使用 getUserAndProfile 會更安全，但我們先用 getUser)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, message: 'User is not logged in.' };
 
+  // 2. 獲取「客戶」表單中的所有字段
   const fullName = formData.get('full_name') as string;
-  // 【核心修改】: 从表单中获取 bio 字段
   const bio = formData.get('bio') as string;
+  const tel = formData.get('tel') as string;
+  const gender = formData.get('gender') as string;
+  const nationality = formData.get('nationality') as string;
 
   if (!fullName) {
-    return { success: false, message: 'Name cannot be empty.' };
+    return { success: false, message: 'Name (full_name) cannot be empty.' };
   }
 
-  // 【核心修改】: 在 update 方法中同时更新 full_name 和 bio
+  // 3. (*** 這是關鍵修復 ***)
+  // 组装 social_links JSON 对象 (包含客戶的所有字段)
+  const socialLinks = {
+    line: formData.get('social_line') as string, 
+    wechat: formData.get('social_wechat') as string,
+    whatsapp: formData.get('social_whatsapp') as string,
+    google_maps: formData.get('social_google_maps') as string,
+  };
+
+  // 4. 组装更新对象
+  const profileUpdateData = { 
+      full_name: fullName,
+      bio: bio,
+      tel: tel,
+      gender: gender,
+      nationality: nationality,
+      social_links: socialLinks,
+      // (我們不更新 level, tags, feature 等字段)
+  };
+
+  // 5. 更新 profiles 表
   const { error } = await supabase
     .from('profiles')
-    .update({ 
-      full_name: fullName,
-      bio: bio 
-    })
-    .eq('id', user.id);
+    .update(profileUpdateData) // <-- 使用包含所有數據的對象
+    .eq('id', user.id); 
 
   if (error) {
+    console.error("Error updating customer profile:", error);
     return { success: false, message: `Update Failed: ${error.message}` };
   }
 
-  revalidatePath('/dashboard/profile');
-  revalidatePath('/dashboard');
+  // 6. 重新驗證正確的儀表板路徑
+  revalidatePath('/customer-dashboard/profile'); // <-- 確保這是客戶的個人資料路徑
   return { success: true, message: 'Updated successfully!' };
 }
 
@@ -1471,37 +1509,159 @@ async function processAndUploadImage(supabase: any, file: File, bucket: string, 
   return publicUrl;
 }
 
-// --- 更新头像 ---
-export async function updateAvatar(prevState: any, formData: FormData) {
+// --- QR - 包含 3 個的限制)
+
+export async function updateQrUrl(prevState: any, formData: FormData) {
   'use server';
-  const supabase = createClient(cookies());
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 身份驗證並獲取*當前*的 QR 碼數組
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, message: 'Authentication required.' };
-
-  const avatarFile = formData.get('avatar') as File;
-  if (!avatarFile || avatarFile.size === 0) {
-    return { success: false, message: 'No file provided.' };
+  if (!user) {
+    return { success: false, message: 'User not logged in' };
   }
 
-  try {
-    const avatarUrl = await processAndUploadImage(supabase, avatarFile, 'avatars', user.id);
-    
-    // 更新 profiles 表中的 avatar_url
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: avatarUrl })
-      .eq('id', user.id);
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('qr_url') 
+    .eq('id', user.id)
+    .single();
 
-    if (updateError) throw updateError;
-
-    revalidatePath('/staff-dashboard/profile');
-    return { success: true, message: '头像已成功更新！', url: avatarUrl };
-  } catch (error: any) {
-    return { success: false, message: error.message };
+  if (profileError) {
+    console.error('Fetch Profile Error:', profileError);
+    return { success: false, message: `Could not fetch profile: ${profileError.message}` };
   }
+
+  // (*** 這是你的新功能：檢查限制 ***)
+  const MAX_QR_CODES = 3; // 設置你的限制
+  const existingQrUrls: string[] = profile.qr_url || [];
+
+  if (existingQrUrls.length >= MAX_QR_CODES) {
+    return { 
+      success: false, 
+      message: `Upload failed: You have reached the maximum limit of ${MAX_QR_CODES} QR codes.` 
+    };
+  }
+  // (*** 檢查結束 ***)
+
+
+  // 2. 獲取文件 (不變)
+  const file = formData.get('qr_url') as File; 
+  if (!file || file.size === 0) {
+    return { success: false, message: 'No file selected' };
+  }
+
+  // 3. 上傳新文件 (不變)
+  const fileExt = file.name.split('.').pop();
+  const filePath = `${user.id}/qr-${new Date().getTime()}.${fileExt}`;
+  
+  const { error: uploadError } = await supabase.storage
+    .from('web-media')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    console.error('Upload Error:', uploadError);
+    return { success: false, message: uploadError.message };
+  }
+
+  // 4. 獲取新文件的公共 URL (不變)
+  const { data: publicUrlData } = supabase.storage
+    .from('web-media')
+    .getPublicUrl(filePath);
+
+  if (!publicUrlData.publicUrl) {
+    return { success: false, message: 'Failed to get public URL' };
+  }
+  
+  const newUrl = publicUrlData.publicUrl;
+
+  // 5. 附加數組 (使用我們已獲取的 'existingQrUrls')
+  const newQrUrls = [...existingQrUrls, newUrl];
+
+  // 6. 更新 'qr_url' 字段 (不變)
+  const { error: dbError } = await supabase
+    .from('profiles')
+    .update({ qr_url: newQrUrls })
+    .eq('id', user.id);
+
+  if (dbError) {
+    console.error('DB Update Error:', dbError);
+    return { success: false, message: dbError.message };
+  }
+
+  revalidatePath('/staff-dashboard/profile');
+  return { success: true, message: 'QR Code added successfully!', url: newUrl }; 
 }
 
+// (已修復的 deleteQrUrl 函數)
 
+export async function deleteQrUrl(urlToDelete: string) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 身份驗證
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    console.error('Delete QR Error: User not logged in');
+    return; // <-- 返回 void
+  }
+
+  // 2. 獲取當前的 QR 碼數組
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('qr_url')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError) {
+    console.error('Fetch Profile Error:', profileError);
+    return; // <-- 返回 void
+  }
+
+  const oldQrUrls: string[] = profile.qr_url || [];
+
+  // 3. 過濾掉要刪除的 URL
+  const newQrUrls = oldQrUrls.filter(url => url !== urlToDelete);
+
+  // 4. 更新 'profiles' 表中的數組
+  const { error: dbError } = await supabase
+    .from('profiles')
+    .update({ qr_url: newQrUrls })
+    .eq('id', user.id);
+
+  if (dbError) {
+    console.error('DB Update Error:', dbError);
+    return; // <-- 返回 void
+  }
+
+  // 5. (重要!) 從 Supabase Storage 中刪除文件
+  try {
+    const bucketName = 'web-media'; // 確保這是你的存儲桶名稱
+    const urlObject = new URL(urlToDelete);
+    const filePath = urlObject.pathname.split(`/${bucketName}/`)[1];
+
+    if (filePath) {
+      const { error: storageError } = await supabase.storage
+        .from(bucketName)
+        .remove([filePath]); 
+
+      if (storageError) {
+        throw new Error(storageError.message);
+      }
+    } else {
+      throw new Error(`Could not parse filePath from URL: ${urlToDelete}`);
+    }
+  } catch (error: any) {
+    console.warn(`DB updated, but failed to delete file: ${error.message}`);
+    // 即使存儲刪除失敗，我們仍然繼續執行 revalidate
+  }
+
+  // 6. 成功 (只 revalidate，不 return)
+  revalidatePath('/staff-dashboard/profile'); // 觸發頁面刷新
+  // (沒有 return 語句)
+}
 
 export async function uploadMultipleMyProfilePhotos(prevState: any, formData: FormData) {
   'use server';
@@ -1570,9 +1730,14 @@ export async function uploadMultipleMyProfilePhotos(prevState: any, formData: Fo
 
 
 
+/**
+ * 預約服務 (已升級版本)
+ * - 允許 'freeman' (shop_id 為 null) 被預約
+ * - 根據客戶 'level' 限制活躍預約數量
+ */
 export async function createBooking(
   serviceId: string,
-  bookingDate: string,
+  bookingDate: string, // 注意：您的舊函數並未使用此參數，但為保持簽名一致而保留
   startTime: string
 ) {
   'use server';
@@ -1581,51 +1746,100 @@ export async function createBooking(
   const supabase = createClient(cookieStore);
 
   // 1. 身份验证
-  const { user, profile } = await getUserAndProfile(supabase); // 假设此函数在本文件定义
-  if (profile.role !== 'customer') {
-    throw new Error('Only customers can book the service.');
+  // 假設 getUserAndProfile 會返回 'level' 字段
+  const { user, profile } = await getUserAndProfile(supabase);
+  if (!user || !profile) {
+    return { success: false, message: 'Authentication required. Please log in.' };
   }
-  // ... (其他权限检查)
+  if (profile.role !== 'customer') {
+    return { success: false, message: 'Only customers can book the service.' };
+  }
 
-  // 2. 验证服务信息
+  //
+  // *** 2. 【新增功能】：檢查預約限制 ***
+  //
+  
+  // 假設 profile 對象中包含了 'level' 字段
+  const customerLevel = profile.level || 0; // 如果 level 為 null，則默認為 0
+  
+  let bookingLimit: number;
+
+  if (customerLevel > 10) {
+    // 級別大於 10，限制 3 次
+    bookingLimit = 1000;
+  } else {
+    // 級別小於等於 10 (包括 10)，限制 1 次
+    bookingLimit = 100;
+  }
+
+  // 查詢客戶當前 "活躍" 的預約數
+  // (定義 "活躍" 為：狀態為 confirmed 且尚未開始的預約)
+  const now = new Date().toISOString();
+  
+  const { count, error: countError } = await supabase
+    .from('bookings') //
+    .select('*', { count: 'exact', head: true })
+    .eq('customer_id', user.id)
+    .eq('status', 'confirmed') // 只計算 'confirmed' 的預約
+    .gt('start_time', now);     // 只計算 'future' (尚未開始) 的預約
+
+  if (countError) {
+    console.error('Error counting customer bookings:', countError.message);
+    return { success: false, message: `Could not verify booking limit: ${countError.message}` };
+  }
+
+  // 檢查是否達到限制
+  if (count !== null && count >= bookingLimit) {
+    return { 
+      success: false, 
+      message: `Booking limit reached. Your level (${customerLevel}) allows ${bookingLimit} active booking(s). You currently have ${count}.` 
+    };
+  }
+
+  //
+  // *** 檢查結束，繼續執行原有邏輯 ***
+  //
+
+  // 3. 验证服务信息 (使用 Admin Client)
   const supabaseAdmin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
   const { data: service, error: serviceError } = await supabaseAdmin
-    .from('services')
+    .from('services') //
     .select('*, owner_id, duration_value, price')
     .eq('id', serviceId)
     .single();
 
   if (serviceError || !service) {
-    throw new Error('The specified service was not found.');
+    return { success: false, message: 'The specified service was not found.' };
   }
 
-  // 3. 根据技师ID查询店铺ID (shop_id)
+  // 4. 查詢店鋪ID (允許 freeman)
   const workerId = service.owner_id;
   const { data: staffInfo, error: staffError } = await supabaseAdmin
-    .from('staff')
+    .from('staff') //
     .select('shop_id')
     .eq('user_id', workerId)
     .single();
 
-  if (staffError || !staffInfo) {
-    console.error(`Cannot find worker_id: ${workerId} The corresponding team information.`);
-    throw new Error('The worker team cannot be determined.');
+  // PGRST116 是 "未找到" 的代碼，我們忽略它
+  if (staffError && staffError.code !== 'PGRST116') {
+    console.error(`Error checking staff table for worker ${workerId}:`, staffError.message);
   }
-  const shopId = staffInfo.shop_id;
+  
+  const shopId = staffInfo ? staffInfo.shop_id : null;
 
-  // 4. 计算时间并创建预约
+  // 5. 计算时间并创建预约
   const bookingStartTime = parseISO(startTime);
   const bookingEndTime = addMinutes(bookingStartTime, service.duration_value);
 
+  // 6. 插入數據到 'bookings' 表
   const { error: insertError } = await supabase
-    .from('bookings')
+    .from('bookings') //
     .insert({
       service_id: serviceId,
       customer_id: user.id,
-      // 【核心修复】: 将 'worker_id' 修正为 'worker_profile_id'
       worker_profile_id: workerId,
       shop_id: shopId,
       start_time: bookingStartTime.toISOString(),
@@ -1639,6 +1853,10 @@ export async function createBooking(
     console.error('Appointment creation failed:', insertError);
     return { success: false, message: `Appointment creation failed: ${insertError.message}` };
   }
+
+  // 7. 預約成功，清除緩存
+  revalidatePath(`/worker/${workerId}`); ///page.tsx]
+  revalidatePath('/customer-dashboard/my-bookings'); //
 
   return { success: true, message: `Reservation successful!` };
 }
@@ -1789,6 +2007,7 @@ export async function toggleShopStatus(shopId: string, currentStatus: boolean) {
 // Action 2: 更新店鋪的完整信息
 export async function updateShopDetails(formData: FormData) {
   'use server';
+  console.log('ACTION: updateShopDetails triggered.');
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
@@ -1796,6 +2015,7 @@ export async function updateShopDetails(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
   if (profile?.role !== 'admin') {
+    console.warn('ACTION: Insufficient permissions.');
     return { success: false, message: 'Insufficient permissions.' };
   }
 
@@ -1812,16 +2032,17 @@ export async function updateShopDetails(formData: FormData) {
     description: rawData.description,
     // ... 其他您允許管理員修改的字段
   };
-
+console.log('ACTION: Attempting to update shop:', shopId, 'with data:', shopDataToUpdate);
   const { error } = await supabase
     .from('shops')
     .update(shopDataToUpdate)
     .eq('id', shopId);
 
   if (error) {
+    console.error('ACTION: Supabase update error:', error.message);
     return { success: false, message: `Information update failed: ${error.message}` };
   }
-
+console.log('ACTION: Update successful.');
   revalidatePath(`/admin/shops/${shopId}/edit`); // 刷新當前編輯頁
   revalidatePath('/admin/shops'); // 同時刷新列表頁
   return { success: true, message: 'The information has been successfully updated!' };
@@ -1931,7 +2152,7 @@ export async function updateUserDetails(formData: FormData) {
     role: formData.get('role'),
     email: formData.get('email'),
     phone: formData.get('phone'),
-    avatar_url: formData.get('avatar_url'),
+    qr_url: formData.get('qr_url'),
     // 處理布爾值 (checkbox)
     is_active: formData.get('is_active') === 'on',
     acc_active: formData.get('acc_active') === 'on',
@@ -1999,4 +2220,64 @@ export async function setActiveBanner(bannerId: string) {
   revalidatePath('/', 'layout');
 
   return { success: true, message: 'Promotion banner updated successfully!' };
+}
+
+
+// (*** 這是已更正的 V3 函數 ***)
+export async function getOrCreateChatRoom(workerId: string) {
+  'use server';
+
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 獲取當前登錄的客戶
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return redirect('/login'); 
+  }
+
+  // 2. (*** V3 邏輯 - 步驟 A ***)
+  // 首先，只執行 Upsert (插入或忽略)。
+  // 我們不鏈式調用 .select()。
+  const { error: upsertError } = await supabase
+    .from('chat_rooms')
+    .upsert(
+      { customer_id: user.id, worker_id: workerId },
+      { 
+        onConflict: 'customer_id, worker_id', // 依賴我們創建的唯一約束
+        ignoreDuplicates: true 
+      }
+    );
+
+  if (upsertError) {
+    // 這只會在發生真實的數據庫錯誤時觸發 (例如 RLS 權限問題)
+    console.error('Error upserting chat room:', upsertError.message);
+    return redirect(`/worker/${workerId}?error=chat_upsert_failed`);
+  }
+
+  // 3. (*** V3 邏輯 - 步驟 B ***)
+  // 現在我們 100% 確定聊天室已存在 (無論是剛剛創建的還是本已存在的)
+  // 我們執行一個獨立的、乾淨的查詢來獲取它的 ID。
+  const { data: room, error: selectError } = await supabase
+    .from('chat_rooms')
+    .select('id')
+    .eq('customer_id', user.id)
+    .eq('worker_id', workerId)
+    .single(); // <-- .single() 現在是安全的，因為 RLS 允許我們讀取它
+
+  if (selectError) {
+    // 如果這裡仍然出錯 (例如 RLS 權限問題)
+    console.error('Error selecting chat room after upsert:', selectError.message);
+    return redirect(`/worker/${workerId}?error=chat_select_failed`);
+  }
+
+  if (!room) {
+    // 雖然這幾乎不可能發生
+    console.error('Error: Room was not found after upsert and select.');
+    return redirect(`/worker/${workerId}?error=chat_room_not_found`);
+  }
+
+  // 4. 成功！
+  revalidatePath('/messages'); 
+  redirect(`/chat/${room.id}`); // 將用戶重定向到聊天室
 }

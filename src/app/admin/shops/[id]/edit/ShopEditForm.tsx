@@ -10,8 +10,8 @@ import { updateShopDetails, deleteShop } from '@/lib/actions';
 type Shop = {
   id: string;
   name: string | null;
-  address: string | null;
-  phone: string | null;
+  address_detail: string | null; 
+  phone_number: string | null;
   description: string | null;
   slug: string | null;
   tags: string | null;
@@ -58,27 +58,57 @@ export default function ShopEditForm({ shop }: { shop: Shop }) {
       </div>
       
       <div>
-        <label htmlFor="address" className="block text-sm font-medium text-gray-700">地址</label>
+        <label htmlFor="address_detail" className="block text-sm font-medium text-gray-700">地址</label>
         <input
           type="text"
-          id="address"
-          name="address"
-          defaultValue={shop.address || ''}
+          id="address_detail"
+          name="address_detail"
+          defaultValue={shop.address_detail || ''}
           className="input my-[20px] w-[90%]"
         />
       </div>
       
       <div>
-        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">電話</label>
+        <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700">電話</label>
         <input
           type="text"
-          id="phone"
-          name="phone"
-          defaultValue={shop.phone || ''}
+          id="phone_number"
+          name="phone_number"
+          defaultValue={shop.phone_number || ''}
+          className="input my-[20px] w-[90%]"
+        />
+      </div>
+<div>
+        <label htmlFor="slug" className="block text-sm font-medium text-gray-700">Slug (網址代稱)</label>
+        <input
+          type="text"
+          id="slug"
+          name="slug"
+          defaultValue={shop.slug || ''}
           className="input my-[20px] w-[90%]"
         />
       </div>
 
+      <div>
+        <label htmlFor="tags" className="block text-sm font-medium text-gray-700">標籤 (請用逗號分隔)</label>
+        <input
+          type="text"
+          id="tags"
+          name="tags"
+          defaultValue={shop.tags || ''}
+          className="input my-[20px] w-[90%]"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700">描述</label>
+        <textarea
+          id="description"
+          name="description"
+          defaultValue={shop.description || ''}
+          className="textarea textarea-bordered my-[20px] w-[90%] h-24"
+        />
+      </div>
 
 
       {/* ... 在這裡添加其他您需要編輯的字段 ... */}

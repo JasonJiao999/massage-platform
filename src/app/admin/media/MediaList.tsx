@@ -37,9 +37,9 @@ export default function MediaList({ initialMedia }: MediaListProps) {
       {initialMedia.length === 0 ? (
         <p className="text-gray-500">暫無已上傳的媒體文件。</p>
       ) : (
-        <div className="mx-auto flex flex-wrap">
+        <div className="mx-auto flex flex-wrap justify-center">
           {initialMedia.map((item) => (
-            <div key={item.id} className="card bg-primary max-w-[300px] my-[20px] p-[10px] text-[var(--foreground)] mx-[10px]">
+            <div key={item.id} className="card bg-primary w-[320px] text-[var(--foreground)] flex m-[10px] p-[10px]">
               
               {/* 【核心修復】: 我們重構了圖片的顯示方式 */}
               <div className="w-full">

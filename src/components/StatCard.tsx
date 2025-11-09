@@ -9,7 +9,7 @@ interface StatCardProps {
 
 export default function StatCard({ title, value, icon }: StatCardProps) {
   return (
-<div className="stat shadow rounded-lg bg-primary text-[var(--foreground)] w-[200px] min-w-[200px] mx-[10px] my-[10px] flex-shrink-0"
+<div className="stat rounded-lg bg-primary text-[var(--foreground)] w-[300px]"
 style={{ borderRadius: '12px' }}
 >
   {icon && (

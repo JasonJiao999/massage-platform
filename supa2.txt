@@ -1,0 +1,16 @@
+    <div className="flex card min-[1200px]:w-[1200px]  h-screen justify-center border mx-auto">
+      
+      {/* ---------------------------------- */}
+      {/* 1. 左側聊天列表 */}
+      {/* ---------------------------------- */}
+      <aside className="w-[30%] max-w-sm flex-shrink-0 bg-white border-r overflow-y-auto">
+       
+      </aside>
+
+      {/* ---------------------------------- */}
+      {/* 2. 右側對話框主體 */}
+      {/* ---------------------------------- */}
+      <main className="flex-1 w-[65%] flex flex-col">
+
+      </main>
+    </div>
