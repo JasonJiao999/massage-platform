@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import WorkerSearchClient from '@/components/WorkerSearchClient';
 import ImageCarousel from '@/components/ImageCarousel';
 import { unstable_noStore as noStore } from 'next/cache'; // 1. 导入 noStore
+import WorkerCard from '@/components/WorkerCard'; // <-- 【新增】導入 WorkerCard
 
 const ITEMS_PER_PAGE = 30;
 
@@ -39,7 +40,8 @@ const [
     { data: adminCitiesData },
     { data: adminAreasData },
     { data: totalCountData },
-    { data: promoImagesData } // <--- 新增查询
+    { data: promoImagesData },
+    { data: recommendedWorkersData, error: recommendedWorkersError }
   ] = await Promise.all([
     supabase.from('tags_admin').select('name').order('sort_order'),
     supabase.from('cities_admin').select('name, location_id').order('sort_order'),
@@ -49,9 +51,17 @@ const [
         city_filter_id: searchParams.city ? Number(searchParams.city) : null,
         area_filter_id: searchParams.area ? Number(searchParams.area) : null,
     }),
-    // <--- 新增的查询逻辑
-    supabase.from('img_admin').select('url, name').eq('asset_type', 'promo_image').eq('is_active', true)
-  ]);
+   
+    supabase.from('img_admin').select('url, name').eq('asset_type', 'promo_image').eq('is_active', true),
+
+
+
+    supabase.from('profiles')
+      .select('id, nickname, qr_url, photo_urls, years, tags') 
+      .gt('level', 90) 
+      .in('role', ['freeman', 'staff']) 
+      .limit(10)  // <--- 显示前10位，数值可以自己调整
+  ]); 
 
   // 【核心修复】确保将完整数据（包括 location_id）传递下去
   const adminTags = adminTagsData?.map(t => ({ tag: t.name })) || [];
@@ -60,6 +70,11 @@ const [
   const totalCount = totalCountData as number || 0;
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   const promoImages = promoImagesData || [];
+  const recommendedWorkers = recommendedWorkersData || [];
+  
+  if (recommendedWorkersError) {
+    console.error("Error fetching recommended workers:", recommendedWorkersError);
+  }
   // --- 3. 获取工作者列表 ---
   const { data: workers, error: workersError } = await supabase.rpc('search_workers', {
     search_term: searchParams.q,
@@ -76,6 +91,31 @@ const [
       <div className="text-center mb-12">
         <ImageCarousel images={promoImages} />
       </div>
+
+{/* --- 【新增：推薦工作者區域】 (使用 'recommendedWorkers') --- */}
+      {recommendedWorkers.length > 0 && (
+        <section className="mb-12">
+          
+          <div className="flex flex-wrap justify-center max-w-[1200px] mx-auto">
+            <div className='card w-full min-[500px]:max-w-[400px] min-[1200px]:max-w-[1200px] '>
+              <h2 className="card bg-[var(--color-third)] text-2xl font-bold text-center py-[10px] mx-[10px]">Top 10 Most Recommended</h2>
+              <div className='flex flex-wrap justify-start gap-[10px]'>
+              
+                {recommendedWorkers.map((worker: any) => (
+                  <WorkerCard 
+                    key={worker.id} 
+                    worker={worker} 
+                    isLoggedIn={isLoggedIn} 
+                    isFavorited={favoritesSet.has(worker.id)} 
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </section>
+      )}
+      {/* --- 推薦區域結束 --- */}
 
       <WorkerSearchClient
         initialWorkers={workers || []}

@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // <-- 導入 Link 組件
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -12,11 +13,15 @@ export default function RegisterPage() {
   const router = useRouter();
   const supabase = createClient();
   const [referralCode, setReferralCode] = useState('');
-
+// --- (新增) 用於管理複選框的 State ---
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 【核心修复】: 使用官方的 supabase.auth.signUp 方法
+// --- (新增) 檢查是否同意條款 ---
+    if (!agreedToTerms) {
+      alert('You must agree to the User Agreement to create an account.');
+      return;
+    }
     // 并将用户选择的角色放在 options.data (即 raw_user_meta_data) 中
     const { error } = await supabase.auth.signUp({
       email,
@@ -40,7 +45,7 @@ export default function RegisterPage() {
   return (
   
     <div className="flex justify-center items-center h-screen ">
-      <div className="card w-[350px] shadow-sm bg-primary items-center text-[var(--foreground)] p-[24px]">
+      <div className="card w-[350px] shadow-sm bg-[var(--color-third)] items-center text-[var(--foreground)] p-[24px]">
         <h1 className="text-2xl font-bold text-center text-card-foreground">Create Account</h1>
         <form onSubmit={handleSignUp} className='w-[300px]'>
           <div>
@@ -90,13 +95,34 @@ export default function RegisterPage() {
               className="input w-[93%] my-[10px]"
             />
           </div>
-
+{/* --- (新增) 同意條款複選框 --- */}
+          <div className="flex items-center space-x-2 my-[10px]">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="checkbox border m-[10px]" // 使用 DaisyUI 樣式
+            />
+            <label htmlFor="terms" className="text-sm">
+              I agree to the{' '}
+              <Link href="/terms" target="_blank" className="underline hover:text-blue-400">
+                User Agreement
+              </Link>
+            </label>
+          </div>
+          {/* --- 複選框結束 --- */}
 
 
           <div className='flex justify-center items-center my-[10px]'>
-          <button type="submit" className="btn btn-wide">
-            Register
-          </button>
+{/* --- (修改) 按鈕現在會根據 'agreedToTerms' 狀態來啟用/禁用 --- */}
+            <button 
+              type="submit" 
+              className="btn btn-wide"
+              disabled={!agreedToTerms}
+            >
+              Register
+            </button>
           </div>
         </form>
       </div>

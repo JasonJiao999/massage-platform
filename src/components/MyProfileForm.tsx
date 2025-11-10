@@ -13,8 +13,7 @@ import {
 } from '@/lib/actions';
 import { useState, useRef, useEffect } from 'react';
 import AddressSelector from './AddressSelector';
-import { 
-  FaTwitter, 
+import {  
   FaInstagram, 
   FaFacebook, 
   FaLine,
@@ -23,6 +22,7 @@ import {
   FaMapMarkedAlt    // <-- 新增
 } from 'react-icons/fa';
 import { deleteQrUrl } from '@/lib/actions'; 
+import { FaXTwitter } from 'react-icons/fa6'; 
 
 // 定义完整的 Profile 类型
 type Profile = {
@@ -374,11 +374,11 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
       />
     </div>
     <div className="flex items-center">
-      <FaTwitter className="text-2xl  mr-3 flex-shrink-0"/>
+      <FaXTwitter className="text-2xl  mr-3 flex-shrink-0"/>
       <input 
         type="url" 
         name="social_twitter" 
-        placeholder="https://twitter.com/..." 
+        placeholder="https://X.com/..." 
         defaultValue={profile.social_links?.twitter || ''} 
         className="input m-[10px] w-[85%]"
       />

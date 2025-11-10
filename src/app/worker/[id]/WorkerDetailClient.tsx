@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useMemo, useEffect, FC } from "react";
 import { format, parseISO, isSameDay } from 'date-fns';
 import { createBooking } from '@/lib/actions';
-import { FaTwitter, FaInstagram, FaFacebook, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaTwitter, FaInstagram, FaFacebook, FaMapMarkerAlt,FaLine,FaTiktok } from 'react-icons/fa';
 import { HiH2 } from 'react-icons/hi2';
 import { getOrCreateChatRoom } from '@/lib/actions';
 import { FaComments } from 'react-icons/fa'; // 聊天圖標
@@ -24,6 +24,9 @@ interface Profile {
   video_urls: string[] | null;
   feature: string[] | null;
   social_links: { [key: string]: string } | null;
+  gender: string | null;
+  nationality: string | null;
+  qr_url: string[] | null;
 }
 interface Service {
   id: string;
@@ -166,21 +169,35 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
 <div className="card bg-primary text-start w-full">
   <div className="flex flex-col gap-[10px] p-[24px]">
     <h3>{worker.nickname}</h3>
-<ul className="list-none pl-0">
-{worker.years && <li>Age: {worker.years} Y</li>}
-{shop && shop.slug && shop.name && (
-  <li>
-    Team: <Link 
-            href={`/shops/${shop.slug}`}
-            className='text-[var(--foreground)]'
-          >{shop.name}
-          </Link>
-  </li>
-)}
-<li>District:{fullAddress}</li>
-<li>Address:{worker.address_detail}</li>
-<li>Tags:{worker.tags?.map(tag => <span key={tag}>{tag}</span>)}</li>
-</ul>
+{/* --- (*** 這是更新後的列表 ***) --- */}
+    <ul className="list-none pl-0">
+      {worker.years && <li>Age: {worker.years} Y</li>}
+      {shop && shop.slug && shop.name && (
+        <li>
+          Team: <Link 
+                  href={`/shops/${shop.slug}`}
+                  className='text-[var(--foreground)]'
+                >{shop.name}
+                </Link>
+        </li>
+      )}
+      {/* --- 新增字段 START --- */}
+      {worker.gender && <li>Gender: {worker.gender}</li>}
+      {worker.nationality && <li>Nationality: {worker.nationality}</li>}
+      {/* --- 新增字段 END --- */}
+      <li>District:{fullAddress}</li>
+      <li>Address:{worker.address_detail}</li>
+{/* --- Tags 顯示 (已修改分隔符) --- */}
+      {worker.tags && worker.tags.length > 0 && (
+        <li>Tags: {worker.tags.join(' / ')}</li>
+      )}
+      {/* --- 新增 Feature 顯示 --- */}
+{/* --- 新增 Feature 顯示 (已修改分隔符) --- */}
+      {worker.feature && worker.feature.length > 0 && (
+        <li>Service Type: {worker.feature.join(' / ')}</li>
+      )}
+    </ul>
+    {/* --- (*** 列表結束 ***) --- */}
 
 {/* --- (*** 這是新添加的聊天按鈕 ***) --- */}
 <form action={getOrCreateChatRoom.bind(null, worker.id)}>
@@ -239,9 +256,58 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
         <FaTwitter size={24} />
       </a>
     )}
+
+      {/* --- 新增：Tiktok --- */}
+      {socialLinks.tiktok && (
+        <a 
+          href={socialLinks.tiktok} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-[var(--foreground)] hover:text-[var(--color-third)] transition-colors"
+        >
+          <FaTiktok size={24} />
+        </a>
+      )}
+
+    {/* --- 新增：Line --- */}
+      {socialLinks.line && (
+        <a 
+          href={socialLinks.line} // 假設 'social_links.line' 是一個可點擊的 URL 或 Line ID
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-[var(--foreground)] hover:text-[var(--color-third)] transition-colors"
+        >
+          <FaLine size={24} />
+        </a>
+      )}
+
+
     </div>
   </div>
 </div>
+
+{/* --- (*** 這是新添加的 QR 碼卡片 ***) --- */}
+{worker.qr_url && worker.qr_url.length > 0 && (
+  <div className="card bg-primary w-full text-start">
+    <div className="card-body">
+      <h3 className="text-xl font-semibold mb-4">QR Codes</h3>
+      <div className="flex flex-wrap justify-center gap-[5px]">
+        {worker.qr_url.map((url, index) => (
+          <div key={index} className="relative ">
+            <Image
+              src={url}
+              alt={`QR Code ${index + 1}`}
+              width={120}
+              height={120}
+              className="object-cover card"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+{/* --- (*** QR 碼卡片結束 ***) --- */}
 
 {/* 服务列表 */}
 <ul className="menu bg-base-200 rounded-box w-full flex flex-wrap justify-center gap-[10px] mx-auto text-[var(--color-secondary)]">
