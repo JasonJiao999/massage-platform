@@ -34,17 +34,17 @@ export default function PaginationControls({ currentPage, totalPages }: Paginati
         className={`px-4 py-2 text-sm font-medium rounded-md ${isFirstPage ? 'bg-gray-200 text-gray-400 pointer-events-none' : 'bg-white text-gray-700 border hover:bg-gray-50'}`}
         aria-disabled={isFirstPage}
       >
-        上一页
+        Previous
       </Link>
       <span className="text-sm text-gray-600">
-        第 {currentPage} 页 / 共 {totalPages} 页
+         {currentPage}  /  {totalPages} 
       </span>
       <Link
         href={createPageURL(currentPage + 1)}
         className={`px-4 py-2 text-sm font-medium rounded-md ${isLastPage ? 'bg-gray-200 text-gray-400 pointer-events-none' : 'bg-white text-gray-700 border hover:bg-gray-50'}`}
         aria-disabled={isLastPage}
       >
-        下一页
+        Next
       </Link>
     </div>
   );

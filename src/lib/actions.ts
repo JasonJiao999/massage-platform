@@ -2142,7 +2142,7 @@ export async function updateUserDetails(formData: FormData) {
     bio: formData.get('bio'),
     role: formData.get('role'),
     email: formData.get('email'),
-    phone: formData.get('phone'),
+    tel: formData.get('tel'),
     qr_url: formData.get('qr_url'),
     // 處理布爾值 (checkbox)
     is_active: formData.get('is_active') === 'on',

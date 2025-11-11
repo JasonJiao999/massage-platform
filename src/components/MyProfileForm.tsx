@@ -262,6 +262,9 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
             name="years" 
             defaultValue={profile.years ?? ''} 
             className="input m-[10px] w-[90%]"
+            min="18"  // <-- 【新增】設置最小值
+            max="99"  // <-- 【新增】設置最大值
+            step="1" // (推薦) 確保只接受整數
           />
         </div>
       </div>
@@ -315,7 +318,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
             name="tags" 
             defaultValue={tagsString} 
             className="input m-[10px] w-[90%]" 
-            placeholder="e.g. Thai Massage, Oil Massage"
+            placeholder="e.g. Good figure, Cute"
           />
         </div>
         <div>
@@ -326,7 +329,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
             name="feature" 
             defaultValue={featuresString} 
             className="input m-[10px] w-[90%]" 
-            placeholder="e.g. Friendly, Strong hands"
+            placeholder="e.g. PR, Massage"
           />
         </div>
       </div>

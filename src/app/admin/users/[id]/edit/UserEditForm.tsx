@@ -13,8 +13,8 @@ type UserProfile = {
   email: string | null;
   bio: string | null;
   role: string | null;
-  phone: string | null;
-  avatar_url: string | null;
+  tel: string | null;
+  qr_url: string | null;
   is_active: boolean;
   acc_active: boolean;
   province_id: number | null;
@@ -79,8 +79,8 @@ export default function UserEditForm({ user }: { user: UserProfile }) {
 
         {/* 電話 */}
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">電話</label>
-          <input type="tel" id="phone" name="phone" defaultValue={user.phone || ''} className="input my-[20px] w-[90%]" />
+          <label htmlFor="tel" className="block text-sm font-medium text-gray-700">電話</label>
+          <input type="tel" id="tel" name="tel" defaultValue={user.tel || ''} className="input my-[20px] w-[90%]" />
         </div>
 
         {/* 角色 */}

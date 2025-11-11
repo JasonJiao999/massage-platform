@@ -59,7 +59,7 @@ export default async function StaffPage() {
 
       </div>
 
-      <div className="card bg-primary p-[24px]">
+      <div className="card bg-primary p-[24px] text-[var(--foreground)]">
         <table className="min-w-full divide-y divide-border">
           <thead className="bg-background/50">
             <tr>

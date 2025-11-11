@@ -10,8 +10,8 @@ const initialState = { message: '', success: false };
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className="...">
-      {pending ? '正在加入...' : '加入店铺'}
+    <button type="submit" disabled={pending} className="btn">
+      {pending ? 'Waiting...' : 'Join the team'}
     </button>
   );
 }
@@ -21,19 +21,19 @@ export function JoinShopForm() {
 
   return (
     <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-center">通过商户邮箱加入店铺</h2>
+      <h2 className="text-2xl font-bold text-center">Join the team(ร่วมทีมกับเรา)</h2>
       <form action={dispatch}>
         <div>
           <label htmlFor="merchant_email" className="block text-sm font-medium">
-            商户的邮箱地址
+            Team email (อีเมลของทีม)
           </label>
           <input
             id="merchant_email"
             name="merchant_email"
             type="email"
             required
-            className="mt-1 block w-full px-3 py-2 border rounded-md"
-            placeholder="merchant@example.com"
+            className="input my-[10px]"
+            placeholder="team@example.com"
           />
         </div>
         <SubmitButton />
