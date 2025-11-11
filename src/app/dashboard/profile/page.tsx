@@ -17,7 +17,7 @@ export default async function CustomerProfilePage() {
   // 【核心修复】: 在 select 查询中添加 bio 字段
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, full_name, email, avatar_url, bio') // <-- 添加 bio
+    .select('id, full_name, email, bio') // <-- 添加 bio
     .eq('id', user.id)
     .single();
 

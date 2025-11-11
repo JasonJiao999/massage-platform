@@ -3,7 +3,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import GoogleTranslateWidget from "@/components/GoogleTranslateWidget";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { createClient } from '@/utils/supabase/server';
@@ -74,7 +73,7 @@ export default async function RootLayout({
     <html lang="en">
 
       <body className={`${inter.className}  `}>
-        <GoogleTranslateWidget />
+        
         
         <Header user={user} profile={profile} logoUrl={logoUrl} />
         
@@ -86,6 +85,8 @@ export default async function RootLayout({
         
         <PromoBanner banner={activeBanner} />
         <Footer />
+
+
       </body>
     </html>
   );

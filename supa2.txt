@@ -1,113 +1,57 @@
-AoFiw — 合规文档 / Compliance Documents
+-- 複製並運行此腳本來更新您的審核函數
 
-首页法律合规声明 — Homepage Legal Compliance Notice
-Legal Notice: AoFiw is a lawful social companionship platform for adults only. Any form of sexual or illegal activity is strictly prohibited. AoFiw is not involved in or responsible for any offline interactions. By using this platform, you confirm you are 18+ and agree to our Terms & Privacy Policy.
+CREATE OR REPLACE FUNCTION public.validate_content_moderation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  -- *** 這是您需要維護的高風險關鍵字列表 ***
+  banned_keywords TEXT[] := ARRAY[
+    -- 英文 (English)
+    'prostitution', 'escort', 'solicit', 'rates', 'sugar baby', 'sugardaddy',
+    'porn', 'nude', 'naked', 'horny', 'kinky', 'fuck', 'sex', 'blowjob', 'creampie',
+    'drugs', 'cocaine', 'heroin', 'meth', 'mdma', 'fraud', 'scam', 'weapon', 'gun', 'illegal',
+    'nazi', 'racist', 'bigot','king', 'queen', 'royal', 'monarchy', 'palace', 'rama x', 'vajiralongkorn', 'suthida', 'sirivannavari', 'dipangkorn',
+    
+    -- 泰文 (Thai) 
+    'ค้าประเวณี', 'ขายตัว', 'เด็กเอ็น', 'ไซด์ไลน์', 
+    'เสี่ย', 'หาเสี่ยเลี้ยง', 'โป๊', 'เปลือย', 'เย็ด', 'แตกใน',
+    'ห้องส่วนตัว', 'นวดกระปู๋',
+    'ยาเสพติด', 'โคเคน', 'เฮโรอีน', 'ยาบ้า', 'ยาอี', 'โกง', 'หลอกลวง', 'อาวุธ', 'ปืน', 'ผิดกฎหมาย',
+    'เหยียดผิว', 'ดูถูก','ในหลวง', 'ราชินี', 'พระราชวงศ์', 'สถาบันกษัตริย์', 'พระบรมมหาราชวัง',
+    'ร.10', 'วชิราลงกรณ์', 'สุทิดา', 'สิริวัณณวรี', 'ทีปังกรรัศมีโชติ', 'ทรงพระเจริญ'
+  ];
+  -- *** 列表結束 ***
 
-平台用户协议 — User Agreement
-English (AoFiw User Agreement)
+  text_to_check TEXT;
+  keyword TEXT;
+BEGIN
+  -- 根據觸發的表，選擇要檢查的字段
+  IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
+    IF TG_TABLE_NAME = 'profiles' THEN
+      text_to_check := COALESCE(NEW.nickname, '') || ' ' || COALESCE(NEW.bio, '');
+    ELSIF TG_TABLE_NAME = 'services' THEN
+      text_to_check := COALESCE(NEW.name, '') || ' ' || COALESCE(NEW.description, '');
+    ELSIF TG_TABLE_NAME = 'messages' THEN
+      text_to_check := COALESCE(NEW.content, '');
+    ELSE
+      RETURN NEW; -- 如果是未知的表，則跳過
+    END IF;
 
-Welcome to AoFiw ("the Platform"). Before using our services, please read this Agreement carefully. By registering, logging in, or using AoFiw, you agree to be bound by these terms.
+    -- 進行不區分大小寫的檢查
+    text_to_check := lower(text_to_check);
 
-1. Platform Purpose
-AoFiw is a social companionship platform for adults, designed for activities such as watching movies, having drinks, or dining together. AoFiw strictly prohibits any sexual or illegal activities.
+    -- 遍歷所有禁用詞
+    FOREACH keyword IN ARRAY banned_keywords
+    LOOP
+      IF text_to_check LIKE '%' || lower(keyword) || '%' THEN
+        -- 如果找到違規詞，拋出錯誤並阻止操作
+        RAISE EXCEPTION 'Content moderation failed: Prohibited content found.';
+      END IF;
+    END LOOP;
+  END IF;
 
-2. Eligibility
-- Users must be at least 18 years old.
-- All registration information must be true and accurate.
-- The Platform reserves the right to suspend or terminate accounts violating this Agreement.
-
-3. Platform Responsibilities
-- AoFiw only provides communication and event-posting features.
-- The Platform is not involved in any offline meetings or transactions.
-- The Platform reserves the right to review and remove inappropriate content.
-
-4. User Obligations
-- Users shall not post or promote sexual, obscene, violent, or illegal content.
-- Users shall not engage in solicitation, advertising, or unlawful profit-making.
-- Users are fully responsible for their actions online and offline.
-
-5. Payment & Refund
-- Paid features (VIP, ads, etc.) are voluntary.
-- All payments are non-refundable unless otherwise required by applicable law.
-- AoFiw reserves the right to adjust pricing at any time.
-
-6. Account Management
-- Users may delete their accounts at any time.
-- Violations may result in suspension or permanent account termination.
-
-7. Disclaimer
-The Platform only provides a communication medium and is not responsible for user interactions or outcomes.
-
-8. Governing Law
-This Agreement shall be governed by applicable laws of Southeast Asia and general international online standards.
-
-免责声明 — Disclaimer
-Disclaimer: AoFiw acts solely as a communication platform between users. We do not organize, guarantee, or participate in any offline meetings or transactions. All interactions, meetings, financial transactions, or other activities between users are the sole responsibility of the parties involved. AoFiw is not liable for any loss, injury, fraud, dispute, or illegal conduct arising from user interactions. If a user’s conduct causes legal exposure to the Platform, AoFiw reserves the right to pursue remedies against that user.
-
-隐私政策（PDPA 版） — Privacy Policy (PDPA Compliant)
-English Summary
-
-1. Data Controller
-AoFiw (individual operator) is the data controller responsible for personal data processing.
-
-2. Types of Data Collected
-- Registration: name/nickname, email, country, birth year, ID proof (if required)
-- Usage: login times, IP address, device info, activity logs
-- Content: user posts and chat records (for moderation and safety)
-- Payment: transaction records (for accounting)
-
-3. Purposes of Processing
-- Identity and age verification
-- Provide, maintain, and improve the service
-- Content moderation, safety, and abuse prevention
-- Legal compliance, dispute resolution, and law enforcement requests
-
-4. Data Sharing
-- We do not sell personal data. 
-- We may share necessary data with payment providers, hosting providers, or law enforcement.
-- Data shared with advertisers will be aggregated or de-identified when possible.
-
-5. Retention & Deletion
-- Data retained per business needs and legal requirements; users may request access, correction, or deletion.
-- Upon account deletion, personal data will be removed or anonymized within a reasonable timeframe (unless retention is required by law).
-
-6. Security
-- Reasonable technical and organizational measures are in place (encryption, backups, access control).
-- In case of a breach, affected users and authorities will be notified as required.
-
-7. User Rights
-Users have rights to access, correct, restrict processing, or delete personal data and may withdraw consent where applicable.
-
-8. Contact
-For privacy requests: support@aofiw.communication
-
-内容审核与封禁规则 — Content Moderation & Suspension Policy
-
-English
-
-1. Moderation Approach
-- AoFiw uses automated keyword filtering combined with manual review. The high-risk keyword list is updated regularly.
-
-2. Content Triggering Immediate Removal & Suspension
-- Any solicitation for sexual services or prostitution;
-- Explicit offers to meet in hotel/private rooms for sexual or overnight purposes;
-- Pornographic or explicit material;
-- Content related to drugs, illegal weapons, fraud, violence, discrimination, or hate speech;
-- Disclosure of personal/identifying information such as ID numbers, phone numbers, or addresses;
-- Impersonation or intentionally misleading content.
-
-3. Violation Handling
-- First violation: remove content and issue a warning;
-- Second violation: restrict features (posting, messaging) and notify the user;
-- Third violation: permanent account suspension and potential legal referral.
-
-4. Appeals
-Suspended users may file an appeal within 14 days to support@aofiw.example. The Platform will review and respond within a reasonable time.
-
-5. Logs & Evidence
-The Platform retains moderation logs and removed content records to resolve disputes and comply with lawful requests, subject to applicable data retention rules.
-          
-
-
-
-
+  RETURN NEW;
+END;
+$$;

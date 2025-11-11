@@ -3,7 +3,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { updateUserDetails, deleteUser } from '@/lib/actions';
+import { useFormState, useFormStatus } from 'react-dom'; 
+import { updateUserDetails, deleteUser, adminGrantSubscriptionTime } from '@/lib/actions';
 
 // 擴展 UserProfile 類型以包含所有字段
 type UserProfile = {
@@ -25,10 +26,20 @@ type UserProfile = {
 // 您系統中定義的所有用戶角色
 const roles = ['customer', 'staff', 'freeman', 'merchant', 'admin'];
 
+// (新增) 提交按鈕組件
+function SubmitButton({ text, pendingText }: { text: string, pendingText?: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending} className="btn">
+      {pending ? (pendingText || '處理中...') : text}
+    </button>
+  );
+}
+
 export default function UserEditForm({ user }: { user: UserProfile }) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
-
+  const [grantState, grantAction] = useFormState(adminGrantSubscriptionTime, { success: false, message: '' });
   const handleSubmit = (formData: FormData) => {
     startTransition(async () => {
       const res = await updateUserDetails(formData);
@@ -49,6 +60,7 @@ export default function UserEditForm({ user }: { user: UserProfile }) {
   };
 
   return (
+  <div className="space-y-6">
     <form action={handleSubmit} className="card bg-primary rounded-lg p-[24px] my-[20px] text-[var(--foreground)]">
       <input type="hidden" name="id" value={user.id} />
       
@@ -80,10 +92,7 @@ export default function UserEditForm({ user }: { user: UserProfile }) {
         </div>
 
         {/* 頭像 URL */}
-        <div className="md:col-span-2">
-          <label htmlFor="avatar_url" className="block text-sm font-medium text-gray-700">頭像 URL</label>
-          <input type="text" id="avatar_url" name="avatar_url" defaultValue={user.avatar_url || ''} className="input my-[20px] w-[90%]" />
-        </div>
+
 
         {/* 個人簡介 */}
         <div className="md:col-span-2">
@@ -143,5 +152,59 @@ export default function UserEditForm({ user }: { user: UserProfile }) {
         <p className={`mt-4 text-sm font-medium ${result.success ? 'text-green-600' : 'text-red-600'}`}>{result.message}</p>
       )}
     </form>
+
+{/* --- (*** 新增) 表單 2: 手動訂閱管理 *** --- */}
+      {/* (僅當用戶是工作者時顯示此表單) */}
+      {(user.role === 'freeman' || user.role === 'staff') && (
+        <form action={grantAction} className="card bg-primary rounded-lg p-[24px] my-[10px] text-[var(--foreground)]">
+          <h2 className="text-xl font-bold mb-4">手動訂閱管理</h2>
+          <input type="hidden" name="userId" value={user.id} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* 授予天數 */}
+            <div>
+              <label htmlFor="daysToAdd" className="block text-sm font-medium">授予天數 (必填)</label>
+              <input type="number" id="daysToAdd" name="daysToAdd" required defaultValue="30" className="input my-[10px] w-[90%]" />
+            </div>
+            
+            {/* 支付金額 (可選) */}
+            <div>
+              <label htmlFor="amountPaid" className="block text-sm font-medium">支付金額 (THB)</label>
+              <input type="number" id="amountPaid" name="amountPaid" defaultValue="0" step="0.01" className="input my-[10px] w-[90%]" />
+            </div>
+
+            {/* 支付方式 */}
+            <div>
+              <label htmlFor="paymentMethod" className="block text-sm font-medium">支付/贈送方式</label>
+              <select id="paymentMethod" name="paymentMethod" defaultValue="admin_gift" className="select my-[10px] w-[90%] text-[var(--color-secondary)]">
+                <option value="admin_gift">管理員贈送 (Gift)</option>
+                <option value="bank_transfer">銀行轉帳 (Bank)</option>
+                <option value="cash">現金 (Cash)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 備註 */}
+          <div className="mt-4">
+            <label htmlFor="notes" className="block text-sm font-medium">備註 (可選)</label>
+            <input type="text" id="notes" name="notes" placeholder="例如PromptPay 截圖已確認" className="input my-[10px] w-[95%]" />
+          </div>
+
+          {/* 提交按鈕 */}
+          <div className="mt-6">
+            <SubmitButton text="確認添加訂閱" pendingText="正在授予..." />
+          </div>
+
+          {/* 顯示結果 */}
+          {grantState?.message && (
+            <p className={`mt-4 text-sm font-medium ${grantState.success ? 'text-green-600' : 'text-red-600'}`}>
+              {grantState.message}
+            </p>
+          )}
+        </form>
+      )}
+
+
+    </div>
   );
 }

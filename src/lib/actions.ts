@@ -1150,7 +1150,7 @@ export async function updateShopTextSettings(prevState: any, formData: FormData)
 
   revalidatePath('/dashboard/shop');
   revalidatePath(`/shops/${shopUpdateData.slug}`);
-  return { message: '店铺基础信息已成功更新！' };
+  return { message: 'Team information has been successfully updated!' };
 }
 
 
@@ -1367,15 +1367,6 @@ export async function removeFavoriteWorker(workerProfileId: string) {
   revalidatePath('/dashboard');
   return { success: true, message: '已取消收藏' };
 }
-
-
-
-
-
-// (你可能還需要 getUserAndProfile 輔助函數)
-//import { getUserAndProfile } from '@/utils/supabase/getUserAndProfile';
-
-
 export async function updateCustomerProfile(prevState: any, formData: FormData) {
   'use server';
   const cookieStore = cookies();
@@ -2280,4 +2271,99 @@ export async function getOrCreateChatRoom(workerId: string) {
   // 4. 成功！
   revalidatePath('/messages'); 
   redirect(`/chat/${room.id}`); // 將用戶重定向到聊天室
+}
+
+/**
+ * 【步驟 3】管理員手動贈送/續費訂閱時間
+ * 此函數僅限管理員調用
+ */
+export async function adminGrantSubscriptionTime(
+  prevState: any, // 用於 useFormState
+  formData: FormData  // 使用 FormData 來獲取參數
+) {
+  'use server';
+
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. 從 FormData 獲取參數
+  const userId = formData.get('userId') as string;
+  const daysToAdd = Number(formData.get('daysToAdd') as string);
+  const amountPaid = Number(formData.get('amountPaid') as string);
+  const notes = formData.get('notes') as string;
+  const paymentMethod = formData.get('paymentMethod') as string || 'admin_gift';
+
+  // 2. 安全檢查：確保操作者是管理員
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, message: 'Authentication failed.' };
+  
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+  
+  if (profile?.role !== 'admin') {
+    return { success: false, message: 'Insufficient permissions.' };
+  }
+
+  // 3. 使用 Service Role Key (繞過 RLS) 來安全地更新*其他*用戶
+  // (確保您在 actions.ts 頂部有: import { createClient as createAdminClient } from '@supabase/supabase-js';)
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // 4. 獲取用戶當前的到期時間
+  const { data: targetProfile, error: fetchError } = await supabaseAdmin
+    .from('profiles')
+    .select('subscription_expires_at')
+    .eq('id', userId)
+    .single();
+
+  if (fetchError || !targetProfile) {
+    return { success: false, message: `User not found: ${fetchError?.message || ''}` };
+  }
+
+  // 5. 計算新的到期時間
+  const currentExpiry = targetProfile.subscription_expires_at ? new Date(targetProfile.subscription_expires_at) : new Date();
+  const now = new Date();
+  
+  // 確保我們從 "現在" 或 "未來的到期日" 開始計算，以較晚者為準
+  const baseDate = currentExpiry > now ? currentExpiry : now;
+  
+  const newExpiryDate = new Date(baseDate.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+
+  // 6. 更新 profiles 表
+  const { error: updateError } = await supabaseAdmin
+    .from('profiles')
+    .update({
+      subscription_status: 'active', // 設為 "active"
+      subscription_expires_at: newExpiryDate.toISOString() // 設置新的到期日
+    })
+    .eq('id', userId);
+
+  if (updateError) {
+    return { success: false, message: `Update profile failed: ${updateError.message}` };
+  }
+
+  // 7. (關鍵) 寫入訂單日誌 (subscription_logs)
+  const { error: logError } = await supabaseAdmin
+    .from('subscription_logs')
+    .insert({
+      worker_profile_id: userId,
+      admin_id: user.id, // 記錄是哪個管理員操作的
+      days_granted: daysToAdd,
+      amount_paid: amountPaid,
+      payment_method: paymentMethod, 
+      notes: notes
+    });
+
+  if (logError) {
+    // 即使日誌失敗，訂閱也已成功，但應返回警告
+    console.warn(`Subscription granted for ${userId}, but failed to write log: ${logError.message}`);
+    // 為了簡單起見，我們仍然返回成功
+  }
+
+  // 8. 刷新緩存
+  revalidatePath('/admin/users');
+  revalidatePath(`/admin/users/${userId}/edit`);
+  
+  return { success: true, message: `成功為用戶添加了 ${daysToAdd} 天訂閱。` };
 }

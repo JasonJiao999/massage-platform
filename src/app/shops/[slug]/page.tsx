@@ -15,7 +15,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
     .select(`
       id, name, description, tags,
       shop_pages ( hero_image_url, featured_video_url, bg_image_url ),
-      staff ( profiles ( id, nickname, avatar_url, photo_urls ) )
+      staff ( profiles ( id, nickname, photo_urls ) )
     `)
     .eq('slug', params.slug)
     .eq('is_active', true)
@@ -37,7 +37,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         
 <div className="flex flex-wrap justify-center w-full gap-[10px]">
   
-  <div className="w-[60%] min-w-[350px] ">
+  <div className="w-[60%] min-w-[450px] ">
 
         {/* 【核心修复】: 背景图现在是一个标准的 Image 组件，有明确的 width 和 height */}
         {backgroundUrl && (
@@ -46,7 +46,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               src={backgroundUrl} 
               alt={`${shop.name} background`} 
               width={1200} // 给一个基础宽度
-              height={400} // 给一个基础高度，保持3:1的比例
+              height={900} // 给一个基础高度，保持4:3的比例
               priority
               className="card w-full h-auto object-cover" // 样式会自适应容器宽度
             />
@@ -54,16 +54,11 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         )}
   </div>
         
-  <div className="card w-[35%] min-w-[350px] bg-secondary p-[24px]">
+  <div className="card w-[35%] min-w-[400px] bg-[var(--color-third)] text-[var()] p-[24px]">
   
-          <h1 className="text-4xl md:text-5xl font-bold text-primary mb-2">Team:{shop.name}</h1>
+          <h1 className="text-4xl md:text-5xl font-bold ">Team:{shop.name}</h1>
           
-          <div className="flex flex-wrap gap-2 justify-center mt-4 btn">
-            {shop.tags?.map((tag: string) => (
-              <span key={tag} className="text-primary text-xs font-semibold px-2.5 py-0.5 rounded-full">{tag}</span>
-            ))}
-          </div>
-          <p className="text-lg text-primary max-w-3xl ">Bio:{shop.description || 'No introduction ....'}</p>
+          <p className="text-lg  max-w-3xl ">Bio:{shop.description || 'No introduction ....'}</p>
   </div>
 </div>
 
@@ -72,7 +67,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           <div className="lg:col-span-2">
             <section>
               <h2 className="text-3xl font-semibold border-b border-border pb-2 mb-6">Our team</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-[10px]">
                 {staffList.length > 0 ? (
                   staffList.map((staff: any) => {
                     // 【核心修复】: 明确只使用 photo_urls[0] 或默认图片
@@ -107,7 +102,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             {/* 广告横幅 */}
        {shopPageData?.hero_image_url && (
           <div className="mb-8 rounded-lg overflow-hidden shadow-2xl">
-            <Image src={shopPageData.hero_image_url} alt={`${shop.name} banner`} width={1200} height={200} className="w-full h-[200px] object-cover my-[20px]" />
+            <Image src={shopPageData.hero_image_url} alt={`${shop.name} banner`} width={1200} height={200} className="w-full object-cover my-[20px] card" />
           </div>
         )}
           </div>
@@ -116,12 +111,12 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           {videoUrl && (
             <aside>
               <h3 className="text-2xl font-semibold mb-4">Team Video</h3>
-              <div className="aspect-video w-full rounded-lg overflow-hidden shadow-lg bg-black">
+              <div className="aspect-video max-w-[1200px] rounded-lg overflow-hidden shadow-lg bg-black">
                 <video 
                   src={videoUrl}
                   controls
                   preload="metadata"
-                  className="max-w-[300px] h-auto object-contain card"
+                  className="w-full h-auto object-contain card mx-auto"
                 >
                   Your browser does not support playing videos.
                 </video>

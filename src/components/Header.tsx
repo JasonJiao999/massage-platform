@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import LogoutButton from './LogoutButton';
-import GoogleTranslateWidget from "@/components/GoogleTranslateWidget";
+
 
 interface HeaderProps {
   user: User | null;
@@ -97,6 +97,7 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
             </Link>
           )}
           <LogoutButton logoutText="Logout" />
+
         </div>
       );
     }
@@ -125,6 +126,7 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
         <Link href="/register" className= "btn">
          Register
         </Link>
+        
       </div>
     );
   };
@@ -139,16 +141,19 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
             <Link href="/">
               <Image src={displayLogoUrl} alt="Logo" width={140} height={80} className="h-10 w-auto" priority />
             </Link>
+            
           </div>
 
           {/* 桌面端用戶操作區域 */}
           <div className="hidden md:flex items-center">
+            
             {/* 傳遞 isMobile={false} (或不傳，默認為 false) */}
             <UserActions />
           </div>
 
           {/* 5. 修改移動端漢堡菜單區域 */}
           <div className="md:hidden relative bg-white" ref={mobileMenuRef}>
+            
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)} 
               className="btn btn-square mx-[20px] hover:text-gray-900 hover:bg-gray-100"
@@ -187,6 +192,7 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
             )}
           </div>
         </div>
+        
       </div>
 
     </header>

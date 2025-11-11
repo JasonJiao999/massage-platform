@@ -9,7 +9,6 @@ type Profile = {
   id: string;
   full_name: string | null;
   email: string | null;
-  avatar_url: string | null;
   bio: string | null; // 确保类型定义中包含 bio
 };
 

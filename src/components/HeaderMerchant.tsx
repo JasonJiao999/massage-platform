@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 export default function HeaderMerchant({ shopSlug }: { shopSlug: string | null }) {
   const pathname = usePathname();
   const navLinks = [
+    { name: 'My console', href: '/dashboard/' },
     { name: 'Team Information', href: '/dashboard/shop' },
     { name: 'Team Page', href: shopSlug ? `/shops/${shopSlug}` : '#', target: '_blank'}, // target 在这里定义
     { name: 'My Team', href: '/dashboard/staff' },

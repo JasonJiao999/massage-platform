@@ -1,9 +1,10 @@
 // src/app/register/page.tsx (最终修复版)
 "use client";
 
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link'; // <-- 導入 Link 組件
 
 export default function RegisterPage() {
@@ -13,6 +14,17 @@ export default function RegisterPage() {
   const router = useRouter();
   const supabase = createClient();
   const [referralCode, setReferralCode] = useState('');
+  const searchParams = useSearchParams();
+
+// 3. (新增) 使用 useEffect 在組件加載時讀取推薦碼
+  useEffect(() => {
+    // 我們將推薦碼參數命名為 'ref'
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setReferralCode(refCode); // 將 URL 中的推薦碼設置到 state 中
+    }
+  }, [searchParams]); // 依賴 searchParams
+
 // --- (新增) 用於管理複選框的 State ---
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const handleSignUp = async (e: React.FormEvent) => {

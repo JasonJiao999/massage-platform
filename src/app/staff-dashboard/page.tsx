@@ -8,7 +8,9 @@ type Profile = {
   id: string;
   points: number | null;
   referral_code: string | null;
-  level: string | null; // <-- 新增
+  level: string | null; 
+  subscription_status: string | null;     
+  subscription_expires_at: string | null; 
 };
 
 export default async function StaffDashboardPage() {
@@ -17,17 +19,16 @@ export default async function StaffDashboardPage() {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return <p className="p-6 text-red-500">You need to be logged in to view the dashboard.</p>;
+    return <p className="mx-auto">You need to be logged in to view the dashboard.</p>;
   }
 
 const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, points, referral_code, level') // <-- 已添加 'level'
+    .select('id, points, referral_code, level, subscription_status, subscription_expires_at') 
     .eq('id', user.id)
-    .single<Profile>(); // <-- 使用我们上面定义的类型
-  
+    .single<Profile>(); 
   if (profileError || !profile) {
-    return <p className="p-6 text-red-500">Your profile cannot be found.</p>;
+    return <p className="mx-auto">Your profile cannot be found.</p>;
   }
 
 
@@ -37,7 +38,7 @@ const { data: profile, error: profileError } = await supabase
 
   if (statsError) {
     console.error('Error fetching dashboard stats:', statsError);
-    return <p className="p-6 text-red-500">An error occurred while loading dashboard data. Please try again later.</p>;
+    return <p className="mx-auto">An error occurred while loading dashboard data. Please try again later.</p>;
   }
   
 
@@ -56,8 +57,8 @@ const { data: profile, error: profileError } = await supabase
     <div className="max-w-[1200px] mx-auto gap-[10px]">
       <h1 className="text-3xl font-bold mb-6 ">Dashboard</h1>
       <DashboardClient 
-      stats={stats ?? {}} // 如果 stats 为 null, 传递空对象
-      profile={profile}  // 传递 profile
+      stats={stats ?? {}} 
+      profile={profile}  
     />
     </div>
   );

@@ -8,8 +8,7 @@ import {
   deleteShopVideo 
 } from '@/lib/actions';
 import { useFormState, useFormStatus } from 'react-dom';
-import { useRef } from 'react';
-
+import { useRef, useState, useEffect } from 'react';
 
 type ShopSettings = {
   shop_id: string;
@@ -54,29 +53,51 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
   const bgInputRef = useRef<HTMLInputElement>(null);
   const heroInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+// --- 2. 為 Team Name 創建 state ---
+  const [teamName, setTeamName] = useState(settings.name || '');
 
+  // --- 3. (可選) 確保在 settings prop 變化時同步 state ---
+  useEffect(() => {
+    setTeamName(settings.name || '');
+  }, [settings.name]);
 
   return (
     <div className="card bg-primary p-[24px]">
       {/* --- 基础信息表单 --- */}
-      <form action={textAction} className="p-6 bg-card   space-y-4">
-        <h3 className="text-lg font-semibold text-white">Basic Information</h3>
+      <form action={textAction} className="p-6 bg-card text-[var(--foreground)]">
+        <h3 className="text-lg font-semibold ">Basic Information</h3>
         <input type="hidden" name="shop_id" value={settings.shop_id} />
         <div className="space-y-[10px] text-black">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-white">Team Name</label>
-            <input type="text" id="name" name="name" defaultValue={settings.name} required className="input w-[95%] my-[10px]"/>
+            <label htmlFor="name" className="block text-sm font-medium ">Team Name</label>
+            <input 
+              type="text" 
+              id="name" 
+              name="name" 
+              value={teamName} // 綁定 value
+              onChange={(e) => setTeamName(e.target.value)} // 更新 state
+              required 
+              className="input w-[95%] my-[10px]"
+            />
           </div>
           <div>
-            <label htmlFor="slug" className="block text-sm font-medium text-white">Team Slug</label>
-            <input type="text" id="slug" name="slug" defaultValue={settings.slug} required className="input w-[95%] my-[10px]"/>
+            {/* (Label 仍然存在，但視覺上隱藏) */}
+            <label htmlFor="slug" className="block text-sm font-medium sr-only">Team Slug</label> 
+            <input 
+              type="hidden" // <-- 設為 hidden
+              id="slug" 
+              name="slug" 
+              value={teamName} // <-- 將 value 綁定到 teamName
+              required 
+              className="input w-[95%] my-[10px]"
+            />
           </div>
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-white">Team Introduction</label>
+            <label htmlFor="description" className="block text-sm font-medium ">Team Introduction</label>
             <textarea id="description" name="description" rows={4} defaultValue={settings.description} className="textarea w-[95%] my-[10px]"></textarea>
           </div>
           <div>
-            <label htmlFor="phone_number" className="block text-sm font-medium text-white">TEL</label>
+            <label htmlFor="phone_number" className="block text-sm font-medium ">TEL</label>
             <input type="tel" id="phone_number" name="phone_number" defaultValue={settings.phone_number} className="input w-[95%] my-[10px]"/>
           </div>
         </div>
@@ -85,15 +106,16 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
       </form>
 
       {/* --- 专属页面内容 --- */}
-      <div className="p-6 bg-card rounded-lg space-y-8">
-        <h3 className="text-lg font-semibold text-white">Team Page</h3>
+      <div className="p-6 bg-card rounded-lg text-[var(--foreground)]">
+        <h3 className="text-lg font-semibold ">Team Page</h3>
 
         {/* 背景图表单 */}
         <form action={bgImageAction} className="space-y-2 border-b-2 py-[10px]" onSubmit={() => setTimeout(() => bgInputRef.current?.form?.reset(), 100)}>
             <input type="hidden" name="shop_id" value={settings.shop_id} />
             {/* 关键修改 (1): 告诉后台要更新哪个字段 */}
             <input type="hidden" name="image_type" value="bg_image_url" />
-            <label htmlFor="background_image" className="block text-sm font-medium text-white">Team photos</label>
+            <label htmlFor="background_image" className="block text-sm font-medium ">Team photos</label>
+            <p>We recommend using 4:3 images.</p>
             {settings.bg_image_url && <img src={settings.bg_image_url} alt="Current background" className="card w-[100%] h-auto rounded-md mx-auto my-[10px]" />}
             {/* 关键修改 (2): 文件本身的 name 改为 'image_file' */}
             <input ref={bgInputRef} type="file" id="background_image" name="image_file" accept="image/*" required className="mt-2 block text-sm text-gray-300"/>
@@ -107,7 +129,8 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
             <input type="hidden" name="shop_id" value={settings.shop_id} />
             {/* 关键修改 (1): 告诉后台要更新哪个字段 */}
             <input type="hidden" name="image_type" value="hero_image_url" />
-            <label htmlFor="hero_image" className="block text-sm font-medium text-white">Banner</label>
+            <label htmlFor="hero_image" className="block text-sm font-medium ">Banner</label>
+            <p>We recommend using images that are 1200px*200px in size.</p>
             {settings.hero_image_url && <img src={settings.hero_image_url} alt="Current hero banner" className="card w-[100%] h-auto rounded-md my-[10px]" />}
             {/* 关键修改 (2): 文件本身的 name 改为 'image_file' */}
             <input ref={heroInputRef} type="file" id="hero_image" name="image_file" accept="image/*" required className="mt-2 block w-full text-sm text-gray-300"/>
@@ -118,7 +141,7 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
 
         {/* 特色视频管理 */}
         <div className="space-y-2 py-[10px]">
-            <label className="block text-sm font-medium text-white">Team Video</label>
+            <label className="block text-sm font-medium ">Team Video</label>
             {settings.featured_video_url ? (
                 <div className="space-y-2">
                     <video src={settings.featured_video_url} controls className="card w-[400px] rounded-md my-[10px]" />
@@ -131,7 +154,7 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
             ) : (
                 <form action={videoAction} className="space-y-2" onSubmit={() => setTimeout(() => videoInputRef.current?.form?.reset(), 100)}>
                      <input type="hidden" name="shop_id" value={settings.shop_id} />
-                    <label htmlFor="featured_video" className="block text-sm font-medium text-white">Upload a new video (limited to 1, under 50MB)</label>
+                    <label htmlFor="featured_video" className="block text-sm font-medium ">Upload a new video (limited to 1, under 50MB)</label>
                     <input ref={videoInputRef} type="file" id="featured_video" name="featured_video" accept="video/mp4,video/webm" required className="mt-2 block  text-sm text-gray-300"/>
                     <SubmitButton text="Upload video" pendingText="Uploading..." />
                     <FormStateMessage state={videoState} />
