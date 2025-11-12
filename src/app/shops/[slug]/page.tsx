@@ -54,7 +54,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         )}
   </div>
         
-  <div className="card w-[35%] min-w-[400px] bg-[var(--color-third)] text-[var()] p-[24px]">
+  <div className="card w-[35%] min-w-[400px] bg-[var(--color-third)] p-[24px]">
   
           <h1 className="text-4xl md:text-5xl font-bold ">Team:{shop.name}</h1>
           

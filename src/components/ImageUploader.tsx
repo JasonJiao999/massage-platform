@@ -1,12 +1,14 @@
-// src/components/ImageUploader.tsx (已完全修復部署錯誤)
+// src/components/ImageUploader.tsx (已完全修复)
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
-// import { uploadMultipleStaffPhotos, deleteStaffPhotos } from '@/lib/actions'; // 保持註釋
+// 【修复 1】: 导入 actions.ts 中真实存在的函数
+import { uploadMultipleMyProfilePhotos, deleteMyProfilePhoto } from '@/lib/actions'; 
 import Image from 'next/image';
 import { useState } from 'react';
 
-const initialState = { message: '' };
+const initialState = { message: '', success: false, url: '' }; // 确保初始状态匹配 action 的返回值
+const deleteInitialState = { message: '', success: false }; // 为删除 action 提供一个单独的状态
 
 function UploadSubmitButton() {
   const { pending } = useFormStatus();
@@ -17,66 +19,55 @@ function UploadSubmitButton() {
   );
 }
 
-function DeleteSubmitButton({ count }: { count: number }) {
+// 【修复 2】: 这是一个新的、用于单个删除按钮的组件
+function DeleteSubmitButton() {
     const { pending } = useFormStatus();
     return (
-      <button type="submit" disabled={pending} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-gray-400">
-        {pending ? '删除中...' : `删除选中的 ${count} 张照片`}
+      <button 
+        type="submit" 
+        disabled={pending} 
+        className="absolute top-2 right-2 btn btn-xs btn-circle btn-error" // 定位到右上角
+        aria-label="Delete photo"
+      >
+        {pending ? '...' : '×'}
       </button>
     );
 }
 
-
+// 【修复 3】: 重构 DeleteForm，移除多选逻辑
 function DeleteForm({ staffId, photoUrls }: { staffId: string; photoUrls: string[] }) {
-  // const [state, formAction] = useFormState(deleteStaffPhotos, initialState); // 保持註釋
-  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
-
-  const handleSelectionChange = (url: string) => {
-    setSelectedPhotos(prev => 
-      prev.includes(url) ? prev.filter(p => p !== url) : [...prev, url]
-    );
-  };
+  // 移除 useState 和 handleSelectionChange
 
   return (
-    <form> {/* 保持 action 移除 */}
-      <input type="hidden" name="staffId" value={staffId} />
-      {selectedPhotos.map(url => <input key={url} type="hidden" name="photoUrlsToDelete" value={url} />)}
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {photoUrls.map((url, index) => (
-          <div key={index} className="relative aspect-square group cursor-pointer" onClick={() => handleSelectionChange(url)}>
-            <Image 
-              src={url} 
-              alt={`员工照片 ${index + 1}`} 
-              fill 
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-              className="rounded-md object-cover" 
-            />
-            <div className={`absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity ${selectedPhotos.includes(url) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-              <div className={`h-6 w-6 rounded border-2 flex items-center justify-center ${selectedPhotos.includes(url) ? 'bg-indigo-600 border-indigo-600' : 'bg-gray-500/50 border-white'}`}>
-                {selectedPhotos.includes(url) && <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {selectedPhotos.length > 0 && (
-        <div className="mt-4"><DeleteSubmitButton count={selectedPhotos.length} /></div>
-      )}
-       
-       {/* 【修復 1】: 'state' 變量已被註釋，必須註釋掉此行 */}
-       {/* {state?.message && <p className="mt-2 text-sm text-green-400">{state.message}</p>} */}
-    </form>
+    // <form> 被移动到了 map 内部
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {photoUrls.map((url, index) => (
+        <div key={index} className="relative aspect-[3/4] group">
+          <Image 
+            src={url} 
+            alt={`员工照片 ${index + 1}`} 
+            fill 
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+            className="rounded-md object-cover" 
+          />
+          {/* 【修复 4】: 每个图片都有自己的删除表单 */}
+          <form action={deleteMyProfilePhoto.bind(null, url)}>
+            <input type="hidden" name="staffId" value={staffId} />
+            <DeleteSubmitButton />
+          </form>
+        </div>
+      ))}
+    </div>
   );
 }
 
 export default function ImageUploader({ staffId, photoUrls }: { staffId: string; photoUrls: string[] | null }) {
-    // const [uploadState, uploadFormAction] = useFormState(uploadMultipleStaffPhotos, initialState); // 保持註釋
+    // 【修复 5】: 使用正确的 action 函数
+    const [uploadState, uploadFormAction] = useFormState(uploadMultipleMyProfilePhotos, initialState);
   
     return (
       <div className="space-y-4 p-4 border border-border rounded-lg bg-card/50">
-        <h3 className="text-lg font-semibold text-white">员工照片管理 (功能維護中)</h3>
+        <h3 className="text-lg font-semibold text-white">员工照片管理</h3>
         
         {photoUrls && photoUrls.length > 0 ? (
           <DeleteForm staffId={staffId} photoUrls={photoUrls} />
@@ -84,9 +75,9 @@ export default function ImageUploader({ staffId, photoUrls }: { staffId: string;
           <p className="text-sm text-gray-400">暂无已上传的照片。</p>
         )}
   
-        {/* 【修復 2】: 'uploadFormAction' 變量已被註釋，必須移除 'action' 屬性 */}
-        <form className="space-y-2 border-t border-border pt-4">
-          <input type="hidden" name="staffId" value={staffId} />
+        {/* 【修复 6】: action 已修正，移除 staffId，因为它会从 session 中获取 */}
+        <form action={uploadFormAction} className="space-y-2 border-t border-border pt-4">
+          {/* <input type="hidden" name="staffId" value={staffId} /> */}
           <div>
             <label htmlFor="photos" className="block text-sm font-medium text-white mb-1">选择一张或多张新照片</label>
             <input 
@@ -102,14 +93,12 @@ export default function ImageUploader({ staffId, photoUrls }: { staffId: string;
           <UploadSubmitButton />
         </form>
   
-        {/* 【修復 3】: 'uploadState' 變量已被註釋，必須註釋掉此塊 */}
-        {/*
+        {/* 【修复 7】: uploadState 现在有正确的类型，可以安全访问 .message */}
         {uploadState?.message && (
-          <p className={`mt-2 text-sm ${uploadState.message.includes('失败') || uploadState.message.includes('错误') ? 'text-red-400' : 'text-green-400'}`}>
+          <p className={`mt-2 text-sm ${!uploadState.success ? 'text-red-400' : 'text-green-400'}`}>
             {uploadState.message}
           </p>
         )}
-        */}
       </div>
     );
   }

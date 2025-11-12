@@ -1,9 +1,11 @@
-// src/components/VideoUploader.tsx
+// src/components/VideoUploader.tsx (已完全修复)
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
-import { uploadMultipleStaffVideos, deleteSingleStaffVideo } from '@/lib/actions';
-import { useTransition } from 'react';
+// 【修复 1】: 导入您 actions.ts 中真实存在的函数
+import { uploadMultipleMyProfileVideos, deleteMyProfileVideo } from '@/lib/actions';
+// 【修复 2】: 移除 useTransition，因为我们将使用 useFormStatus
+// import { useTransition } from 'react';
 
 const initialState = { message: '' };
 
@@ -16,19 +18,26 @@ function UploadSubmitButton() {
   );
 }
 
-// 视频预览卡片组件 (大大简化版)
-function VideoCard({ staffId, url }: { staffId: string; url: string; }) {
-  const [isPending, startTransition] = useTransition();
+// 【修复 3】: 新增一个用于删除表单的状态按钮
+function DeleteSubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+      <button 
+        type="submit" 
+        disabled={pending}
+        className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded-md disabled:bg-gray-500"
+      >
+        {pending ? '删除中...' : '删除此视频'}
+      </button>
+    );
+}
 
-  const handleDelete = () => {
-    if (confirm('您确定要删除这个视频吗？')) {
-      startTransition(async () => {
-        const result = await deleteSingleStaffVideo(staffId, url);
-        // 直接弹窗提示结果，不再需要复杂的 useFormState
-        alert(result.message); 
-      });
-    }
-  };
+
+// 视频预览卡片组件
+function VideoCard({ staffId, url }: { staffId: string; url: string; }) {
+  // 【修复 4】: 移除旧的 onClick 逻辑 (useTransition, startTransition, handleDelete)
+  // const [isPending, startTransition] = useTransition();
+  // const handleDelete = () => { ... };
 
   return (
     <div className="flex flex-col gap-2">
@@ -37,24 +46,23 @@ function VideoCard({ staffId, url }: { staffId: string; url: string; }) {
           src={url} 
           className="w-full h-full object-cover"
           playsInline 
-          controls // <-- 只依赖这个属性来提供所有播放控件
+          controls 
         />
       </div>
       
-      <button 
-        onClick={handleDelete}
-        disabled={isPending}
-        className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded-md disabled:bg-gray-500"
-      >
-        {isPending ? '删除中...' : '删除此视频'}
-      </button>
+      {/* 【修复 5】: 将删除按钮改为一个 Form Action */}
+      {/* 它调用 deleteMyProfileVideo 并仅绑定 URL，这与 actions.ts 中的函数签名匹配 */}
+      <form action={deleteMyProfileVideo.bind(null, url)}>
+        <DeleteSubmitButton />
+      </form>
     </div>
   );
 }
 
 // 主组件 (简化版)
 export default function VideoUploader({ staffId, videoUrls }: { staffId: string; videoUrls: string[] | null }) {
-  const [uploadState, uploadFormAction] = useFormState(uploadMultipleStaffVideos, initialState);
+  // 【修复 6】: 使用正确的 action 函数
+  const [uploadState, uploadFormAction] = useFormState(uploadMultipleMyProfileVideos, initialState);
 
   return (
     <div className="space-y-4 p-4 border border-border rounded-lg bg-card/50">
@@ -65,7 +73,7 @@ export default function VideoUploader({ staffId, videoUrls }: { staffId: string;
           {videoUrls.map((url) => (
             <VideoCard
               key={url}
-              staffId={staffId}
+              staffId={staffId} // staffId 属性保留，以防将来使用
               url={url}
             />
           ))}
@@ -75,7 +83,10 @@ export default function VideoUploader({ staffId, videoUrls }: { staffId: string;
       )}
 
       <form action={uploadFormAction} className="space-y-2 border-t border-border pt-4">
-        <input type="hidden" name="staffId" value={staffId} />
+        {/* 【修复 7】: uploadMultipleMyProfileVideos 会自动从会话中获取用户ID，
+          因此不再需要 staffId 这个隐藏字段。
+        */}
+        {/* <input type="hidden" name="staffId" value={staffId} /> */}
         <div>
           <label htmlFor="videos" className="block text-sm font-medium text-white mb-1">选择一个或多个新视频</label>
           <input 

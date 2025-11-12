@@ -174,39 +174,52 @@ export async function deleteMyProfilePhoto(photoUrl: string) {
 
 
 /**
- * 【重命名版】为当前用户上传多个视频
+ * 【重命名版】为当前用户上传多个视频 (已修复, 匹配 useFormState 签名)
  */
-export async function uploadMultipleMyProfileVideos(formData: FormData) {
+export async function uploadMultipleMyProfileVideos(prevState: any, formData: FormData): Promise<{ success: boolean; message: string; }> {
     'use server';
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
-    const { user } = await getUserAndProfile(supabase);
-  
-    const files = formData.getAll('videos') as File[];
-    if (!files || files.length === 0) throw new Error('No files to upload.');
-  
-    const { data: profileData, error: profileError } = await supabase.from('profiles').select('video_urls').eq('id', user.id).single();
-    if (profileError) throw profileError;
-    const existingUrls = profileData.video_urls || [];
-  
-    // 【核心修改】: 使用 'web-media' Bucket 和 'videos' 子文件夹
-    const uploadPromises = files.map(file => 
-      supabase.storage.from('web-media').upload(`${user.id}/videos/${Date.now()}_${file.name}`, file)
-    );
-    const uploadResults = await Promise.all(uploadPromises);
-  
-    const newUrls = uploadResults.map(result => {
-      if (result.error) throw result.error;
-      const { data } = supabase.storage.from('web-media').getPublicUrl(result.data.path);
-      return data.publicUrl;
-    });
-  
-    const allUrls = [...existingUrls, ...newUrls];
-  
-    const { error: updateError } = await supabase.from('profiles').update({ video_urls: allUrls }).eq('id', user.id);
-    if (updateError) throw updateError;
-  
-    revalidatePath('/staff-dashboard/profile');
+
+    try { // <-- 【修复 A】: 包裹在 try/catch 中
+        const { user } = await getUserAndProfile(supabase);
+    
+        const files = formData.getAll('videos') as File[];
+        // 【修复 B】: 检查空文件并返回状态
+        if (!files || files.length === 0 || (files.length === 1 && files[0].size === 0)) {
+            return { success: false, message: '未提供任何文件。' };
+        }
+    
+        const { data: profileData, error: profileError } = await supabase.from('profiles').select('video_urls').eq('id', user.id).single();
+        if (profileError) throw profileError; // 将被 catch 捕获
+        const existingUrls = profileData.video_urls || [];
+    
+        // 【核心修改】: 使用 'web-media' Bucket 和 'videos' 子文件夹
+        const uploadPromises = files.map(file => 
+          supabase.storage.from('web-media').upload(`${user.id}/videos/${Date.now()}_${file.name}`, file)
+        );
+        const uploadResults = await Promise.all(uploadPromises);
+    
+        const newUrls = [];
+        for (const result of uploadResults) {
+             if (result.error) throw result.error; // 将被 catch 捕获
+             const { data } = supabase.storage.from('web-media').getPublicUrl(result.data.path);
+             newUrls.push(data.publicUrl);
+        }
+    
+        const allUrls = [...existingUrls, ...newUrls];
+    
+        const { error: updateError } = await supabase.from('profiles').update({ video_urls: allUrls }).eq('id', user.id);
+        if (updateError) throw updateError; // 将被 catch 捕获
+    
+        revalidatePath('/staff-dashboard/profile');
+        // 【修复 C】: 返回成功的状态
+        return { success: true, message: '视频上传成功！' };
+    
+    } catch (error: any) {
+        // 【修复 D】: 在出错时返回失败的状态
+        return { success: false, message: error.message || '发生意外错误。' };
+    }
 }
 
 /**
