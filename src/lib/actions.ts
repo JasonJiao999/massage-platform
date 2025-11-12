@@ -187,7 +187,7 @@ export async function uploadMultipleMyProfileVideos(prevState: any, formData: Fo
         const files = formData.getAll('videos') as File[];
         // 【修复 B】: 检查空文件并返回状态
         if (!files || files.length === 0 || (files.length === 1 && files[0].size === 0)) {
-            return { success: false, message: '未提供任何文件。' };
+            return { success: false, message: 'No documents were provided.' };
         }
     
         const { data: profileData, error: profileError } = await supabase.from('profiles').select('video_urls').eq('id', user.id).single();
@@ -214,11 +214,11 @@ export async function uploadMultipleMyProfileVideos(prevState: any, formData: Fo
     
         revalidatePath('/staff-dashboard/profile');
         // 【修复 C】: 返回成功的状态
-        return { success: true, message: '视频上传成功！' };
+        return { success: true, message: 'Video uploaded successfully!' };
     
     } catch (error: any) {
         // 【修复 D】: 在出错时返回失败的状态
-        return { success: false, message: error.message || '发生意外错误。' };
+        return { success: false, message: error.message || 'An error has occurred.' };
     }
 }
 

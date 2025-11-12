@@ -164,7 +164,9 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
   // 状态管理：照片上传
   const [photosState, photosFormAction] = useFormState(uploadMultipleMyProfilePhotos, { success: false, message: '' });
   const photosFormRef = useRef<HTMLFormElement>(null);
-
+// 【新增】: 为视频上传添加 state 和 ref
+  const [videoState, videoFormAction] = useFormState(uploadMultipleMyProfileVideos, { success: false, message: '' });
+  const videoFormRef = useRef<HTMLFormElement>(null);
   // 新增：照片文件选择状态
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   
@@ -222,6 +224,17 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
         }
     }
   }, [photosState]);
+
+// 【新增】: 为视频 state 添加 effect
+  useEffect(() => {
+    if (videoState.message) {
+        alert(videoState.message);
+        if (videoState.success) {
+            videoFormRef.current?.reset(); // 成功后清空文件输入框
+        }
+    }
+  }, [videoState]);
+
 
   // 将数组转换为逗号分隔的字符串用于 input 显示
   const tagsString = profile.tags?.join(', ') || '';
@@ -583,7 +596,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
       <div className="p-6 bg-gray-800 rounded-lg shadow-md space-y-4">
         <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch p-[24px]'>
   <h2 className="text-xl font-bold text-white">My Videos</h2>
-  <form action={uploadMultipleMyProfileVideos} className='flex items-center gap-4'>
+<form ref={videoFormRef} action={videoFormAction} className='flex items-center gap-4'>
     <div className="relative">
       <input 
         type="file" 
@@ -600,6 +613,13 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
     {/* 如果需要显示选中文件数量，可以在这里添加类似的逻辑 */}
     <SubmitButton text="Upload videos" />
   </form>
+
+  {/* 【新增】: 显示视频上传的状态消息 */}
+  {videoState?.message && (
+    <p className={`mt-2 text-sm ${!videoState.success ? 'text-red-400' : 'text-green-400'}`}>
+      {videoState.message}
+    </p>
+  )}
 </div>
 
 
