@@ -51,7 +51,7 @@ export default async function ProfilePage() {
       <h2 className="text-xl font-bold text-white">LV-{profile.level ?? 'N/A'}</h2>
       </div>
 
-      <div className="card bg-[var(--color-third)] p-[24px] rounded-lg shadow m-[10px] ">
+      <div className="card bg-[var(--color-third)]  max-w-[1200px] rounded-lg shadow mx-[10px] p-[20px]">
           <h2 className="text-xl font-semibold mb-4 ">Work status management</h2>
           <div className="flex items-center ">
               <p>
@@ -68,14 +68,15 @@ export default async function ProfilePage() {
 
       <MyProfileForm profile={profile} />
 
-      <div className="card bg-[var(--color-third)] p-[24px] mx-auto space-y-8 min-w-[500px] max-w-[1200px]">
-        <h2 className="text-xl font-semibold mb-4">Partner Relationship Management</h2>
+      <div className="card bg-[var(--color-third)] w-full m-[10px] max-[800px]:w-[480px] mx-auto">
+        <h2 className="text-xl font-semibold w-full text-center pt-[10px]">Partner Relationship Management</h2>
         {isInShop ? (
-          <div>
-            <p className="mb-4 ">
+          <div className="text-xl font-semibold w-full mx-[24px] flex-col pb-[20px] ">
+            <p className="break-all">
               You and “<span className="font-bold">{shopName}</span>” are partners.(คุณและ “<span className="font-bold">{shopName}</span>” เป็นหุ้นส่วนกัน)
             </p>
-            <p>If you want to end the partnership, you will become an independent worker.(หากคุณต้องการยุติความร่วมมือ คุณจะกลายเป็นคนงานอิสระ)</p>
+            <p className="break-words">If you want to end the partnership,<br className="max-[800px]:inline hidden" />you will become an independent worker.<br className="max-[800px]:inline hidden" />
+              (หากคุณต้องการยุติความร่วมมือ คุณจะกลายเป็นคนงานอิสระ)</p>
 
 
             <LeaveShopButton />

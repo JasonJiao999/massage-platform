@@ -8,7 +8,7 @@
 
 /* 2. 定义我们主题系统的CSS变量 (作为默认值/备用值) */
 :root {
-  --background: 0 0% 83%;    /* 背景-HSL 值 */
+  --background: #000000;    /* 背景-HSL 值 */
   --foreground: #000000;      /* 亮灰色文字 */
 
   
@@ -29,8 +29,8 @@
 
 /* 3. 将一些基础变量应用到全局 */
 body {
-  background-color: 0 0% 100%;
-  color: hsl(var(--foreground));
+ 
+  color: var(--color-secondary);
   font-family: var(--font-family);
 
 

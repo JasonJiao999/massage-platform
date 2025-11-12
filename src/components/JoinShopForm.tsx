@@ -20,7 +20,8 @@ export function JoinShopForm() {
   const [state, dispatch] = useFormState(joinShopByMerchantEmail, initialState);
 
   return (
-    <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+    <div className=" card bg-[var(--color-third)] p-[24px] mx-auto space-y-8 min-w-[500px] max-w-[1200px]">
+    <div className="rounded-lg shadow mx-[10px] text-center">
       <h2 className="text-2xl font-bold text-center">Join the team(ร่วมทีมกับเรา)</h2>
       <form action={dispatch}>
         <div>
@@ -43,6 +44,7 @@ export function JoinShopForm() {
           </p>
         )}
       </form>
+    </div>
     </div>
   );
 }

@@ -26,10 +26,10 @@ export default function Footer() {
   return (
     
     // 這是您需要的響應式 Footer 容器
-    <footer className="footer p-[24px] card bg-primary text-[var(--foreground)] mt-[20px] max-w-[1150px] mx-auto mb-[20px] flex flex-col min-[1200px]:flex-row min-[1200px]:justify-between min-[1200px]:items-center w-full">
-   
+    <footer>
+    <div  className="footer card bg-primary text-[var(--foreground)] w-full max-[800px]:w-[480px] mx-auto m-[10px] flex flex-row flex-wrap justify-evenly items-center ">
       {/* 1. 法律條款 (在手機上會自動堆疊) */}
-      <nav className="grid grid-flow-col gap-[10px] ">
+      <nav className="gap-[10px] ">
         <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
         <li><a href={`mailto:${customerServiceEmail}`} className="link link-hover text-[var(--foreground)]">
           Customer Service
@@ -43,7 +43,7 @@ export default function Footer() {
 
       {/* 2. 社交媒體 (在手機上會自動堆疊) */}
       <nav>
-        <div className="grid grid-flow-col gap-[10px] ">
+        <div className="gap-[10px] ">
           {socialLinks.map((link) => (
             <a 
               key={link.label}
@@ -53,23 +53,21 @@ export default function Footer() {
               aria-label={link.label}
               className="link link-hover"
             >
-              <link.icon className="w-6 h-6 text-[var(--foreground)]" />
+              <link.icon className="w-[20px] h-[20px] text-[var(--foreground)]" />
             </a>
           ))}
         </div>
       </nav>
 
       {/* 3. 版權和翻譯 (在手機上會自動堆疊) */}
-      <aside>
+      <aside className="gap-[10px]">
         <p >
           Copyright © {currentYear} - All right reserved by AoFiw.com
           <br />
           This website is only for users aged 18 and over.
         </p>
-        <div className='mx-auto'>
-
-        </div>
       </aside>
+    </div>
 
     </footer>
   );
