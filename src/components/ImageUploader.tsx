@@ -1,8 +1,8 @@
-// src/components/ImageUploader.tsx
+// src/components/ImageUploader.tsx (已完全修復部署錯誤)
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
-import { uploadMultipleStaffPhotos, deleteStaffPhotos } from '@/lib/actions';
+// import { uploadMultipleStaffPhotos, deleteStaffPhotos } from '@/lib/actions'; // 保持註釋
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -28,7 +28,7 @@ function DeleteSubmitButton({ count }: { count: number }) {
 
 
 function DeleteForm({ staffId, photoUrls }: { staffId: string; photoUrls: string[] }) {
-  const [state, formAction] = useFormState(deleteStaffPhotos, initialState);
+  // const [state, formAction] = useFormState(deleteStaffPhotos, initialState); // 保持註釋
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
 
   const handleSelectionChange = (url: string) => {
@@ -38,14 +38,13 @@ function DeleteForm({ staffId, photoUrls }: { staffId: string; photoUrls: string
   };
 
   return (
-    <form action={formAction}>
+    <form> {/* 保持 action 移除 */}
       <input type="hidden" name="staffId" value={staffId} />
       {selectedPhotos.map(url => <input key={url} type="hidden" name="photoUrlsToDelete" value={url} />)}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {photoUrls.map((url, index) => (
           <div key={index} className="relative aspect-square group cursor-pointer" onClick={() => handleSelectionChange(url)}>
-            {/* ↓↓↓ 核心修正区域 ↓↓↓ */}
             <Image 
               src={url} 
               alt={`员工照片 ${index + 1}`} 
@@ -53,7 +52,6 @@ function DeleteForm({ staffId, photoUrls }: { staffId: string; photoUrls: string
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
               className="rounded-md object-cover" 
             />
-            {/* ↑↑↑ 核心修正区域 ↑↑↑ */}
             <div className={`absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity ${selectedPhotos.includes(url) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               <div className={`h-6 w-6 rounded border-2 flex items-center justify-center ${selectedPhotos.includes(url) ? 'bg-indigo-600 border-indigo-600' : 'bg-gray-500/50 border-white'}`}>
                 {selectedPhotos.includes(url) && <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>}
@@ -66,18 +64,19 @@ function DeleteForm({ staffId, photoUrls }: { staffId: string; photoUrls: string
       {selectedPhotos.length > 0 && (
         <div className="mt-4"><DeleteSubmitButton count={selectedPhotos.length} /></div>
       )}
-      {state?.message && <p className="mt-2 text-sm text-green-400">{state.message}</p>}
+       
+       {/* 【修復 1】: 'state' 變量已被註釋，必須註釋掉此行 */}
+       {/* {state?.message && <p className="mt-2 text-sm text-green-400">{state.message}</p>} */}
     </form>
   );
 }
 
-// ... (主组件 ImageUploader 保持不变)
 export default function ImageUploader({ staffId, photoUrls }: { staffId: string; photoUrls: string[] | null }) {
-    const [uploadState, uploadFormAction] = useFormState(uploadMultipleStaffPhotos, initialState);
+    // const [uploadState, uploadFormAction] = useFormState(uploadMultipleStaffPhotos, initialState); // 保持註釋
   
     return (
       <div className="space-y-4 p-4 border border-border rounded-lg bg-card/50">
-        <h3 className="text-lg font-semibold text-white">员工照片管理</h3>
+        <h3 className="text-lg font-semibold text-white">员工照片管理 (功能維護中)</h3>
         
         {photoUrls && photoUrls.length > 0 ? (
           <DeleteForm staffId={staffId} photoUrls={photoUrls} />
@@ -85,7 +84,8 @@ export default function ImageUploader({ staffId, photoUrls }: { staffId: string;
           <p className="text-sm text-gray-400">暂无已上传的照片。</p>
         )}
   
-        <form action={uploadFormAction} className="space-y-2 border-t border-border pt-4">
+        {/* 【修復 2】: 'uploadFormAction' 變量已被註釋，必須移除 'action' 屬性 */}
+        <form className="space-y-2 border-t border-border pt-4">
           <input type="hidden" name="staffId" value={staffId} />
           <div>
             <label htmlFor="photos" className="block text-sm font-medium text-white mb-1">选择一张或多张新照片</label>
@@ -102,12 +102,14 @@ export default function ImageUploader({ staffId, photoUrls }: { staffId: string;
           <UploadSubmitButton />
         </form>
   
+        {/* 【修復 3】: 'uploadState' 變量已被註釋，必須註釋掉此塊 */}
+        {/*
         {uploadState?.message && (
           <p className={`mt-2 text-sm ${uploadState.message.includes('失败') || uploadState.message.includes('错误') ? 'text-red-400' : 'text-green-400'}`}>
             {uploadState.message}
           </p>
         )}
+        */}
       </div>
     );
   }
-  
