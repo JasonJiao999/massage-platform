@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import React from 'react';
 import { FaTwitter, FaFacebook, FaInstagram, FaLine, FaTelegram, FaWeixin } from 'react-icons/fa';
+import { FaXTwitter } from 'react-icons/fa6'; 
 
 
 
@@ -10,13 +11,14 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
   
   const socialLinks = [
-    { href: 'https://twitter.com/YourAccount', icon: FaTwitter, label: 'X (Twitter)' },
-    { href: 'https://facebook.com/YourAccount', icon: FaFacebook, label: 'Facebook' },
+    { href: 'https://x.com/AoFiwcom', icon: FaXTwitter, label: 'X (Twitter)' },
+    { href: 'https://t.me/aofiwcom', icon: FaTelegram, label: 'Telegram' },
+  ];
+   {/* { href: 'https://facebook.com/YourAccount', icon: FaFacebook, label: 'Facebook' },
     { href: 'https://instagram.com/YourAccount', icon: FaInstagram, label: 'Instagram' },
     { href: 'https://line.me/ti/p/~YourLineID', icon: FaLine, label: 'Line' },
-    { href: 'https://t.me/YourAccount', icon: FaTelegram, label: 'Telegram' },
-    { href: 'weixin://dl/chat?YourWeChatID', icon: FaWeixin, label: 'WeChat' },
-  ];
+    
+    { href: 'weixin://dl/chat?YourWeChatID', icon: FaWeixin, label: 'WeChat' },*/}
 
   const customerServiceEmail = 'service@yourwebsite.com';
 

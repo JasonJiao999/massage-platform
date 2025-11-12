@@ -178,15 +178,21 @@ return (
 {/* --- (*** 新增：訂閱狀態橫幅 ***) --- */}
       {!isActive && (
         <div className="card bg-red-500 text-white p-6 mb-6 text-center w-full">
-          <h2 className="font-bold text-xl">您的訂閱已過期！</h2>
-          <p>您的個人資料已從首頁隱藏，客戶無法再預約您。</p>
-          <p className="mt-2">請立即聯繫 Telegram 客服 ( @YourCustomerService ) 辦理續費。</p>
+          <h2 className="font-bold text-xl">การสมัครสมาชิกของคุณหมดอายุแล้ว!</h2>
+          <p>ข้อมูลของคุณจะไม่สามารถเข้าถึงได้โดยผู้เยี่ยมชมเว็บไซต์อีกต่อไป</p>
+          <p className="mt-2">กรุณาติดต่อฝ่ายบริการลูกค้า Telegram ( https://t.me/aofiwvip ) </p>
         </div>
       )}
       {isActive && daysRemaining <= 7 && (
         <div className="card bg-yellow-400 text-black p-6 mb-6 text-center w-full">
-          <h2 className="font-bold text-xl">您的訂閱即將到期！</h2>
-          <p>您的訂閱僅剩 {daysRemaining} 天。為避免您的資料被隱藏，請及時聯繫客服續費。</p>
+          <h2 className="font-bold text-xl">การสมัครสมาชิกของคุณกำลังจะหมดอายุ!</h2>
+          <p>การสมัครของคุณเหลือเวลาอีก {daysRemaining} วัน</p>
+        </div>
+      )}
+      {/* 【新增】情況 3：訂閱活躍且剩餘時間大於 7 天 */}
+      {isActive && daysRemaining > 7 && (
+        <div className="card  text-white  text-center w-full">
+          <h2 className="font-bold text-xl px-[10px] ">สถานะการสมัคร: ใช้งานอยู่ | การสมัครของคุณเหลือเวลาอีก {daysRemaining} วัน</h2>
         </div>
       )}
       {/* --- (*** 橫幅結束 ***) --- */}

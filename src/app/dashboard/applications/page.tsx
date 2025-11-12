@@ -2,7 +2,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { approveApplication, rejectApplication } from '@/lib/actions';
+// import { approveApplication, rejectApplication } from '@/lib/actions';
 
 export default async function ApplicationsPage() {
   const cookieStore = cookies();
@@ -29,6 +29,7 @@ export default async function ApplicationsPage() {
       <h1 className="text-2xl font-bold text-white mb-6">Manage Join Applications</h1>
 
       <div className="space-y-4">
+        {/*
         {applications && applications.length > 0 ? (
           applications.map((app) => {
             const profile = app.profiles as { nickname: string, email: string };
@@ -49,11 +50,11 @@ export default async function ApplicationsPage() {
               </div>
             );
           })
-        ) : (
+        ) : (*/}
           <div className="bg-card border border-border rounded-lg p-8 text-center text-foreground/60">
             <p>There are no pending applications.</p>
           </div>
-        )}
+      {/*  )} */}
       </div>
     </div>
   );

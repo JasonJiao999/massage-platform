@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTransition } from 'react';
-import { toggleShopStatus, deleteShopByAdmin } from '@/lib/actions';
+import { toggleShopStatus, deleteShop } from '@/lib/actions';
 
 // 搜索栏组件
 function SearchBar({ initialQuery }: { initialQuery: string }) {
@@ -65,7 +65,7 @@ function DeleteShopButton({ shopId }: { shopId: string }) {
   const handleDelete = () => {
     if (confirm('警告：您确定要永久删除这家店铺及其所有相关数据吗？此操作不可逆！')) {
       startTransition(async () => {
-        await deleteShopByAdmin(shopId);
+        await deleteShop(shopId);
         router.refresh();
       });
     }
