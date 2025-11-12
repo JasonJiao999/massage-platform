@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import GoogleTranslateWidget from './GoogleTranslateWidget'; 
+
 // 这是一个异步的 React 服务器组件
 export default async function TopNavigation({ children }: { children: React.ReactNode }) {
   const cookieStore = cookies();
@@ -33,7 +33,7 @@ export default async function TopNavigation({ children }: { children: React.Reac
       
       {/* 3. 【核心】在这里渲染从 layout.tsx 传递进来的、角色专属的 Header */}
       {children}
-      <GoogleTranslateWidget />
+
     </div>
   );
 }
