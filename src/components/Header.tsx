@@ -156,7 +156,7 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
             
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)} 
-              className="btn btn-square mx-[20px] hover:text-gray-900 hover:bg-gray-100"
+              className="btn btn-square mx-[20px] bg-[var(--background)] hover:text-gray-900 hover:bg-gray-100"
             >
               <span className="sr-only">Open menu</span>
               

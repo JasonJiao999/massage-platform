@@ -56,7 +56,7 @@ export default function RegisterPage() {
 
   return (
   
-    <div className="flex justify-center items-center h-screen ">
+    <div className="flex justify-center items-center h-screen max-[800px]:w-[280px]">
       <div className="card w-[350px] shadow-sm bg-[var(--color-third)] items-center text-[var(--foreground)] p-[24px]">
         <h1 className="text-2xl font-bold text-center text-card-foreground">Create Account</h1>
         <form onSubmit={handleSignUp} className='w-[300px]'>
@@ -69,7 +69,7 @@ export default function RegisterPage() {
               value={role}
               onChange={(e) => setRole(e.target.value)}
               required
-              className="select text-[var(--color-secondary)] w-[93%] my-[10px]"
+              className="select text-[var(--foreground)] w-[93%] my-[10px]"
             >
               <option value="customer">Customer</option>
               <option value="freeman">Freeman</option>

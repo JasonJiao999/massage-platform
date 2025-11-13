@@ -30,7 +30,7 @@ export default function LoginPage() {
 
   return (
    
-    <div className="flex justify-center items-center h-screen ">
+    <div className="flex justify-center items-center h-screen max-[800px]:w-[280px]">
       
       <div className="card w-[350px] shadow-sm bg-primary items-center text-[var(--foreground)] p-[24px]">
         

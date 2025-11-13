@@ -26,7 +26,7 @@ const PromoBanner = ({ banner }: { banner: { url: string; name: string | null } 
 
   return (
 
-<div className="w-full max-w-[1200px] mx-auto m-[10px] max-[800px]:w-[480px]">
+<div className="w-full max-w-[1200px] mx-auto m-[10px] max-[800px]:w-[300px]">
   <div className="relative aspect-[1200/200]">
 <Image
         src={banner.url}
@@ -70,7 +70,7 @@ export default async function RootLayout({
   const logoUrl = logoData?.url || null;
 
   return (
-    <html lang="en" className="bg-[var(--background)]">
+    <html lang="en" className="bg-[var(--background)] max-[800px]:w-[320px]">
 
       <body className={`w-full max-w-[1200px] mx-auto`}>
         

@@ -27,7 +27,7 @@ export default function Footer() {
     
     // 這是您需要的響應式 Footer 容器
     <footer>
-    <div  className="footer card bg-primary text-[var(--foreground)] w-full max-[800px]:w-[480px] mx-auto m-[10px] flex flex-row flex-wrap justify-evenly items-center ">
+    <div  className="footer card bg-primary text-[var(--foreground)] w-full p-[10px] mx-auto flex flex-row flex-wrap justify-evenly max-[800px]:w-[280px] items-center ">
       {/* 1. 法律條款 (在手機上會自動堆疊) */}
       <nav className="gap-[10px] ">
         <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
