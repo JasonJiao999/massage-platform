@@ -158,15 +158,15 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
   };
 
   return (
-    <div className="container mx-auto max-w-[1200px] py-[20px]">
+    <div className="container max-w-[1200px] py-[20px]">
       <div style={layoutStyle}>
         
         
         <div style={leftPanelStyle}>
-<div className='flex flex-wrap justify-center gap-[10px] text-[var(--foreground)]' data-theme="mytheme">
+<div className='flex flex-wrap justify-center gap-[10px] text-[var(--foreground)]'>
 
 
-<div className="card bg-primary text-start w-full">
+<div className="card bg-primary text-start mx-[10px] w-full">
   <div className="flex flex-col gap-[10px] p-[24px]">
     <h3>{worker.nickname}</h3>
 {/* --- (*** 這是更新後的列表 ***) --- */}
@@ -214,7 +214,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
   </div>
 </div>
 
-<div className="card bg-primary w-full text-start">
+<div className="card bg-primary w-full text-start mx-[10px]">
   <div className="card-body">
 
     <p>Bio:{worker.bio}</p>
@@ -288,7 +288,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
 
 {/* --- (*** 這是新添加的 QR 碼卡片 ***) --- */}
 {worker.qr_url && worker.qr_url.length > 0 && (
-  <div className="card bg-primary w-full text-start">
+  <div className="card bg-primary w-full text-start mx-[10px]">
     <div className="card-body">
       <h3 className="text-xl font-semibold mb-4">QR Codes</h3>
       <div className="flex flex-wrap justify-center gap-[5px]">
@@ -310,8 +310,8 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
 {/* --- (*** QR 碼卡片結束 ***) --- */}
 
 {/* 服务列表 */}
-<ul className="menu bg-base-200 rounded-box w-full flex flex-wrap justify-center gap-[10px] mx-auto text-[var(--color-secondary)]">
-  <li className="menu-title">Service List</li>
+<ul className="menu bg-[var(--color-third)] rounded-box w-full mx-[10px]  text-[var(--color-secondary)]">
+  <li className="menu-title text-[var(--color-secondary)]">Service List</li>
   <li>
     {services.map(service => (
       <div 
@@ -323,13 +323,14 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
             modal.showModal();
           }
         }}
-        style={{ cursor: 'pointer' }}
+        style={{ cursor: 'pointer'  }}
+        className="flex flex-row justify-between gap-[10px]"
       >
-        <div  className="w-[250px]">
+        <div  className="w-[60%]">
         <h3>{service.name}</h3>
         <p>{service.description}</p>
         </div>
-        <div className="w-[120px]">
+        <div className="w-[40%]">
           <p>Time: {service.duration_value} {service.duration_unit}</p>
           <p>{service.price} THB</p>
         </div>
@@ -347,7 +348,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
 
 {/* 预约对话框 */}
 <dialog id="booking_modal" className="modal">
-  <div className="modal-box px-[30px]" style={{ maxWidth: '400px' }}>
+  <div className="modal-box px-[30px] bg-[var(--color-third)]" style={{ maxWidth: '400px' }}>
     <h3 className="font-bold text-lg">Booking</h3>
     
     {selectedService && (
@@ -382,7 +383,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
         
         {/* 預約時間顯示區 */}
         {selectedDate && (initialAvailability[selectedDate]?.length > 0) ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px] ">
             {/* 左側：選擇時間 */}
             <div>
               <h3 className="font-semibold mb-2">Select Time(24H)</h3>
@@ -469,13 +470,13 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
         </div>
 
         
-        <div style={rightPanelStyle}>
+        <div style={rightPanelStyle} className="w-[full-20px] mx-[10px]">
 
 
 
 
-                   {worker.photo_urls && worker.photo_urls.length > 0 && (
-            <div className="">
+          {worker.photo_urls && worker.photo_urls.length > 0 && (
+            <div >
               
               <div className="flex flex-col items-center ">
                 <div className="carousel w-full rounded-box">
@@ -497,7 +498,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-center w-full max-w-[500px] py-2 gap-2">
+                <div className="flex justify-center w-full max-w-[500px]">
                   {worker.photo_urls.map((url: string, index: number) => (
                     <a 
                       key={`button-${url}`} 
@@ -516,7 +517,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
           {worker.video_urls && worker.video_urls.length > 0 && (
             <div>
               
-              <div className="grid grid-cols-1 gap-6 justify-items-center my-[10px]">
+              <div className="grid grid-cols-1 gap-[10px] justify-items-center my-[10px]">
                 {worker.video_urls.map((url: string) => (
                   <div 
                     key={url} 
