@@ -70,7 +70,7 @@ export default async function RootLayout({
   const logoUrl = logoData?.url || null;
 
   return (
-    <html lang="en" className="bg-[var(--background)] max-[800px]:w-[320px]">
+    <html lang="en" className="bg-[var(--background)] max-[800px]:w-[450px]">
 
       <body className={`w-full max-w-[1200px] mx-auto`}>
         
