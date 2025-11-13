@@ -19,24 +19,24 @@ export const metadata: Metadata = {
 
 
 const PromoBanner = ({ banner }: { banner: { url: string; name: string | null } | null }) => {
-  // 如果沒有傳入 banner 數據，或者 banner 沒有 url，則不渲染任何內容
+
   if (!banner || !banner.url) {
     return null;
   }
 
   return (
 
-<div className="w-[full-20px] m-[10px]">
-  <div className="relative aspect-[1200/200]">
-<Image
-        src={banner.url}
-        alt={banner.name || "Promotional Banner"}
-        fill={true} 
-        style={{ objectFit: "cover"  }}
-        className="card"
-        priority
-      />
-    </div>
+<div className="w-[full-20px] m-[10px]"> {/* 添加左右内边距，确保不贴边 */}
+      <div className="relative aspect-[1200/200] mx-auto max-w-[1200px] overflow-hidden rounded-lg shadow-lg"> {/* 添加一些美化样式 */}
+        <Image
+          src={banner.url}
+          alt={banner.name || "Promotional Banner"}
+          fill={true} // 保持 fill={true} 实现响应式填充
+          style={{ objectFit: "cover" }}
+          className="card" // 保持 card 样式
+          priority
+        />
+      </div>
     </div>
 
   );
@@ -58,7 +58,7 @@ export default async function RootLayout({
     profile = userProfile;
   }
   
-  // 這段 Promise.all 已經在獲取您需要的 'promo_banner'
+  // 這段 Promise.all 已經在獲取您需要的 'promo_banner' w-[full-20px] m-[10px]
   const [
     { data: activeBanner },
     { data: logoData }
@@ -72,7 +72,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className="bg-[var(--background)] max-[800px]:w-[450px] ">
 
-      <body className={` w-full max-w-[1200px] mx-auto border mb-[20px] `}>
+      <body className={` w-full max-w-[1200px] mx-auto  mb-[20px] `}>
         
         
         <Header user={user} profile={profile} logoUrl={logoUrl} />
@@ -82,10 +82,10 @@ export default async function RootLayout({
           
         </main>
         
-        
+        <div>
         <PromoBanner banner={activeBanner} />
         <Footer />
-
+        </div>
 
       </body>
     </html>

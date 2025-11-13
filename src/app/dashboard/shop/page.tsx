@@ -64,7 +64,7 @@ export default async function ShopSettingsPage() {
 
   return (
     <div className="max-w-[1200px] mx-auto gap-[10px]">
-      <h1 className="text-2xl font-bold mb-6 text-white">Editorial Team Information</h1>
+      <h1 className="text-2xl font-bold mb-6 text-white mx-[10px]">Editorial Team Information</h1>
       <ShopEditForm settings={settings} />
     </div>
   );

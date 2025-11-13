@@ -170,9 +170,9 @@ export default function WorkerSearchClient({
       )}
       {/* --- 提示窗口結束 --- */}
 
-      <div className="flex flex-wrap justify-center gap-1 mx-[30px] my-[10px] ">
-        <div className="card bg-[var(--color-third)] min-[780px]:w-[1135px] p-[24px]">
-          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 my-[10px]">
+      <div className="flex flex-wrap justify-center max-w-[1200px] my-[10px] ">
+        <div className="card bg-[var(--color-third)] w-full mx-[10px] ]">
+          <form onSubmit={handleSearchSubmit} className="flex items-center p-[24px] my-[10px]">
             <input
               type="search"
               value={searchTerm}
@@ -187,7 +187,7 @@ export default function WorkerSearchClient({
           </form>
 
           {/* 推荐标签 */}
-          <div className="flex flex-wrap items-center gap-[5px] my-[10px] max-w-[1200px]">
+          <div className="flex flex-wrap items-center gap-[5px] p-[24px]">
             <span className="text-sm font-medium ">Recommended:</span>
             {adminTags.map(({ tag }) => (
               <button 
@@ -201,7 +201,7 @@ export default function WorkerSearchClient({
           </div>
 
           {/* 热门城市 */}
-          <div className="flex flex-wrap items-center gap-[5px]">
+          <div className="flex flex-wrap items-center gap-[5px] p-[24px]">
             <span className="text-sm font-medium ">Popular Cities:</span>
             {popularCities.map(({ name, location_id }) => (
               <button 
@@ -215,7 +215,7 @@ export default function WorkerSearchClient({
           </div>
 
           {/* 热门地区 */}
-          <div className="flex flex-wrap items-center gap-[5px] my-[10px]">
+          <div className="flex flex-wrap items-center gap-[5px] p-[24px]">
             <span className="text-sm font-medium ">Popular Areas:</span>
             {popularAreas.map(({ name, location_id }) => (
               <button 

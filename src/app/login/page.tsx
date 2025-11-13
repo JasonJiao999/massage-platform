@@ -30,9 +30,9 @@ export default function LoginPage() {
 
   return (
    
-    <div className="flex justify-center items-center h-screen max-[800px]:w-[280px]">
+    <div className="flex justify-center">
       
-      <div className="card w-[350px] shadow-sm bg-primary items-center text-[var(--foreground)] p-[24px]">
+      <div className="card shadow-sm bg-primary h-[400] text-[var(--foreground)] w-[full-20px] mx-[10px] p-[20px]">
         
         <h1 className="text-2xl font-bold text-center">Login Account</h1>
         <form onSubmit={handleSignIn} className="w-[300px]">

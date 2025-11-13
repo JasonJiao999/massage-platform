@@ -12,7 +12,7 @@ export default function HeaderCustomer() {
 
   ];
   return (
-    <div className="w-[1200px] mx-auto gap-[10px] my-[10px] flex items-center ">
+    <div className="w-[full-20px] gap-[10px] m-[10px] flex items-center ">
       {navLinks.map((link) => (
         <Link key={link.name} href={link.href} className={`block p-4 rounded-lg shadow-sm transition-all ${pathname.startsWith(link.href) ? 'bg-indigo-600 text-white' : 'bg-white hover:bg-gray-50'}`}>
           <h3 className="btn">{link.name}</h3>

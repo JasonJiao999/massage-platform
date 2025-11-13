@@ -31,7 +31,7 @@ export default function ImageCarousel({ images }: ImageCarouselProps) {
       {images.map((image, index) => (
         <div
           key={index}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out w-[full-20px] mx-[10px] ${
             index === currentIndex ? 'opacity-100' : 'opacity-0'
           }`}
         >
@@ -40,7 +40,7 @@ export default function ImageCarousel({ images }: ImageCarouselProps) {
             alt={image.name || `Promo Image ${index + 1}`}
             width={1280}
             height={720}
-            className="w-full h-full object-cover rounded-lg"
+            className="w-full h-full object-cover rounded-lg card "
             priority={index === 0}
           />
         </div>

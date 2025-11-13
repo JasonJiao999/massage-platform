@@ -35,7 +35,7 @@ export default function ProfileFormClient({ initialData }: { initialData: Profil
   );
 
   return (
-    <form action={formAction} className="card bg-primary w-[350px] p-[24px] items-stretch text-[var(--foreground)] gap-[10px]">
+    <form action={formAction} className="card bg-primary w-[340px] p-[24px] items-stretch text-[var(--foreground)] gap-[10px] m-[10px]">
       
       {/* 昵称輸入 */}
       <div>

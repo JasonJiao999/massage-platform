@@ -94,13 +94,15 @@ export default async function CustomerDashboardPage() {
 
 
   return (
-    <div className="max-w-[1200px] mx-auto gap-4 my-[10px] p-4">
+    <div className="max-w-[1200px] mx-auto my-[10px]">
       {/* 渲染個人資料表單 */}
-      <h1 className="text-2xl font-bold">Profile</h1>
+      <h1 className="text-2xl font-bold mx-[10px]">Profile</h1>
 
         <div className="flex flex-wrap justify-center max-w-[1200px] mx-auto">
         <div className='card w-full min-[500px]:max-w-[400px] min-[1200px]:max-w-[1200px] '>
-<div className='flex flex-wrap justify-between gap-[10px]'>
+
+
+<div className='flex flex-wrap justify-between'>
       {user ? (
         <ProfileFormClient initialData={profile as ProfileData || {}} />
       ) : (
@@ -109,7 +111,7 @@ export default async function CustomerDashboardPage() {
 
       {/* 渲染走馬燈gg */}
       {carouselImages.length > 0 && (
-        <div className=" rounded-lg shadow-lg  min-[500px]:w-[400px] min-[1200px]:w-[790px]">
+        <div className=" rounded-lg shadow-lg  min-[500px]:w-[380px] min-[1200px]:w-[770px] m-[10px]">
           <AutoPlayCarousel 
             images={carouselImages} // <-- 傳入轉換後的數據
             intervalMs={30000} // 30 秒
@@ -122,7 +124,7 @@ export default async function CustomerDashboardPage() {
 
       {/* 渲染收藏列表 */}
       <div className="mt-12 pt-6 ">
-        <h2 className="text-2xl font-bold">Favorites</h2>
+        <h2 className="text-2xl font-bold mx-[10px]">Favorites</h2>
         
         <div className="flex flex-wrap justify-center max-w-[1200px] mx-auto">
         <div className='card w-full min-[500px]:max-w-[400px] min-[1200px]:max-w-[1200px] '>

@@ -70,7 +70,7 @@ export default function CustomerChatLayout({ initialRooms, customerProfile }: {
 
   return (
     // 【修改】: 移除 max-[800px]:w-[300px]，使用 max-w-[1200px] 和 w-full 确保响应式
-    <div className="flex flex-row card w-full max-w-[1200px] h-[800px] justify-between border mx-auto ">
+    <div className="flex flex-row card w-[full-20px] h-[800px] justify-between border mx-[10px]">
       
       {/* 1. 左側聊天列表 (顯示 *工作者*) */}
       {/* 【修改】: 添加响应式类 */}

@@ -50,8 +50,8 @@ function BookingCard({ booking }: { booking: Booking }) {
 
   return (
     <div className={`rounded-lg  overflow-hidden ${isPast ? 'opacity-70' : ''}`}>
-      <div className="card bg-[var(--color-third)] p-[24px] text-[var(--color-secondary)] w-[340px] h-[400px]">
-        <div className="flex justify-between items-start mb-3">
+      <div className="card bg-[var(--color-third)] p-[10px] text-[var(--color-secondary)] min-w-[130px] max-[11000px]:w-[350px] h-[400px] ">
+        <div className="flex justify-between items-start">
           <h3 className="text-xl font-bold">{booking.services?.name || 'Unknown'}</h3>
 
         </div>
@@ -66,7 +66,7 @@ function BookingCard({ booking }: { booking: Booking }) {
 
         </div>
 
-        <div className="border-t mt-4 pt-4 flex items-center justify-between">
+        <div className="border-t  flex items-center justify-between">
           <div className="flex items-center gap-3">
  
             <div className='my-[15px]'>
@@ -110,32 +110,35 @@ export default function MyBookingsClient({ bookings }: { bookings: Booking[] }) 
   }, [bookings]);
 
   return (
-    <main className=" h-screen">
-      <div className="flex-1 min-w-[300px] max-w-[1200px] m-[10px] mx-auto">
+   
+      <div className="flex-1max-w-[1180px] mx-[10px]">
         <h1 className="text-3xl md:text-4xl font-bold  ">My Booking</h1>
         <h2 className="card bg-primary text-[var(--foreground)] p-[24px]">Future Bookings</h2>
-        <section className="my-[10px] w-full flex justify-center">
-          <div className='card w-full min-[500px]:max-w-[390px] min-[1200px]:max-w-[1200px]'>
-          {upcomingBookings.length > 0 ? (
-            <div className="flex flex-wrap justify-start gap-[18px]">
-              {upcomingBookings.map(booking => <BookingCard key={booking.id} booking={booking} />)}
-            </div>
-          ) : <p className="font-semibold p-[24px]">You currently have no future bookings.</p>}
-          </div>
-        </section>
+<section className="my-[10px] w-full flex justify-center">
+  <div className='mx-auto'>
+    {upcomingBookings.length > 0 ? (
+ 
+      <div className="grid grid-cols-2 min-[800px]:grid-cols-3  justify-start gap-[10px]">
+        {upcomingBookings.map(booking => <BookingCard key={booking.id} booking={booking} />)}
+      </div>
+    ) : (
+      <p className="font-semibold p-[24px]">You currently have no future bookings.</p>
+    )}
+  </div>
+</section>
 
         <h2 className="card bg-primary text-[var(--foreground)] p-[24px] ">Record</h2>
-        <section className="w-full flex justify-center">
-          <div className='card w-full min-[500px]:max-w-[390px] min-[1200px]:max-w-[1200px]'>
+        <section className="flex justify-center w-full">
+          <div className=' mx-auto'>
 
           {pastBookings.length > 0 ? (
-            <div className="flex flex-wrap justify-start gap-[18px]">
+            <div className="grid grid-cols-2 min-[800px]:grid-cols-3 justify-start gap-[10px]">
               {pastBookings.map(booking => <BookingCard key={booking.id} booking={booking} />)}
             </div>
           ) : <p className="font-semibold p-[24px]">You have not recorded anything.</p>}
           </div>
         </section>
       </div>
-    </main>
+
   );
 }

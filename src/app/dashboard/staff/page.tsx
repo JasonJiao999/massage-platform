@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-
+import StaffTableDiv from '@/components/StaffTableDiv';
 
 export default async function StaffPage() {
   const cookieStore = cookies();
@@ -52,55 +52,16 @@ export default async function StaffPage() {
   }
 
 
+
   return (
     <div className="max-w-[1200px] mx-auto gap-[10px]">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white">Team Management</h1>
+        <h1 className="text-2xl font-bold text-white mx-[10px]">Team Management</h1>
 
       </div>
 
-      <div className="card bg-primary p-[24px] text-[var(--foreground)]">
-        <table className="min-w-full divide-y divide-border">
-          <thead className="bg-background/50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-foreground/80 uppercase tracking-wider">Nickname</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-foreground/80 uppercase tracking-wider">Status</th>
-              <th scope="col" className="relative px-6 py-3">
-                <span className="sr-only">Edit</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {staffList && staffList.length > 0 ? (
-              staffList.map((staffMember: any) => { // 使用 any 临时避免类型错误，专注于运行时问题
-                const profile = Array.isArray(staffMember.profiles) ? staffMember.profiles[0] : staffMember.profiles;
-                return (
-                  <tr key={staffMember.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                      {profile?.nickname || profile?.email || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {staffMember.is_active ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Enable</span>
-                      ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Disable</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link href={`/dashboard/staff/${staffMember.id}/edit`} className="btn">Edit</Link>
-                    </td>
-                  </tr>
-                )
-              })
-            ) : (
-              <tr>
-                <td colSpan={3} className="px-6 py-4 text-center text-sm text-foreground/60">
-                  No information available. Please click the top right corner to add a new member.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="card w-[full-20px] text-[var(--foreground)] mx-[10px]">
+        <StaffTableDiv staffList={staffList} />
       </div>
     </div>
   );

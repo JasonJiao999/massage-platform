@@ -62,12 +62,12 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
   }, [settings.name]);
 
   return (
-    <div className="card bg-primary p-[24px]">
+    <div className="card  max-w-[1200px] ">
       {/* --- 基础信息表单 --- */}
-      <form action={textAction} className="p-6 bg-card text-[var(--foreground)]">
+      <form action={textAction} className="text-[var(--foreground)] bg-primary w-[full-20px] mx-[10px] p-[24px] card ">
         <h3 className="text-lg font-semibold ">Basic Information</h3>
         <input type="hidden" name="shop_id" value={settings.shop_id} />
-        <div className="space-y-[10px] text-black">
+        <div className="space-y-[10px] w-[full-20px] mx-[10px] ">
           <div>
             <label htmlFor="name" className="block text-sm font-medium ">Team Name</label>
             <input 
@@ -98,7 +98,7 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
           </div>
           <div>
             <label htmlFor="phone_number" className="block text-sm font-medium ">TEL</label>
-            <input type="tel" id="phone_number" name="phone_number" defaultValue={settings.phone_number} className="input w-[95%] my-[10px]"/>
+            <input type="tel" id="phone_number" name="phone_number" defaultValue={settings.phone_number} className="input w-[95%] mt-[10px]"/>
           </div>
         </div>
         <SubmitButton text="Save" />
@@ -106,7 +106,7 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
       </form>
 
       {/* --- 专属页面内容 --- */}
-      <div className="p-6 bg-card rounded-lg text-[var(--foreground)]">
+      <div className="text-[var(--foreground)] bg-primary w-[full-20px] mx-[10px] p-[24px] card my-[10px]">
         <h3 className="text-lg font-semibold ">Team Page</h3>
 
         {/* 背景图表单 */}
@@ -116,9 +116,9 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
             <input type="hidden" name="image_type" value="bg_image_url" />
             <label htmlFor="background_image" className="block text-sm font-medium ">Team photos</label>
             <p>We recommend using 4:3 images.</p>
-            {settings.bg_image_url && <img src={settings.bg_image_url} alt="Current background" className="card w-[100%] h-auto rounded-md mx-auto my-[10px]" />}
+            {settings.bg_image_url && <img src={settings.bg_image_url} alt="Current background" className="card w-[90%]  h-auto rounded-md mx-auto my-[10px]" />}
             {/* 关键修改 (2): 文件本身的 name 改为 'image_file' */}
-            <input ref={bgInputRef} type="file" id="background_image" name="image_file" accept="image/*" required className="mt-2 block text-sm text-gray-300"/>
+            <input ref={bgInputRef} type="file" id="background_image" name="image_file" accept="image/*" required className=" block text-sm text-gray-300"/>
             <p className="text-xs text-gray-400 mt-1">Uploading a new image will replace the existing photo.</p>
             <SubmitButton text="Upload Team Photos" pendingText="Uploading..." />
             <FormStateMessage state={bgImageState} />
@@ -131,7 +131,7 @@ export default function ShopEditForm({ settings }: { settings: ShopSettings }) {
             <input type="hidden" name="image_type" value="hero_image_url" />
             <label htmlFor="hero_image" className="block text-sm font-medium ">Banner</label>
             <p>We recommend using images that are 1200px*200px in size.</p>
-            {settings.hero_image_url && <img src={settings.hero_image_url} alt="Current hero banner" className="card w-[100%] h-auto rounded-md my-[10px]" />}
+            {settings.hero_image_url && <img src={settings.hero_image_url} alt="Current hero banner" className="card w-[90%] h-auto rounded-md my-[10px] mx-auto" />}
             {/* 关键修改 (2): 文件本身的 name 改为 'image_file' */}
             <input ref={heroInputRef} type="file" id="hero_image" name="image_file" accept="image/*" required className="mt-2 block w-full text-sm text-gray-300"/>
             <p className="text-xs text-gray-400 mt-1">Uploading a new image will replace the existing banner.</p>

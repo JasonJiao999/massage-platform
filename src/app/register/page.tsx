@@ -56,8 +56,8 @@ export default function RegisterPage() {
 
   return (
   
-    <div className="flex justify-center items-center h-screen max-[800px]:w-[280px]">
-      <div className="card w-[350px] shadow-sm bg-[var(--color-third)] items-center text-[var(--foreground)] p-[24px]">
+    <div className="flex justify-center">
+      <div className="card shadow-sm bg-[var(--color-third)] h-[400] text-[var(--color-secondary)] w-[full-20px] mx-[10px] p-[20px]">
         <h1 className="text-2xl font-bold text-center text-card-foreground">Create Account</h1>
         <form onSubmit={handleSignUp} className='w-[300px]'>
           <div>
@@ -69,7 +69,7 @@ export default function RegisterPage() {
               value={role}
               onChange={(e) => setRole(e.target.value)}
               required
-              className="select text-[var(--foreground)] w-[93%] my-[10px]"
+              className="select text-[var(--foreground)] w-[93%] my-[10px] "
             >
               <option value="customer">Customer</option>
               <option value="freeman">Freeman</option>
@@ -82,7 +82,7 @@ export default function RegisterPage() {
             </label>
             <input
               id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-              className="input w-[93%] my-[10px]"
+              className="input w-[93%] my-[10px] "
             />
           </div>
           <div>
@@ -91,7 +91,7 @@ export default function RegisterPage() {
             </label>
             <input
               id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
-              className="input w-[93%] my-[10px]"
+              className="input w-[93%] my-[10px] "
             />
           </div>
           {/* 3. *** 新增的推薦碼輸入框 *** */}
@@ -104,7 +104,7 @@ export default function RegisterPage() {
               type="text" 
               value={referralCode} 
               onChange={(e) => setReferralCode(e.target.value)}
-              className="input w-[93%] my-[10px]"
+              className="input w-[93%] my-[10px] "
             />
           </div>
 {/* --- (新增) 同意條款複選框 --- */}

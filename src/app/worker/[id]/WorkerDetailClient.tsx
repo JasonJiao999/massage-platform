@@ -470,7 +470,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
         </div>
 
         
-        <div style={rightPanelStyle} className="w-[full-20px] mx-[10px]">
+        <div style={rightPanelStyle} className="w-full">
 
 
 
@@ -491,7 +491,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
                           src={url}
                           alt={`Photo ${index + 1} of the worker`}
                           fill
-                          sizes="min-[500px]:max-w-[450px] min-[1200px]:max-w-full"
+                          sizes="min-[500px]:max-w-[350px] min-[1200px]:max-w-full"
                           className="object-cover"
                         />
                       </div>

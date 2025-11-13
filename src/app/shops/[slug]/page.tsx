@@ -33,11 +33,11 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   return (
     // 使用一个简单的 div 作为主容器，移除所有复杂的定位
     <div className="max-w-[1200px] mx-auto flex flex-row">
-      <div className="container mx-auto">
+      <div className="container mx-[10px] max-w-[1180px]">
         
-<div className="flex flex-wrap justify-center w-full gap-[10px]">
+<div className="flex flex-wrap justify-between max-w-[1180px] gap-[10px]">
   
-  <div className="w-[60%] min-w-[450px] ">
+  <div className="w-[60%] min-w-[430px] ">
 
         {/* 【核心修复】: 背景图现在是一个标准的 Image 组件，有明确的 width 和 height */}
         {backgroundUrl && (
@@ -54,7 +54,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         )}
   </div>
         
-  <div className="card w-[35%] min-w-[400px] bg-[var(--color-third)] p-[24px]">
+  <div className="card w-[35%] min-w-[390px] bg-[var(--color-third)]  p-[20px]">
   
           <h1 className="text-4xl md:text-5xl font-bold ">Team:{shop.name}</h1>
           
@@ -67,7 +67,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           <div className="lg:col-span-2">
             <section>
               <h2 className="text-3xl font-semibold border-b border-border pb-2 mb-6">Our team</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-[10px]">
+              <div className="grid grid-cols-2 min-[800px]:grid-cols-3 min-[1200px]:grid-cols-4 gap-[10px]">
                 {staffList.length > 0 ? (
                   staffList.map((staff: any) => {
                     // 【核心修复】: 明确只使用 photo_urls[0] 或默认图片
@@ -77,7 +77,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                     
                     return (
                       <Link href={`/worker/${staff.id}`} key={staff.id} className="group text-center">
-                        <div className="relative max-w-[300px] min-w-[150px] aspect-[3/4] mx-auto mb-2 rounded-lg overflow-hidden">
+                        <div className="relative max-w-[250px] min-w-[150px] aspect-[3/4] mx-auto mb-2 rounded-lg overflow-hidden">
                           <Image 
                             src={displayImage} 
                             alt={staff.nickname || 'Staff photo'} 

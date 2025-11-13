@@ -14,7 +14,7 @@ export default function HeaderMerchant({ shopSlug }: { shopSlug: string | null }
   ];
 
   return (
-    <div className="max-w-[1200px] mx-auto flex flex-row gap-[10px] px-[10px]">
+    <div className="max-w-[1200px] mx-auto flex flex-row flex-wrap gap-[10px] px-[10px]">
       {navLinks.map((link) => (
         <Link 
           key={link.name} 
