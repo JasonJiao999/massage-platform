@@ -298,7 +298,7 @@ return (
           ดาวน์โหลด QR Code (Download)
         </button>
         
-        <label className="block text-sm font-medium mt-6 mb-2 w-full">ลิงก์แนะนำของคุณ (Your Referral Link)</label>
+        <label className="block text-sm font-medium mt-6  w-full">ลิงก์แนะนำของคุณ (Your Referral Link)</label>
         <div className="flex w-full">
           <input 
             type="text" 
@@ -340,7 +340,7 @@ return (
         </button>
         
         {/* 推薦連結 */}
-        <label className="block text-sm font-medium mt-6 mb-2 w-full">ลิงก์โปรไฟล์ของคุณ (Your Profile Link)</label>
+        <label className="block text-sm font-medium   w-full">ลิงก์โปรไฟล์ของคุณ (Your Profile Link)</label>
         <div className="flex w-full">
           <input 
             type="text" 

@@ -30,7 +30,7 @@ function ChatBubble({ message, isSender }: { message: Message, isSender: boolean
 
   return (
     <div className={`flex ${justifyClass} w-full`}>
-      <div className={`max-w-xs md:max-w-md p-3 rounded-lg ${bubbleClass}`}>
+      <div className={`max-w-xs md:max-w-md p-3 rounded-lg break-words ${bubbleClass}`}>
         <ReactLinkify
           componentDecorator={(decoratedHref, decoratedText, key) => (
             <a target="_blank" rel="noopener noreferrer" href={decoratedHref} key={key} 

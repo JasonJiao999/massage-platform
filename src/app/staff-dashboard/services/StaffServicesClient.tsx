@@ -40,8 +40,8 @@ function CreateServiceForm() {
     }, [state]);
 
     return (
-        <form ref={formRef} action={dispatch} className="card bg-primary max-w-[1150px] mx-auto gap-4r p-[24px] text-[var(--foreground)]">
-            <h3 className="text-lg font-semibold">Creating a New Service</h3>
+        <form ref={formRef} action={dispatch} className="card bg-primary w-[full-20px] mx-[10px] gap-4r p-[24px] text-[var(--foreground)]">
+            <h3 className="text-lg font-semibold ">Creating a New Service</h3>
             <div>
                 <label htmlFor="name" className="block text-sm font-medium">Service Name(ชื่อบริการ เช่น นวด ดูหนัง หรือดื่มกาแฟ)</label>
                 <input type="text" id="name" name="name" required className="input m-[10px] w-[95%]" />
@@ -96,7 +96,7 @@ export default function StaffServicesClient({ services }: { services: Service[] 
     <div className=" mx-auto">
       <div className="mx-auto min-w-[500px] max-w-[1200px]">
       <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch'>
-      <h2 className="text-xl font-bold text-white">My Service Management</h2>
+      <h2 className="text-xl font-bold text-white w-[full-20px] mx-[10px]">My Service Management</h2>
       </div>
       </div>
       
@@ -104,7 +104,7 @@ export default function StaffServicesClient({ services }: { services: Service[] 
 
 <div className="p-6 mx-auto space-y-8 min-w-[500px] max-w-[1200px]">
       <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch'>
-      <h2 className="text-xl font-bold text-white">My Service List</h2>
+      <h2 className="text-xl font-bold text-white w-[full-20px] mx-[10px]">My Service List</h2>
       </div>
       </div>
       <div className="space-y-4">
@@ -114,9 +114,9 @@ export default function StaffServicesClient({ services }: { services: Service[] 
   
             
             
-            <div key={service.id} className="card bg-[var(--color-third)] max-w-[1150px] mx-auto gap-4r p-[24px] my-[10px]">
+            <div key={service.id} className="card bg-[var(--color-third)] w-[full-20px] mx-[10px] p-[24px] my-[10px]">
 
-<div className="flex items-center justify-between gap-4 mt-2 text-sm ">
+<div className="flex items-center justify-between text-sm ">
 
   {/* 左侧内容：服务名称 */}
   <h3 className="font-bold text-lg ">

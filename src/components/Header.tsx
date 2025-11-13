@@ -133,7 +133,7 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
 
 
   return (
-    <header className="card bg-primary max-w-[1200px] mx-auto flex flex-row gap-[10px] py-[10px] m-[10px]">
+    <header className="card bg-primary w-[full-20px] flex flex-row gap-[10px] py-[10px] m-[10px]">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}

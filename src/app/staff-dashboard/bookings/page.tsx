@@ -71,13 +71,13 @@ export default async function BookingManagementPage({
     }
 
     return (
-      <div className="text-foreground w-[1200px] mx-auto px-[24px] mt-[10px]">
+    <div className="text-foreground max-w-[1200px] mt-[10px]">
 
- <div className="p-6 mx-auto space-y-8 min-w-[500px] max-w-[1200px]">
-      <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch '>
-      <h2 className="text-xl font-bold text-white">Appointment Management</h2>
-      </div>
-      </div>
+
+
+      <h2 className="text-xl font-bold text-white w-[full-20px] mx-[10px]">Appointment Management</h2>
+
+
 
         <BookingManagementClient
           bookings={bookings || []}
@@ -89,14 +89,12 @@ export default async function BookingManagementPage({
     );
   } catch (error: any) {
     return (
-      <div className="text-foreground w-[1200px] mx-auto  mt-[10px]">
-         <div className="p-6  mx-auto space-y-8 min-w-[500px] max-w-[1200px]">
-      <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch '>
-      <h2 className="text-xl font-bold text-white">Appointment Management</h2>
-      </div>
-      </div>
+      <div className="text-foreground max-w-[1200px] mt-[10px]">
 
-        <div className="text-red-500 bg-red-100 border border-red-400 rounded-md p-4">
+      <h2 className="text-xl font-bold text-white w-[full-20px] mx-[10px]">Appointment Management</h2>
+
+
+        <div className="text-red-500 bg-red-100 border border-red-400 rounded-md">
           <p>Loading failed: {error.message}</p>
         </div>
       </div>

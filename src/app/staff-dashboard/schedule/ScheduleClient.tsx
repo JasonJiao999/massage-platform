@@ -47,7 +47,7 @@ function CreateRuleForm() {
     const [state, dispatch] = useFormState(createAvailabilityRule, { message: '', success: false });
     const weekDays = [{val: 1, label: 'Mon'}, {val: 2, label: 'Tue'}, {val: 3, label: 'Wed'}, {val: 4, label: 'Thu'}, {val: 5, label: 'Fri'}, {val: 6, label: 'Sat'}, {val: 7, label: 'Sun'}];
     return (
-        <form action={dispatch} className="card bg-primary flex-1 min-w-[300px] w-full max-w-[500px] p-[24px] m-[10px] text-[var(--foreground)]">
+        <form action={dispatch} className="card bg-primary flex-1 p-[24px] m-[10px] text-[var(--foreground)] max-[800px]:w-[full-20px] min-[801px]:w-[500px]">
             <h3 className="text-lg font-semibold">1. Create a Long-term Plan(แผนระยะยาว)</h3>
    
 <div className="flex flex-wrap ">
@@ -73,7 +73,7 @@ function CreateRuleForm() {
 
             <div>
                 <label className="block text-sm font-medium">Repeat Week(กำหนดวันทำงานรายสัปดาห์)</label>
-                <div className="mt-2 flex gap-2 flex-wrap">
+                <div className=" flex gap-2 flex-wrap">
                     {weekDays.map(day => (
                         <label key={day.val} className="flex items-center gap-1 text-sm">
                             <input type="checkbox" name="days_of_week" value={day.val} className="checkbox bg-secondary m-[5px] text-[var(--foreground)]" /> {day.label}
@@ -82,7 +82,7 @@ function CreateRuleForm() {
                 </div>
             </div>
             <SubmitButton text="Save" />
-            {state?.message && <p className={`mt-2 text-sm ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>}
+            {state?.message && <p className={` text-sm ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>}
         </form>
     );
 }
@@ -92,7 +92,7 @@ function CreateOverrideForm() {
     const [state, dispatch] = useFormState(createAvailabilityOverride, { message: '', success: false });
     const [type, setType] = useState<'unavailable' | 'available'>('unavailable');
     return (
-        <form action={dispatch} className="card bg-primary flex-1 min-w-[300px] w-full max-w-[500px] p-[24px] m-[10px] text-[var(--foreground)]">
+        <form action={dispatch} className="card bg-primary flex-1 max-[800px]:w-[full-20px] min-[801px]:w-[500px] p-[24px] m-[10px] text-[var(--foreground)]">
             <h3 className="text-lg font-semibold">2. Set Holidays/Overtime</h3>
             <p>(กำหนดวันพักผ่อน/วันล่วงเวลา)</p>
             <div>
@@ -101,7 +101,7 @@ function CreateOverrideForm() {
             </div>
             <div>
                 <label className="block text-sm font-medium">Type(พิมพ์)</label>
-                <div className="mt-2 flex gap-4 my-[10px]">
+                <div className=" flex gap-4 my-[10px]">
                     <label className="flex items-center gap-1 m-[10px]"><input type="radio" name="type" value="unavailable" checked={type === 'unavailable'} onChange={() => setType('unavailable')} />Holiday(วันพักผ่อน)</label>
                     <label className="flex items-center gap-1 m-[10px]"><input type="radio" name="type" value="available" checked={type === 'available'} onChange={() => setType('available')} /> Overtime(วันล่วงเวลา)</label>
                 </div>
@@ -119,7 +119,7 @@ function CreateOverrideForm() {
                 </div>
             )}
             <SubmitButton text="Save" />
-            {state?.message && <p className={`mt-2 text-sm ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>}
+            {state?.message && <p className={` text-sm ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>}
         </form>
     );
 }
@@ -165,9 +165,9 @@ export default function ScheduleClient({ rules, overrides, schedules }: { rules:
 
   return (
 
-    <div className="mx-auto  min-w-[500px] max-w-[1200px]">
+    <div className="mx-auto  max-w-[1200px]">
       <div className='flex flex-row flex-wrap justify-between gap-6 items-stretch '>
-      <h2 className="text-xl font-bold text-white">Working time plan</h2>
+      <h2 className="text-xl font-bold text-white w-[full-20px] mx-[10px]">Working time plan</h2>
       </div>
 <div className="flex flex-wrap gap-4 p-4 bg-blue-50 ">
     <div className="flex-1 ">
@@ -177,11 +177,11 @@ export default function ScheduleClient({ rules, overrides, schedules }: { rules:
 
         
     </div>
-    <div className="card bg-[var(--color-third)] flex-1 min-w-[300px] w-full max-w-[600px] p-[24px] m-[10px]">
+    <div className="card bg-[var(--color-third)] flex-1 max-[800px]:w-[full-20px] min-[801px]:w-[500px] p-[12px] m-[10px]">
         
 
       {/* --- 显示已有规则 --- */}
-      <div className="min-w-[300px]">
+      <div className="gap-[10px]">
         <h2 className="text-2xl font-semibold border-b pb-2">My Work Plan</h2>
         {rules.map(rule => (
             <div key={rule.id} className="p-4 rounded-lg bg-white flex justify-between items-start">
@@ -196,13 +196,13 @@ export default function ScheduleClient({ rules, overrides, schedules }: { rules:
       </div>
       
       {/* --- 显示已有例外 --- */}
-      <div className="space-y-4">
+      <div className="gap-[10px]">
         <h2 className="text-2xl font-semibold border-b pb-2">My Holiday/Overtime</h2>
         {overrides.map(override => (
             <div key={override.id} className="p-4 border-b rounded-lg bg-white flex justify-between items-start">
                 
-                    <p><strong>Date:</strong> {override.override_date}</p>
-                    <p><strong>Type:</strong> {override.type === 'available' ? `OT (${override.start_time} - ${override.end_time})` : 'Holiday'}</p>
+                    <p><strong>Date:</strong> {override.override_date} &nbsp; <br className="max-[800px]:inline hidden" />
+                    <strong>Type:</strong> {override.type === 'available' ? `OT (${override.start_time} - ${override.end_time})` : 'Holiday'}</p>
                 
                 <DeleteOverrideButton overrideId={override.id} />
             </div>

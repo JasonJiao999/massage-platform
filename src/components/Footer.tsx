@@ -27,9 +27,9 @@ export default function Footer() {
     
     // 這是您需要的響應式 Footer 容器
     <footer>
-    <div  className="footer card bg-primary text-[var(--foreground)] w-full p-[10px] mx-auto flex flex-row flex-wrap justify-evenly max-[800px]:w-[280px] items-center ">
+    <div  className="footer text-[var(--foreground)] card bg-primary max-w-[1180px] mx-auto py-[10px] flex flex-row justify-center items-center">
       {/* 1. 法律條款 (在手機上會自動堆疊) */}
-      <nav className="gap-[10px] ">
+      <nav className="justify-center p-[24px] max-w-[800px]:w-full">
         <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
         <li><a href={`mailto:${customerServiceEmail}`} className="link link-hover text-[var(--foreground)]">
           Customer Service
@@ -42,8 +42,8 @@ export default function Footer() {
       </nav> 
 
       {/* 2. 社交媒體 (在手機上會自動堆疊) */}
-      <nav>
-        <div className="gap-[10px] ">
+      <nav className="p-[24px] justify-center ">
+        <div className="flex justify-center mx-auto">
           {socialLinks.map((link) => (
             <a 
               key={link.label}
@@ -60,7 +60,7 @@ export default function Footer() {
       </nav>
 
       {/* 3. 版權和翻譯 (在手機上會自動堆疊) */}
-      <aside className="gap-[10px]">
+      <aside className="p-[24px] justify-center">
         <p >
           Copyright © {currentYear} - All right reserved by AoFiw.com
           <br />
