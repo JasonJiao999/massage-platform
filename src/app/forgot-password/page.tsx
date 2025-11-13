@@ -29,18 +29,18 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg- ">
+    <div className="flex justify-center items-center h-[500px]">
       <div className="card w-[350px] shadow-sm bg-[var(--color-third)] items-center text-[var(--foreground)] p-[24px]">
-        <h1 className="text-2xl font-bold text-center text-card-foreground">Reset password</h1>
-        <p className="text-left text-sm text-card-foreground/80">
+        <h1 className="text-2xl font-bold text-center ">Reset password</h1>
+        <p className="text-left text-sm ">
           Please enter your email address and we will send you a link to reset your password.
         </p>
         <form onSubmit={handlePasswordReset} className="gap-[10px] ">
           <div className="flex flex-col justify-center  gap-[15px]">
-            <label htmlFor="email" className="block text-sm font-medium text-card-foreground/80">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium ">Email</label>
             <input
               id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-              className="input w-[230px]"
+              className="input w-[230px] text-[var(--foreground)]"
             />
           
           <button type="submit" className="btn btn-wide mx-auto">

@@ -57,7 +57,7 @@ export default function RegisterPage() {
   return (
   
     <div className="flex justify-center">
-      <div className="card shadow-sm bg-[var(--color-third)] h-[400] text-[var(--color-secondary)] w-[full-20px] mx-[10px] p-[20px]">
+      <div className="card shadow-sm bg-[var(--color-third)] h-auto text-[var(--color-secondary)] w-[full-20px] mx-[10px] p-[20px]">
         <h1 className="text-2xl font-bold text-center text-card-foreground">Create Account</h1>
         <form onSubmit={handleSignUp} className='w-[300px]'>
           <div>
