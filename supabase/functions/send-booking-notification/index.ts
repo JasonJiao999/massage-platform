@@ -7,7 +7,7 @@ import { Resend } from 'https://esm.sh/resend@3.2.0';
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const SUPABASE_URL = Deno.env.get('PROJECT_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('MY_SERVICE_ROLE_KEY');
-const FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@yourdomain.com';
+const FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@aofiw.com';
 
 type Profile = { email?: string; nickname?: string; };
 

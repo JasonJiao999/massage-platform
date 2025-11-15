@@ -538,6 +538,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
 
 <div className="flex flex-row justify-between items-center px-6 p-[24px]">
   <h2 className="text-2xl font-bold text-white flex-shrink-0">My Photos</h2>
+  
   <form ref={photosFormRef} action={photosFormAction} className='flex items-center gap-4'>
     <div className="relative">
       <input 
@@ -561,6 +562,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
     <SubmitButton text="Upload photos" />
   </form>
 </div>
+<p className='mx-[20px]'>หากรูปภาพที่คุณอัปโหลดมีขนาดใหญ่กว่า 1MB ความเร็วในการอัปเดตหน้าเว็บอาจได้รับผลกระทบ โปรดรอสักครู่</p>
 <div className="max-w-[1200px] mx-auto flex flex-row flex-wrap justify-start gap-4">
   {profile.photo_urls?.map(url => (
     <div key={url} className="relative group aspect-[3/4] rounded-lg overflow-hidden min-w-[330px] flex-1 max-w-[calc(33.333%-12px)] p-[10px] m-auto">

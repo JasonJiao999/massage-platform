@@ -199,7 +199,7 @@ return (
 
   {/* --- (新增) 首次訪問的教程窗口 --- */}
   {showTutorialModal && (
-    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 mx-[auto]">
       <div className="card bg-[var(--color-secondary)] text-[var(--foreground)] rounded-lg shadow-2xl max-w-lg w-[500px] p-[24px]">
         <h2 className="text-2xl font-bold mb-4 text-center">ยินดีต้อนรับสู่คอนโซลการทำงาน</h2>
         <p className="text-md mb-6 text-left">
