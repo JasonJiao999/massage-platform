@@ -29,7 +29,7 @@ export default function WorkerCard({ worker, isLoggedIn, isFavorited }: WorkerCa
 
   return (
     <div 
-      className="card w-full bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-[500px]:max-w-[400px] min-[1200px]:max-w-[280px]"
+      className="card w-full bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-[500px]:max-w-[200px] min-[1200px]:max-w-[280px]"
       style={{
         backgroundColor: 'white',
         borderRadius: '10px',

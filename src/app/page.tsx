@@ -87,7 +87,7 @@ const [
   
   // --- 4. 渲染页面 ---
   return (
-    <main className="container mx-auto px-4 py-8 ">
+    <main className="container mx-auto">
       <div className="text-center mb-12">
         <ImageCarousel images={promoImages} />
       </div>
@@ -97,9 +97,13 @@ const [
         <section className="mb-12">
           
           <div className="flex flex-wrap justify-center max-w-[1200px] mx-auto">
-            <div className='card w-full min-[500px]:max-w-[400px] min-[1200px]:max-w-[1200px] '>
+
+            <div className='card w-full min-[1200px]:max-w-[1200px] '>
               <h2 className="card bg-[var(--color-third)] text-2xl font-bold text-center py-[10px] mx-[10px]">Top 10 Most Recommended</h2>
-              <div className='flex flex-wrap justify-start gap-[10px]'>
+<div className='grid grid-cols-2 
+                        min-[768px]:grid-cols-4   {/* 屏幕宽度 >= 768px 时显示 4 列 */}
+                        min-[1024px]:grid-cols-5 {/* 屏幕宽度 >= 1024px 时显示 5 列 */}
+                        gap-[10px]'>
               
                 {recommendedWorkers.map((worker: any) => (
                   <WorkerCard 
