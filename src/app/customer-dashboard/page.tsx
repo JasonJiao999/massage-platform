@@ -5,7 +5,7 @@ import ProfileFormClient from './ProfileFormClient'; // 導入客戶端表單
 import WorkerCard from '@/components/WorkerCard';   // 導入 WorkerCard
 import Image from 'next/image';
 import AutoPlayCarousel from '@/components/AutoPlayCarousel'; // 導入走馬燈組件
-
+import ChangePasswordForm from '@/components/ChangePasswordForm';
 
 export interface ProfileData {
   id?: string;
@@ -119,6 +119,7 @@ export default async function CustomerDashboardPage() {
         </div>
       )} 
 </div>
+
         </div>
         </div>
 
@@ -127,10 +128,12 @@ export default async function CustomerDashboardPage() {
         <h2 className="text-2xl font-bold mx-[10px]">Favorites</h2>
         
         <div className="flex flex-wrap justify-center max-w-[1200px] mx-auto">
-        <div className='card w-full min-[500px]:max-w-[400px] min-[1200px]:max-w-[1200px] '>
+        <div className='card w-full  '>
         {favoriteWorkers.length > 0 ? (
-
-          <div className="flex flex-wrap justify-start gap-[10px]">
+<div className='grid grid-cols-2 
+                        min-[768px]:grid-cols-4   {/* 屏幕宽度 >= 768px 时显示 4 列 */}
+                        min-[1024px]:grid-cols-5 {/* 屏幕宽度 >= 1024px 时显示 5 列 */}
+                        gap-[10px]'>
             {favoriteWorkers.map(worker => (
               <WorkerCard
                 key={worker.id}
@@ -149,7 +152,7 @@ export default async function CustomerDashboardPage() {
 
 
       </div> 
-
+<div className='mx-[10px]'><ChangePasswordForm /></div>
     </div>
   );
 }

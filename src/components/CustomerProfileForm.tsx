@@ -32,7 +32,7 @@ export default function CustomerProfileForm({ profile }: { profile: Profile }) {
   });
 
   return (
-    <div className="card bg-primary p-[24px]">
+    <div className="card bg-primary p-[24px] text-[var(--foreground)]">
       
 
       <form action={updateAction} className="space-y-6">

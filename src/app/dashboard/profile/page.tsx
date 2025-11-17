@@ -1,9 +1,10 @@
-// src/app/dashboard/profile/page.tsx
+// src/app/dashboard/profile/page.tsx (已修改，添加了修改密码组件)
 
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import CustomerProfileForm from '@/components/CustomerProfileForm';
+import ChangePasswordForm from '@/components/ChangePasswordForm'; // <-- 1. 导入 ChangePasswordForm
 
 export default async function CustomerProfilePage() {
   const cookieStore = cookies();
@@ -30,7 +31,8 @@ export default async function CustomerProfilePage() {
   }
 
   return (
-    <div className="max-w-[500px] mx-auto gap-[10px]">
+    // <--- 2. 修改: 将 'gap-[10px]' 替换为 'space-y-6' 以便在卡片之间添加垂直间距
+    <div className="max-w-[500px] mx-auto space-y-[10px]">
       <header className="mb-10">
         <h1 className="text-3xl font-bold text-white">My Profile</h1>
         <p className="text-foreground/70 mt-2">
@@ -38,9 +40,17 @@ export default async function CustomerProfilePage() {
         </p>
       </header>
 
+      {/* 客户个人资料卡片 */}
       <div className="p-8 bg-card rounded-lg">
         <CustomerProfileForm profile={profile} />
       </div>
+
+      {/* --- 3. 新增: 修改密码卡片 --- */}
+      <div className="p-8 bg-card rounded-lg">
+        <ChangePasswordForm />
+      </div>
+      {/* --- 结束新增 --- */}
+
     </div>
   );
 }
