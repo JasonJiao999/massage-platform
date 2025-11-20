@@ -6,10 +6,10 @@ import Link from 'next/link';
 import { useState, useMemo, useEffect, FC } from "react";
 import { format, parseISO, isSameDay } from 'date-fns';
 import { createBooking } from '@/lib/actions';
-import { FaTwitter, FaInstagram, FaFacebook, FaMapMarkerAlt,FaLine,FaTiktok } from 'react-icons/fa';
+import { FaTwitter, FaInstagram, FaFacebook, FaMapMarkerAlt,FaLine,FaTiktok,FaComments } from 'react-icons/fa';
 import { HiH2 } from 'react-icons/hi2';
 import { getOrCreateChatRoom } from '@/lib/actions';
-import { FaComments } from 'react-icons/fa'; // 聊天圖標
+
 
 // --- 接口定義 ---
 interface Profile {
@@ -21,7 +21,7 @@ interface Profile {
   tags: string[] | null;
   years: number | null;
   photo_urls: string[] | null;
-  video_urls: string[] | null;
+  video_urls: string[] | null; 
   feature: string[] | null;
   social_links: { [key: string]: string } | null;
   gender: string | null;
@@ -53,16 +53,24 @@ interface Booking {
   start_time: string;
   end_time: string;
 }
-interface WorkerDetailProps {
+interface EmbedVideo {
+  originalUrl: string;
+  html: string | null;
+  status: 'loading' | 'success' | 'error';
+  message?: string;
+}
+export interface WorkerDetailProps {
   worker: Profile;
   services: Service[];
   shop: Shop | null;
   initialAvailability: Availability;
   existingBookings: Booking[];
   fullAddress: string;
+  reviews: any[]; 
 }
 
-const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, initialAvailability, existingBookings, fullAddress }) => {
+
+const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, initialAvailability, existingBookings, fullAddress, reviews }) => {
   const [selectedDate, setSelectedDate] = useState<string | null>(Object.keys(initialAvailability)[0] || null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
@@ -70,6 +78,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [bookingResult, setBookingResult] = useState<{ success: boolean; message: string } | null>(null);
   const [windowWidth, setWindowWidth] = useState(0);
+  const [embedVideos, setEmbedVideos] = useState<EmbedVideo[]>([]);
 
   useEffect(() => {
     // 设置初始窗口宽度
@@ -157,6 +166,36 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
     width: windowWidth >= 1024 ? '65%' : '100%'
   };
 
+// --- 关键 Hook 1: 脚本加载 (只加载 X/Twitter 脚本) ---
+useEffect(() => {
+    const existingScript = document.getElementById('twitter-widgets-script');
+    if (!existingScript) {
+        const script = document.createElement('script');
+        script.id = 'twitter-widgets-script';
+        script.src = 'https://platform.twitter.com/widgets.js'; // X/Twitter 官方脚本
+        script.async = true;
+        document.body.appendChild(script);
+        console.log('Twitter widgets script inserted.');
+    }
+}, []); // <-- 依赖数组为空，只执行一次
+
+// --- 关键 Hook 2: 渲染后触发 X/Twitter 扫描 ---
+useEffect(() => {
+    // 这个 useEffect 确保在 worker 数据变化后，X/Twitter 脚本能够重新扫描 DOM
+    // 当 dangerouslySetInnerHTML 插入内容后，我们需要手动触发 X/Twitter 渲染
+    if (worker.video_urls && worker.video_urls.length > 0) {
+        // 确保脚本加载完毕后，在下一个事件循环中执行渲染
+        setTimeout(() => {
+             // 官方 X/Twitter 渲染函数：twttr.widgets.load()
+             // @ts-ignore
+             if (window.twttr && window.twttr.widgets && window.twttr.widgets.load) {
+                 // @ts-ignore
+                 window.twttr.widgets.load();
+                 console.log('X/Twitter widgets load triggered.');
+             }
+        }, 300); // 延迟 300ms 确保浏览器有时间应用 dangerouslySetInnerHTML
+    }
+}, [worker.video_urls]); // 依赖 worker.video_urls 变化而重新触发
   return (
     <div className="container max-w-[1200px] py-[20px]">
       <div style={layoutStyle}>
@@ -512,44 +551,36 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
               </div>
             </div>
           )}
-
-          
+{/* --- X/Twitter 视频嵌入区域 --- */}
           {worker.video_urls && worker.video_urls.length > 0 && (
-            <div>
-              
-              <div className="grid grid-cols-1 gap-[10px] justify-items-center my-[10px]">
-                {worker.video_urls.map((url: string) => (
+            <div className="mt-8">
+              <h3 className="text-xl font-bold text-white mb-4">X/Twitter Videos</h3>
+              {worker.video_urls.map((url, index) => (
+                <div key={index} className="grid grid-cols-1 gap-[10px] justify-items-center my-[10px]">
+                  
+                  {/* 【核心】：插入 X/Twitter 官方所需的 HTML 结构 */}
+                  {/* 核心类名: twitter-tweet，用于脚本扫描 */}
                   <div 
-                    key={url} 
-                    className="
-                      shadow-md
-                      overflow-hidden
-                      w-full
-                      mix-w-[450px]
-                      mix-h-[600px]
-                      aspect-[3/4]
-                      flex items-center justify-center
-                    "
-                    style={{
-                      backgroundColor: 'white',
-                      borderRadius: '0.5rem'
-                    }}
+                      className="twitter-embed-container" // 额外的容器用于样式
+                      style={{ maxWidth: '450px' }}
                   >
-                    <video 
-                      src={url} 
-                      controls 
-                      preload="metadata" 
-                      className="
-                        w-full
-                        h-full
-                        object-cover
-                      " 
-                    />
+                     <blockquote 
+                        key={url} // 确保 key 依赖于 URL，以便 React 重新渲染
+                        className="twitter-tweet"
+                        // 插入用户的原始链接作为 blockquote 的内容，
+                        // 脚本会自动扫描并替换为 iframe。
+                        dangerouslySetInnerHTML={{ 
+                            __html: `<a href="${url}"></a>` 
+                        }}
+                      >
+                      </blockquote>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           )}
+          {/* --- 结束 X/Twitter 视频 --- */}
+
 
 
         </div>

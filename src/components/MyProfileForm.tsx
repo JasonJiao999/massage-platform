@@ -8,7 +8,7 @@ import {
   updateQrUrl,
   uploadMultipleMyProfilePhotos,
   deleteMyProfilePhoto,
-  uploadMultipleMyProfileVideos,
+  updateMyProfileVideoLinks,
   deleteMyProfileVideo
 } from '@/lib/actions';
 import { useState, useRef, useEffect } from 'react';
@@ -23,6 +23,7 @@ import {
 } from 'react-icons/fa';
 import { deleteQrUrl } from '@/lib/actions'; 
 import { FaXTwitter } from 'react-icons/fa6'; 
+import { useRouter } from 'next/navigation';
 
 // 定义完整的 Profile 类型
 type Profile = {
@@ -147,10 +148,13 @@ function ImageUploader({
   );
 }
 
-
+const MAX_VIDEO_SLOTS = 3; // 限制最多 3 个视频
 
 // 主组件
 export function MyProfileForm({ profile }: { profile: Profile }) {
+  const router = useRouter(); 
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
   // 状态管理：个人资料更新
   const [profileState, profileDispatch] = useFormState(updateMyProfile, { message: '', success: false });
   const formRef = useRef<HTMLFormElement>(null);
@@ -164,8 +168,36 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
   // 状态管理：照片上传
   const [photosState, photosFormAction] = useFormState(uploadMultipleMyProfilePhotos, { success: false, message: '' });
   const photosFormRef = useRef<HTMLFormElement>(null);
-  const [videoState, videoFormAction] = useFormState(uploadMultipleMyProfileVideos, { success: false, message: '' });
-  const videoFormRef = useRef<HTMLFormElement>(null);
+  
+// <--- 新增: 视频链接数组状态 (确保 video_urls 是数组) --->
+  const [videoUrls, setVideoUrls] = useState<string[]>(
+    (profile.video_urls || []).concat(Array(MAX_VIDEO_SLOTS).fill('')).slice(0, MAX_VIDEO_SLOTS)
+  );
+
+  const handleVideoUrlChange = (index: number, value: string) => {
+    const newVideoUrls = [...videoUrls];
+    newVideoUrls[index] = value;
+    setVideoUrls(newVideoUrls);
+  };
+  
+  // <--- 新增: 提交视频链接的 Server Action 处理器 --->
+  const handleVideoLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    
+    // 调用新的 Server Action，传递清理过的链接数组
+    const { success, message: msg } = await updateMyProfileVideoLinks(videoUrls);
+    
+    setMessage(msg);
+    if (success) {
+        // 如果成功，强制刷新页面以确保数据一致性
+        router.refresh(); 
+    }
+    setLoading(false);
+  };
+
+
   // 新增：照片文件选择状态
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   
@@ -223,14 +255,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
         }
     }
   }, [photosState]);
-  useEffect(() => {
-    if (videoState.message) {
-        alert(videoState.message);
-        if (videoState.success) {
-            videoFormRef.current?.reset(); // 成功后清空文件输入框
-        }
-    }
-  }, [videoState]);
+
   // 将数组转换为逗号分隔的字符串用于 input 显示
   const tagsString = profile.tags?.join(', ') || '';
   const featuresString = profile.feature?.join(', ') || '';
@@ -590,48 +615,51 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
       <div className=" bg-gray-800 rounded-lg shadow-md space-y-4">
         <div className='flex flex-row flex-wrap justify-between  items-stretch p-[24px]'>
   <h2 className="text-xl font-bold text-white">My Videos</h2>
-  <form ref={videoFormRef} action={videoFormAction} className='flex items-center gap-4'>
-    <div className="relative">
-      <input 
-        type="file" 
-        name="videos" 
-        accept="video/*" 
-        multiple 
-        required 
-        className="file-input file-input-ghost absolute opacity-0 w-full h-full cursor-pointer" 
-      />
-      <button type="button" className="btn cursor-pointer">
-        Choose Files
-      </button>
-    </div>
-    {videoState?.message && (
-  <p className={` text-sm ${!videoState.success ? 'text-red-400' : 'text-green-400'}`}>
-    {videoState.message}
-  </p>
-)}
-    <SubmitButton text="Upload videos" />
-  </form>
+ {/* ----------------- 视频链接嵌入表单 (新功能) ----------------- */}
+      <form onSubmit={handleVideoLinkSubmit} className="card bg-[var(--color-third)] p-6">
+        <h2 className="text-xl font-bold text-white mb-4">My TikTok Videos (Max {MAX_VIDEO_SLOTS})</h2>
+
+        <div className="space-y-4">
+          {videoUrls.map((url, index) => (
+            <div key={index}>
+              <label htmlFor={`video_url_${index}`} className="block text-sm font-medium text-card-foreground/80">
+                Video Link {index + 1}
+              </label>
+              <input
+                id={`video_url_${index}`}
+                type="url"
+                value={url}
+                onChange={(e) => handleVideoUrlChange(index, e.target.value)}
+                className="input w-full mt-1"
+                placeholder={`Paste TikTok video link ${index + 1} here (optional)`}
+              />
+            </div>
+          ))}
+        </div>
+
+        <button type="submit" className="btn btn-secondary mt-6" disabled={loading}>
+          {loading ? 'Saving Links...' : 'Save Video Links'}
+        </button>
+        {message && <p className={`text-sm mt-2 text-center ${message.includes('success') ? 'text-green-500' : 'text-red-500'}`}>{message}</p>}
+        {/* ----------------- 结束新增 ----------------- */}
+      </form>
 </div>
 
 
 
 
         <div className="max-w-[1200px] mx-auto flex flex-row flex-wrap justify-start gap-4r">
-          {profile.video_urls?.map(url => (
-            <div key={url} className="rounded-lg overflow-hidden min-w-[330px] flex-1 max-w-[calc(33.333%-12px)] p-[10px] m-auto items-center">
-              <video src={url} controls preload="metadata" className="card w-full rounded-lg bg-black object-cover">
-                Your browser does not support playing the video.
-              </video>
-
-
-                <form action={deleteMyProfileVideo.bind(null, url)}>
-                  <button type="submit" className="btn mx-auto]">
-                    Delete
-                  </button>
-                </form>
-
-            </div>
-          ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {profile.video_urls?.filter(u => u.trim() !== '').map((url, index) => (
+                <div key={index} className="w-full aspect-video flex justify-center items-center bg-gray-800 text-gray-400 rounded-lg">
+                    {/* 提示用户视频已保存，实际预览在访客页面实现 */}
+                    <p>Video {index + 1} Saved</p>
+                </div>
+            ))}
+            {(!profile.video_urls || profile.video_urls.filter(u => u.trim() !== '').length === 0) && (
+                <p>No videos saved yet.</p>
+            )}
+          </div>
         </div>
 
 

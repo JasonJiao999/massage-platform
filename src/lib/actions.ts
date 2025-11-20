@@ -222,6 +222,68 @@ export async function uploadMultipleMyProfileVideos(prevState: any, formData: Fo
     }
 }
 
+
+
+// --------------------- 辅助函数: TikTok 链接校验 ---------------------
+// 这是一个简单的校验，确认链接是有效的 TikTok 视频链接
+function isValidTikTokUrl(url: string): boolean {
+    const tiktokRegex = /^(https?:\/\/(www\.|vt\.|vm\.|m\.)?tiktok\.com\/\S+)/;
+    return tiktokRegex.test(url);
+}
+// -------------------------------------------------------------------
+
+/**
+ * 更新用户的 TikTok 视频链接列表 (最多 3 个)
+ */
+export async function updateMyProfileVideoLinks(
+    updatedVideoUrls: string[] // 接收一个字符串数组
+): Promise<{ success: boolean; message: string; }> {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return { success: false, message: 'User not authenticated.' };
+        }
+
+        // 1. 清理和校验数据
+        const cleanedUrls = updatedVideoUrls
+            .map(url => url.trim())
+            .filter(url => url.length > 0); // 移除所有空字符串
+
+        // 2. 数量限制校验
+        const MAX_VIDEOS = 3;
+        if (cleanedUrls.length > MAX_VIDEOS) {
+            return { success: false, message: `You can only add up to ${MAX_VIDEOS} video links.` };
+        }
+
+        // 3. 链接有效性校验 (仅 TikTok)
+        for (const url of cleanedUrls) {
+            if (!isValidTikTokUrl(url)) {
+                return { success: false, message: `Invalid link: ${url}. Only valid TikTok video URLs are accepted.` };
+            }
+        }
+        
+        // 4. 更新数据库
+        // 注意：video_urls 是 TEXT[] 类型，需要一个字符串数组
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ video_urls: cleanedUrls }) // 直接更新为清理和验证后的数组
+            .eq('id', user.id);
+
+        if (updateError) {
+            console.error('Database update error:', updateError);
+            throw updateError;
+        }
+
+        revalidatePath('/staff-dashboard/profile');
+        return { success: true, message: 'Video links updated successfully!' };
+
+    } catch (error: any) {
+        return { success: false, message: error.message || 'An unexpected error occurred while saving links.' };
+    }
+}
 /**
  * 【重命名版】为当前用户删除一个视频
  */
