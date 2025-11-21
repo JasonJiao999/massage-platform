@@ -10,7 +10,7 @@ import { Resend } from 'resend';
 import sharp from 'sharp'; 
 import { v4 as uuidv4 } from 'uuid';
 import { format, parseISO, addMinutes } from 'date-fns';
-
+import { isValidSocialVideoUrl } from '@/utils/validation';
 
 
 
@@ -224,16 +224,10 @@ export async function uploadMultipleMyProfileVideos(prevState: any, formData: Fo
 
 
 
-// --------------------- 辅助函数: TikTok 链接校验 ---------------------
-// 这是一个简单的校验，确认链接是有效的 TikTok 视频链接
-function isValidTikTokUrl(url: string): boolean {
-    const tiktokRegex = /^(https?:\/\/(www\.|vt\.|vm\.|m\.)?tiktok\.com\/\S+)/;
-    return tiktokRegex.test(url);
-}
-// -------------------------------------------------------------------
+
 
 /**
- * 更新用户的 TikTok 视频链接列表 (最多 3 个)
+ * 更新用户的嵌入视频链接列表 (最多 3 个)
  */
 export async function updateMyProfileVideoLinks(
     updatedVideoUrls: string[] // 接收一个字符串数组
@@ -249,8 +243,9 @@ export async function updateMyProfileVideoLinks(
 
         // 1. 清理和校验数据
         const cleanedUrls = updatedVideoUrls
-            .map(url => url.trim())
-            .filter(url => url.length > 0); // 移除所有空字符串
+            .map((url: string) => url.trim()) 
+            .filter((url: string) => url.length > 0) 
+            .map((url: string) => url.split('?')[0]); 
 
         // 2. 数量限制校验
         const MAX_VIDEOS = 3;
@@ -260,8 +255,8 @@ export async function updateMyProfileVideoLinks(
 
         // 3. 链接有效性校验 (仅 TikTok)
         for (const url of cleanedUrls) {
-            if (!isValidTikTokUrl(url)) {
-                return { success: false, message: `Invalid link: ${url}. Only valid TikTok video URLs are accepted.` };
+            if (!isValidSocialVideoUrl(url)) {
+              return { success: false, message: `Invalid link: ${url}. Only valid X/Twitter status URLs are accepted.` };
             }
         }
         

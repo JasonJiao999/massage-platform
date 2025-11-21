@@ -9,6 +9,7 @@ import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -71,7 +72,11 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="bg-[var(--background)] max-[800px]:w-[450px] ">
-
+      <Script
+        src="https://platform.twitter.com/widgets.js"
+        strategy="lazyOnload" // 确保在浏览器空闲时加载
+        id="twitter-widgets-script"
+      />
       <body className={` w-full max-w-[1200px] mx-auto  mb-[20px] `}>
         
         

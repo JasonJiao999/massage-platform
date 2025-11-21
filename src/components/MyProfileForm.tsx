@@ -616,8 +616,8 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
         <div className='flex flex-row flex-wrap justify-between  items-stretch p-[24px]'>
   <h2 className="text-xl font-bold text-white">My Videos</h2>
  {/* ----------------- 视频链接嵌入表单 (新功能) ----------------- */}
-      <form onSubmit={handleVideoLinkSubmit} className="card bg-[var(--color-third)] p-6">
-        <h2 className="text-xl font-bold text-white mb-4">My TikTok Videos (Max {MAX_VIDEO_SLOTS})</h2>
+<form onSubmit={handleVideoLinkSubmit} className="card bg-[var(--color-third)] p-6">
+        <h2 className="text-xl font-bold text-white mb-4">My X/Twitter Videos (Max {MAX_VIDEO_SLOTS})</h2> {/* <-- 【修改】更改标题 */}
 
         <div className="space-y-4">
           {videoUrls.map((url, index) => (
@@ -631,7 +631,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
                 value={url}
                 onChange={(e) => handleVideoUrlChange(index, e.target.value)}
                 className="input w-full mt-1"
-                placeholder={`Paste TikTok video link ${index + 1} here (optional)`}
+                placeholder={`Paste X/Twitter video link ${index + 1} here (optional)`} 
               />
             </div>
           ))}

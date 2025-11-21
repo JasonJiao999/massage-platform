@@ -7,15 +7,23 @@ import { useState, useMemo, useEffect, FC } from "react";
 import { format, parseISO, isSameDay } from 'date-fns';
 import { createBooking } from '@/lib/actions';
 import { FaTwitter, FaInstagram, FaFacebook, FaMapMarkerAlt,FaLine,FaTiktok,FaComments } from 'react-icons/fa';
-import { HiH2 } from 'react-icons/hi2';
 import { getOrCreateChatRoom } from '@/lib/actions';
 
+// 显式声明全局 twttr 对象的结构
+declare global {
+  interface Window {
+    twttr: {
+      widgets: {
+        load: (element?: HTMLElement) => void;
+      };
+    } | undefined; 
+  }
+}
 
 // --- 接口定義 ---
 interface Profile {
   id: string;
   nickname: string | null;
-  avatar_url: string | null;
   bio: string | null;
   address_detail: string | null;
   tags: string[] | null;
@@ -53,12 +61,7 @@ interface Booking {
   start_time: string;
   end_time: string;
 }
-interface EmbedVideo {
-  originalUrl: string;
-  html: string | null;
-  status: 'loading' | 'success' | 'error';
-  message?: string;
-}
+
 export interface WorkerDetailProps {
   worker: Profile;
   services: Service[];
@@ -78,7 +81,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [bookingResult, setBookingResult] = useState<{ success: boolean; message: string } | null>(null);
   const [windowWidth, setWindowWidth] = useState(0);
-  const [embedVideos, setEmbedVideos] = useState<EmbedVideo[]>([]);
+
 
   useEffect(() => {
     // 设置初始窗口宽度
@@ -166,36 +169,48 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
     width: windowWidth >= 1024 ? '65%' : '100%'
   };
 
-// --- 关键 Hook 1: 脚本加载 (只加载 X/Twitter 脚本) ---
-useEffect(() => {
-    const existingScript = document.getElementById('twitter-widgets-script');
-    if (!existingScript) {
-        const script = document.createElement('script');
-        script.id = 'twitter-widgets-script';
-        script.src = 'https://platform.twitter.com/widgets.js'; // X/Twitter 官方脚本
-        script.async = true;
-        document.body.appendChild(script);
-        console.log('Twitter widgets script inserted.');
-    }
-}, []); // <-- 依赖数组为空，只执行一次
+// --- 核心修复 1: 脚本加载 (纯 DOM 注入) ---
+  useEffect(() => {
+      const scriptId = 'twitter-widgets-script';
+      if (!document.getElementById(scriptId)) {
+          const script = document.createElement('script');
+          (script as HTMLScriptElement).id = scriptId;
+          (script as HTMLScriptElement).src = "https://platform.twitter.com/widgets.js";
+          
+          const fjs = document.getElementsByTagName('script')[0];
+          if (fjs && fjs.parentNode) {
+              fjs.parentNode.insertBefore(script, fjs);
+          } else {
+              document.head.appendChild(script);
+          }
+          console.log('X EMBED LOG: Script Tag Injected to DOM.'); 
+      }
+  }, []); 
 
-// --- 关键 Hook 2: 渲染后触发 X/Twitter 扫描 ---
-useEffect(() => {
-    // 这个 useEffect 确保在 worker 数据变化后，X/Twitter 脚本能够重新扫描 DOM
-    // 当 dangerouslySetInnerHTML 插入内容后，我们需要手动触发 X/Twitter 渲染
-    if (worker.video_urls && worker.video_urls.length > 0) {
-        // 确保脚本加载完毕后，在下一个事件循环中执行渲染
-        setTimeout(() => {
-             // 官方 X/Twitter 渲染函数：twttr.widgets.load()
-             // @ts-ignore
-             if (window.twttr && window.twttr.widgets && window.twttr.widgets.load) {
-                 // @ts-ignore
-                 window.twttr.widgets.load();
-                 console.log('X/Twitter widgets load triggered.');
-             }
-        }, 300); // 延迟 300ms 确保浏览器有时间应用 dangerouslySetInnerHTML
-    }
-}, [worker.video_urls]); // 依赖 worker.video_urls 变化而重新触发
+  // --- 核心修复 2: 延迟加载器 (使用轮询机制确保 load 被调用) ---
+  useEffect(() => {
+      if (worker.video_urls && worker.video_urls.length > 0) {
+          let attempts = 0;
+          const maxAttempts = 20; 
+          const interval = setInterval(() => {
+              if (window.twttr?.widgets?.load) {
+                  // === 成功日志 ===
+                  console.log('X EMBED LOG: SUCCESS! Calling twttr.widgets.load() on attempt', attempts + 1); 
+                  window.twttr.widgets.load();
+                  clearInterval(interval);
+              }
+              
+              if (++attempts >= maxAttempts) {
+                  // === 超时日志 ===
+                  console.error('X EMBED LOG: Polling Timeout. Script failed to initialize after', attempts, 'attempts.'); 
+                  clearInterval(interval);
+              }
+          }, 200);
+
+          return () => clearInterval(interval);
+      }
+  }, [worker.video_urls]);
+  
   return (
     <div className="container max-w-[1200px] py-[20px]">
       <div style={layoutStyle}>
@@ -551,32 +566,37 @@ useEffect(() => {
               </div>
             </div>
           )}
-{/* --- X/Twitter 视频嵌入区域 --- */}
+{/* --- 核心修改 3: X/Twitter 视频嵌入区域 (移除查询参数) --- */}
           {worker.video_urls && worker.video_urls.length > 0 && (
             <div className="mt-8">
               <h3 className="text-xl font-bold text-white mb-4">X/Twitter Videos</h3>
-              {worker.video_urls.map((url, index) => (
-                <div key={index} className="grid grid-cols-1 gap-[10px] justify-items-center my-[10px]">
+              {worker.video_urls.map((url, index) => {
+                  // 【新增逻辑】清理 URL，移除查询参数（如 ?s=20）
+                  const cleanedUrl = url.split('?')[0]; 
                   
-                  {/* 【核心】：插入 X/Twitter 官方所需的 HTML 结构 */}
-                  {/* 核心类名: twitter-tweet，用于脚本扫描 */}
-                  <div 
-                      className="twitter-embed-container" // 额外的容器用于样式
-                      style={{ maxWidth: '450px' }}
-                  >
-                     <blockquote 
-                        key={url} // 确保 key 依赖于 URL，以便 React 重新渲染
-                        className="twitter-tweet"
-                        // 插入用户的原始链接作为 blockquote 的内容，
-                        // 脚本会自动扫描并替换为 iframe。
-                        dangerouslySetInnerHTML={{ 
-                            __html: `<a href="${url}"></a>` 
-                        }}
-                      >
-                      </blockquote>
-                  </div>
-                </div>
-              ))}
+                  return (
+                    <div key={index} className="grid grid-cols-1 gap-[10px] justify-items-center my-[10px]">
+                      
+                      <div className="twitter-embed-container" style={{ maxWidth: '450px', width: '100%', minHeight: '300px' }}>
+                          <blockquote 
+                            key={cleanedUrl} 
+                            className="twitter-tweet"
+                            data-theme="dark" 
+                            data-align="center" 
+                            style={{ 
+                                margin: '0 auto', 
+                                width: '400px', 
+                                height: '700px' 
+                            }} 
+                            dangerouslySetInnerHTML={{ 
+                                __html: `<a href="${cleanedUrl}"></a>` 
+                            }}
+                          >
+                          </blockquote>
+                      </div>
+                    </div>
+                  );
+              })}
             </div>
           )}
           {/* --- 结束 X/Twitter 视频 --- */}
