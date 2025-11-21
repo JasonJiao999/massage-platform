@@ -21,8 +21,8 @@ interface Service {
 function SubmitButton({ text }: { text: string }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400">
-      {pending ? '保存中...' : text}
+    <button type="submit" disabled={pending} className="btn">
+      {pending ? 'Save...' : text}
     </button>
   );
 }
@@ -42,51 +42,51 @@ export default function EditServiceModal({ service, onCancel, onSaveSuccess }: {
 
   return (
     // 【核心修改】: 移除所有 Modal/Overlay/Positioning CSS，它现在只是一个容器
-    <div className="card bg-gray-100 p-6 rounded-lg shadow-inner w-full mt-4 border border-blue-400/70 text-black">
+    <div className="card bg-primary p-[20px] w-[90%]  text-[var(--foreground)] mx-auto ">
         
-        <h3 className="text-xl font-bold mb-4">编辑服务: {service.name}</h3>
+        <h3 className="text-xl font-bold mb-4">บริการแก้ไข {service.name}</h3>
 
-        <form action={dispatch} className="space-y-4">
+        <form action={dispatch} className="flex flex-col gap-[10px]">
           <input type="hidden" name="service_id" value={service.id} />
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium">服务名称</label>
+            <label htmlFor="name" className="block text-sm font-medium">ชื่อบริการ</label>
             {/* 确保输入框中的文字在浅色背景下可见 */}
-            <input type="text" id="name" name="name" required defaultValue={service.name || ''} className="mt-1 block w-full input border border-gray-300 text-black" />
+            <input type="text" id="name" name="name" required defaultValue={service.name || ''} className="w-[80%] input" />
           </div>
           <div>
-            <label htmlFor="description" className="block text-sm font-medium">服务描述</label>
-            <textarea id="description" name="description" rows={3} defaultValue={service.description || ''} className="mt-1 block w-full input border border-gray-300 text-black"></textarea>
+            <label htmlFor="description" className="block text-sm font-medium">การแนะนำบริการ</label>
+            <textarea id="description" name="description" rows={3} defaultValue={service.description || ''} className="w-[80%] textarea"></textarea>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="price" className="block text-sm font-medium">价格</label>
-              <input type="number" id="price" name="price" required step="0.01" defaultValue={service.price || 0} className="mt-1 block w-full input border border-gray-300 text-black" />
+              <label htmlFor="price" className="block text-sm font-medium">ราคา</label>
+              <input type="number" id="price" name="price" required step="0.01" defaultValue={service.price || 0} className="w-[80%] input" />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 mt-[10px]">
               <div>
-                <label htmlFor="duration_value" className="block text-sm font-medium">时长数值</label>
-                <input type="number" id="duration_value" name="duration_value" required defaultValue={service.duration_value || 0} className="mt-1 block w-full input border border-gray-300 text-black" />
+                <label htmlFor="duration_value" className="block text-sm font-medium">ค่าตัวเลข</label>
+                <input type="number" id="duration_value" name="duration_value" required defaultValue={service.duration_value || 0} className="w-[40%] input" />
               </div>
-              <div>
-                <label htmlFor="duration_unit" className="block text-sm font-medium">单位</label>
-                <select id="duration_unit" name="duration_unit" required defaultValue={service.duration_unit || 'minutes'} className="mt-1 block w-full input border border-gray-300 text-black">
-                  <option value="minutes">分钟</option>
-                  <option value="hours">小时</option>
-                  <option value="days">天</option>
+              <div >
+                <label htmlFor="duration_unit" className="block text-sm font-medium">หน่วยเวลา</label>
+                <select id="duration_unit" name="duration_unit" required defaultValue={service.duration_unit || 'minutes'} className="w-[40%] select">
+                  <option value="minutes">นาที</option>
+                  <option value="hours">ชั่วโมง</option>
+                 
                 </select>
               </div>
             </div>
           </div>
           <div>
-            <label htmlFor="type" className="block text-sm font-medium">我的分类</label>
-            <input type="text" id="type" name="type" defaultValue={service.type || ''} className="mt-1 block w-full input border border-gray-300 text-black" />
+            <label htmlFor="type" className="block text-sm font-medium">หมวดหมู่บริการ</label>
+            <input type="text" id="type" name="type" defaultValue={service.type || ''} className="w-[80%] input" />
           </div>
 
           <div className="flex justify-end gap-4 pt-4">
             {/* 使用 onCancel prop 来关闭内联表单 */}
-            <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">取消</button>
-            <SubmitButton text="保存更改" />
+            <button type="button" onClick={onCancel} className="btn">Cancel</button>
+            <SubmitButton text="Save" />
           </div>
           {state?.message && <p className={`mt-2 text-sm ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>}
         </form>

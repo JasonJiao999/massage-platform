@@ -81,6 +81,10 @@ export default async function ProfilePage() {
 
       {/* 合作关系卡片 */}
       <div className="card bg-[var(--color-third)] w-[full-20px] mx-[10px]">
+
+
+
+        
         <h2 className="text-xl font-semibold w-full text-center">Partner Relationship</h2>
         {isInShop ? (
           <div className="text-xl font-semibold w-full px-[24px] flex-col pb-[20px]">

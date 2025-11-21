@@ -612,17 +612,17 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
 </div>
 
       {/* 视频库管理 */}
-      <div className=" bg-gray-800 rounded-lg shadow-md space-y-4">
-        <div className='flex flex-row flex-wrap justify-between  items-stretch p-[24px]'>
-  <h2 className="text-xl font-bold text-white">My Videos</h2>
+      <div className="card bg-primary p-[20px] text-[var(--foreground)] mx-[10px] mt-[20px]">
+        <h2 className="text-xl font-bold ">My X/Twitter Videos (Max {MAX_VIDEO_SLOTS})</h2> 
+        <div className='flex flex-row flex-wrap justify-between  items-stretch p-[24px] '>
  {/* ----------------- 视频链接嵌入表单 (新功能) ----------------- */}
-<form onSubmit={handleVideoLinkSubmit} className="card bg-[var(--color-third)] p-6">
-        <h2 className="text-xl font-bold text-white mb-4">My X/Twitter Videos (Max {MAX_VIDEO_SLOTS})</h2> {/* <-- 【修改】更改标题 */}
+<form onSubmit={handleVideoLinkSubmit} className="w-full">
+        
 
-        <div className="space-y-4">
+        <div className="flex flex-col gap-[10px]">
           {videoUrls.map((url, index) => (
             <div key={index}>
-              <label htmlFor={`video_url_${index}`} className="block text-sm font-medium text-card-foreground/80">
+              <label htmlFor={`video_url_${index}`} className="block text-sm font-medium ">
                 Video Link {index + 1}
               </label>
               <input
@@ -630,14 +630,14 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
                 type="url"
                 value={url}
                 onChange={(e) => handleVideoUrlChange(index, e.target.value)}
-                className="input w-full mt-1"
+                className="input w-[80%]"
                 placeholder={`Paste X/Twitter video link ${index + 1} here (optional)`} 
               />
             </div>
           ))}
         </div>
 
-        <button type="submit" className="btn btn-secondary mt-6" disabled={loading}>
+        <button type="submit" className="btn btn-wide mt-[10px]" disabled={loading}>
           {loading ? 'Saving Links...' : 'Save Video Links'}
         </button>
         {message && <p className={`text-sm mt-2 text-center ${message.includes('success') ? 'text-green-500' : 'text-red-500'}`}>{message}</p>}

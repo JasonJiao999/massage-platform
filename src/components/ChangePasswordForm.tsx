@@ -51,9 +51,9 @@ export default function ChangePasswordForm() {
 
   return (
     // 您可以自定义卡片样式，使其与 MyProfileForm 协调
-    <form onSubmit={handleSubmit} className="card bg-primary p-[20px] text-[var(--foreground)]">
+    <form onSubmit={handleSubmit} className="card bg-primary p-[20px] text-[var(--foreground)] mx-[10px]">
       <h2 className="text-xl font-bold text-white mb-4">Change Password</h2>
-      <div className="flex flex-col gap-[10px]">
+      <div className="flex flex-col gap-[10px] p-[24px]">
         <div>
           <label htmlFor="newPassword" className="block text-sm font-medium text-foreground/80">
             New Password

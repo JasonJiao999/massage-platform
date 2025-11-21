@@ -28,7 +28,7 @@ const PromoBanner = ({ banner }: { banner: { url: string; name: string | null } 
   return (
 
 <div className="w-[full-20px] m-[10px]"> {/* 添加左右内边距，确保不贴边 */}
-      <div className="relative aspect-[1200/200] mx-auto max-w-[1200px] overflow-hidden rounded-lg shadow-lg"> {/* 添加一些美化样式 */}
+      <div className="relative aspect-[1200/200] mx-auto max-w-[1200px] overflow-hidden rounded-lg shadow-lg my-[30px]"> {/* 添加一些美化样式 */}
         <Image
           src={banner.url}
           alt={banner.name || "Promotional Banner"}
