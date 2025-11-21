@@ -141,7 +141,7 @@ export default function AddressSelector({
 
   // JSX 渲染部分
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[var(--color-secondary)]">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
       {/* 省份选择 */}
       <div>
         <label htmlFor="province" className="block text-sm font-medium  mb-2 text-[var(--foreground)]">

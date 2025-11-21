@@ -304,7 +304,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
         id="gender" 
         name="gender" 
         defaultValue={profile.gender ?? ''}
-        className="select m-[10px] w-[90%] text-[var(--color-secondary)]"
+        className="select m-[10px] w-[90%] "
       >
         <option value="">Choose...</option>
         <option value="male">Male</option>
@@ -321,7 +321,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
         id="nationality" 
         name="nationality" 
         defaultValue={profile.nationality ?? ''}
-        className="select m-[10px] w-[90%] text-[var(--color-secondary)]"
+        className="select m-[10px] w-[90%] "
       >
         <option value="">Choose...</option>
         <option value="Thailand">Thailand</option>
@@ -467,7 +467,7 @@ export function MyProfileForm({ profile }: { profile: Profile }) {
 </div>
 
     {/* Address Card */}
-    <div className="card bg-primary flex-1 min-w-[300px] w-[450px] p-[24px] m-[10px]">
+    <div className="card bg-primary flex-1 min-w-[300px] w-[450px] p-[24px] m-[10px] text-[var(--foreground)]">
       <h3 className="text-xl font-semibold  mb-4">Detailed address</h3>
       <div className="space-y-4">
         <div>
