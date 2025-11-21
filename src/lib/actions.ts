@@ -553,7 +553,7 @@ export async function createMyService(prevState: any, formData: FormData) {
   return { message: 'Service created successfully!', success: true };
 }
 
-// 更新服务信息
+// 【updateMyService】: 更新成功后添加公开页面刷新
 export async function updateMyService(prevState: any, formData: FormData) {
   'use server';
   const cookieStore = cookies();
@@ -598,23 +598,24 @@ export async function updateMyService(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/staff-dashboard/services');
+  revalidatePath(`/worker/${user.id}`); // 刷新工作者公开页面缓存
   return { message: 'Successfully updated!', success: true };
 }
 
 
 
+// 【deleteMyService】: 软删除/归档逻辑 (假设 is_active 存在以满足业务需求)
 export async function deleteMyService(serviceId: string) {
     'use server';
     const supabase = createClient(cookies());
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        // 返回错误对象，而不是抛出异常
         return { success: false, message: 'Authentication required. You must be logged in.' };
     }
 
     try {
-        // 1. 安全检查：确保用户拥有此服务 (您的原有逻辑)
+        // 1. 安全检查：确保用户拥有此服务的所有权
         const { data: service, error: ownerError } = await supabase
             .from('services')
             .select('owner_id')
@@ -625,47 +626,46 @@ export async function deleteMyService(serviceId: string) {
             return { success: false, message: 'You do not have permission to delete this service.' };
         }
 
-        // 2. 【核心逻辑】: 在删除前，检查是否存在关联的预约
-        const { data: existingBookings, error: bookingCheckError } = await supabase
-            .from('bookings') // 假设您的预约表名为 'bookings'
-            .select('id', { count: 'exact' }) // 使用 count 来获取准确数量
+        // 2. 【修复 TS 警告】: 检查关联订单数量 (用于消息中提示)
+        const { count, error: bookingCheckError } = await supabase
+            .from('bookings') 
+            .select('id', { count: 'exact', head: true }) 
             .eq('service_id', serviceId);
+        
+        // 声明并初始化 bookingCount，消除 TypeScript 警告
+        const bookingCount: number = count || 0; 
         
         if (bookingCheckError) {
             console.error('Booking Check Error:', bookingCheckError);
-            return { success: false, message: 'Failed to check for existing bookings before deletion.' };
         }
         
-        // 如果查询到的预约数量大于 0，则不允许删除
-        if (existingBookings && existingBookings.length > 0) {
-            // **这里是关键：返回一个清晰的错误信息给前端**
-            return { success: false, message: `此服务已经有 ${existingBookings.length} 个订单了，不能删除。` };
-        }
-
-        // 3. 执行删除：只有在通过所有检查后才执行
-        const { error: deleteError } = await supabase
+        // 3. 【核心修改】: 执行软删除/归档 (假设 is_active 字段已添加)
+        // **如果你没有 is_active 字段，这一步会失败。请务必添加该字段。**
+        const { error: updateError } = await supabase
             .from('services')
-            .delete()
+            .update({ is_active: false }) // 执行软删除
             .eq('id', serviceId);
 
-        if (deleteError) {
-            // 兜底：如果数据库层面还是出错了，记录日志并返回通用错误
-            console.error('Delete Service Error:', deleteError);
-            return { success: false, message: 'Failed to delete the service due to a database error.' };
+        if (updateError) {
+             // 只有在无法归档时才阻止操作，并返回数据库错误
+            return { success: false, message: `归档失败: ${updateError.message} (请确保services表有is_active字段)` };
         }
 
         // 4. 成功后，刷新路径并返回成功信息
         revalidatePath('/staff-dashboard/services');
-        return { success: true, message: 'Service deleted successfully.' };
+        revalidatePath(`/worker/${user.id}`); 
+        
+        const message = bookingCount > 0
+            ? `服务已归档。注意: 此服务有 ${bookingCount} 个现有订单，已保留历史记录。`
+            : '服务已成功归档。';
+            
+        return { success: true, message: message };
 
     } catch (error: any) {
-        // 捕获任何意外的异常，防止程序崩溃
         console.error('Unexpected error in deleteMyService:', error);
         return { success: false, message: error.message || 'An unexpected error occurred.' };
     }
 }
-
-
 
 /**
  * 顾客或员工取消预约 (更新为月度计数逻辑)

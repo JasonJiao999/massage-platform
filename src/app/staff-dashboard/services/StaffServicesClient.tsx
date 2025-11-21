@@ -1,4 +1,4 @@
-// src/app/staff-dashboard/services/StaffServicesClient.tsx (已修复 ReferenceError 的最终完整版)
+// src/app/staff-dashboard/services/StaffServicesClient.tsx 
 
 'use client';
 
@@ -6,8 +6,8 @@ import { useFormState, useFormStatus } from 'react-dom';
 import { createMyService, deleteMyService, updateMyService } from '@/lib/actions'; 
 import { useEffect, useRef, useState } from 'react';
 import EditServiceModal from '@/components/EditServiceModal';
+import { useRouter } from 'next/navigation';
 
-// 1. 【核心修改】: 添加 'export' 关键字，让这个类型可以被外部文件导入
 export interface Service {
   id: string;
   name: string | null;
@@ -83,13 +83,38 @@ function CreateServiceForm() {
 
 // 主客户端组件
 export default function StaffServicesClient({ services }: { services: Service[] }) {
-  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const router = useRouter(); 
 
   const translateUnit = (unit: string | null) => {
     if (unit === 'minutes') return 'Minutes';
     if (unit === 'hours') return 'Hours';
     if (unit === 'days') return 'Days';
     return '';
+  };
+
+  const handleRefreshAndClose = () => {
+    setEditingServiceId(null);
+    router.refresh(); 
+  };
+  
+  // 4. 处理删除/隐藏操作
+  const handleDeleteAction = async (serviceId: string, serviceName: string | null) => {
+      // 修改提示语
+      const confirmed = window.confirm(
+          `Are you sure you want to archive/hide the service "${serviceName}"? \nThis will remove it from public view but keep booking history.`
+      );
+      if (confirmed) {
+          const result = await deleteMyService(serviceId); // 调用修改后的软删除 action
+          if (result && !result.success) {
+            // 只有当 action 明确返回错误时才弹窗
+            alert(`Error: ${result.message}`);
+          } else {
+            // 成功隐藏后，强制刷新
+            alert(result.message);
+            router.refresh();
+          }
+      }
   };
 
   return (
@@ -127,24 +152,17 @@ export default function StaffServicesClient({ services }: { services: Service[] 
   <div className="flex items-center gap-2 flex-shrink-0">
     
     {/* 编辑按钮 */}
-    <button 
-      onClick={() => setEditingService(service)}
-      className="btn"
-    >
-      Edit
-    </button>
+                    <button 
+                      onClick={() => 
+                          setEditingServiceId(prevId => (prevId === service.id ? null : service.id))
+                      }
+                      className="btn"
+                    >
+                      {editingServiceId === service.id ? 'Close Edit' : 'Edit'}
+                    </button>
 
     {/* 删除按钮的表单 */}
-    <form action={async () => {
-        const confirmed = window.confirm(`Are you sure you want to permanently delete the service "${service.name}"? This action cannot be undone.`);
-        if (confirmed) {
-            // 建议在这里处理返回的状态，例如显示一个通知
-            const result = await deleteMyService(service.id);
-            if (result && !result.success) {
-              alert(`Error: ${result.message}`);
-            }
-        }
-    }}>
+    <form action={() => handleDeleteAction(service.id, service.name)}>
       <button type="submit" className="btn btn-warning">Delete</button>
     </form>
 
@@ -166,14 +184,14 @@ export default function StaffServicesClient({ services }: { services: Service[] 
 
     {/* Time */}
     {service.duration_value && service.duration_unit && (
-      <div className="flex-1 min-w-[120px] p-2  rounded-lg flex items-center justify-center bg-[var(--color-third)]">
+<div className="flex-1 min-w-[120px] p-2 rounded-lg flex items-center justify-center bg-[var(--color-third)]">
         <span>Time: {service.duration_value} {translateUnit(service.duration_unit)}</span>
       </div>
     )}
 
     {/* Type */}
     {service.type && (
-      <div className="flex-1 min-w-[120px] p-2  rounded-lg flex items-center justify-center bg-[var(--color-third)]">
+  <div className="flex-1 min-w-[120px] p-2 rounded-lg flex items-center justify-center bg-[var(--color-third)]">
         <span>Type: {service.type}</span>
       </div>
     )}
@@ -184,10 +202,17 @@ export default function StaffServicesClient({ services }: { services: Service[] 
 </div>
 
 <div className="flex-grow m-[10px]">
-<p className="text-sm  mt-1">{service.description}</p>
+<p className="text-sm mt-1">{service.description}</p>
 </div>
 
-
+                {/* 【核心修改 4】：内联编辑表单 - 根据 ID 匹配显示 */}
+                {editingServiceId === service.id && (
+                    <EditServiceModal 
+                        service={service} 
+                        onCancel={handleRefreshAndClose} // 取消按钮也刷新并关闭
+                        onSaveSuccess={handleRefreshAndClose}
+                    />
+                )}
 
 
             </div>
@@ -197,12 +222,7 @@ export default function StaffServicesClient({ services }: { services: Service[] 
         )}
       </div>
 
-      {editingService && (
-        <EditServiceModal 
-          service={editingService} 
-          onClose={() => setEditingService(null)}
-        />
-      )}
+
     </div>
   );
 }

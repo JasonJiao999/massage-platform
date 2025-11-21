@@ -139,7 +139,7 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
           {/* Logo */}
           <div className="flex-shrink-0 mx-[10px]">
             <Link href="/">
-              <Image src={displayLogoUrl} alt="Logo" width={140} height={80} className="h-10 w-auto" priority />
+              <Image src={displayLogoUrl} alt="Logo" width={260} height={85}  priority />
             </Link>
             
           </div>

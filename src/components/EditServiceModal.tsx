@@ -27,53 +27,50 @@ function SubmitButton({ text }: { text: string }) {
   );
 }
 
-// 主模态框组件
-export default function EditServiceModal({ service, onClose }: { service: Service, onClose: () => void }) {
+// 主编辑表单组件 (取代 Modal)
+// 它现在接收 onCancel 和 onSaveSuccess 回调
+export default function EditServiceModal({ service, onCancel, onSaveSuccess }: { service: Service, onCancel: () => void, onSaveSuccess: () => void }) {
   const [state, dispatch] = useFormState(updateMyService, { message: '', success: false });
 
-  // 当表单成功提交后，显示成功消息并自动关闭模态框
+  // 当表单成功提交后，通知父组件刷新并关闭表单
   useEffect(() => {
     if (state.success) {
-      alert(state.message); // 或者使用更美观的 Toast 通知
-      onClose();
+      alert(state.message); 
+      onSaveSuccess(); // 通知父组件刷新数据并关闭表单
     }
-  }, [state, onClose]);
+  }, [state, onSaveSuccess]);
 
   return (
-    // 背景遮罩层
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      {/* 模态框容器 */}
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">编辑服务</h2>
-          <button onClick={onClose} className="text-2xl font-bold hover:text-red-500">&times;</button>
-        </div>
+    // 【核心修改】: 移除所有 Modal/Overlay/Positioning CSS，它现在只是一个容器
+    <div className="card bg-gray-100 p-6 rounded-lg shadow-inner w-full mt-4 border border-blue-400/70 text-black">
+        
+        <h3 className="text-xl font-bold mb-4">编辑服务: {service.name}</h3>
 
         <form action={dispatch} className="space-y-4">
-          {/* 1. 【核心】将 service ID 作为隐藏字段传递给 Server Action */}
           <input type="hidden" name="service_id" value={service.id} />
 
           <div>
             <label htmlFor="name" className="block text-sm font-medium">服务名称</label>
-            <input type="text" id="name" name="name" required defaultValue={service.name || ''} className="mt-1 block w-full input" />
+            {/* 确保输入框中的文字在浅色背景下可见 */}
+            <input type="text" id="name" name="name" required defaultValue={service.name || ''} className="mt-1 block w-full input border border-gray-300 text-black" />
           </div>
           <div>
             <label htmlFor="description" className="block text-sm font-medium">服务描述</label>
-            <textarea id="description" name="description" rows={3} defaultValue={service.description || ''} className="mt-1 block w-full input"></textarea>
+            <textarea id="description" name="description" rows={3} defaultValue={service.description || ''} className="mt-1 block w-full input border border-gray-300 text-black"></textarea>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="price" className="block text-sm font-medium">价格</label>
-              <input type="number" id="price" name="price" required step="0.01" defaultValue={service.price || 0} className="mt-1 block w-full input" />
+              <input type="number" id="price" name="price" required step="0.01" defaultValue={service.price || 0} className="mt-1 block w-full input border border-gray-300 text-black" />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label htmlFor="duration_value" className="block text-sm font-medium">时长数值</label>
-                <input type="number" id="duration_value" name="duration_value" required defaultValue={service.duration_value || 0} className="mt-1 block w-full input" />
+                <input type="number" id="duration_value" name="duration_value" required defaultValue={service.duration_value || 0} className="mt-1 block w-full input border border-gray-300 text-black" />
               </div>
               <div>
                 <label htmlFor="duration_unit" className="block text-sm font-medium">单位</label>
-                <select id="duration_unit" name="duration_unit" required defaultValue={service.duration_unit || 'minutes'} className="mt-1 block w-full input">
+                <select id="duration_unit" name="duration_unit" required defaultValue={service.duration_unit || 'minutes'} className="mt-1 block w-full input border border-gray-300 text-black">
                   <option value="minutes">分钟</option>
                   <option value="hours">小时</option>
                   <option value="days">天</option>
@@ -83,16 +80,16 @@ export default function EditServiceModal({ service, onClose }: { service: Servic
           </div>
           <div>
             <label htmlFor="type" className="block text-sm font-medium">我的分类</label>
-            <input type="text" id="type" name="type" defaultValue={service.type || ''} className="mt-1 block w-full input" />
+            <input type="text" id="type" name="type" defaultValue={service.type || ''} className="mt-1 block w-full input border border-gray-300 text-black" />
           </div>
 
           <div className="flex justify-end gap-4 pt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">取消</button>
+            {/* 使用 onCancel prop 来关闭内联表单 */}
+            <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">取消</button>
             <SubmitButton text="保存更改" />
           </div>
-          {state?.message && !state.success && <p className="mt-2 text-sm text-red-600">{state.message}</p>}
+          {state?.message && <p className={`mt-2 text-sm ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>}
         </form>
       </div>
-    </div>
   );
 }

@@ -1,4 +1,4 @@
-// next.config.mjs (已修复 X/Twitter 和 Supabase 的最终 CSP 版本)
+// next.config.mjs (最终修复版 - 允许视频播放)
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -31,28 +31,22 @@ const nextConfig = {
   },
   
   async headers() {
-    // 根据您的存储 URL，假设 Supabase API 域名为 lwtvwliusnzjjrrhjyeq.supabase.co
     const SUPABASE_DOMAIN = 'lwtvwliusnzjjrrhjyeq.supabase.co';
     
-    // -----------------------------------------------------------------------
-    // 定义涵盖 X/Twitter 和 Supabase 的 Content Security Policy (CSP) 规则
-    // -----------------------------------------------------------------------
     const cspDirectives = [
         "default-src 'self'",
         
-        // 脚本：确保 platform.twitter.com 被允许
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' translate.google.com translate.googleapis.com https://platform.twitter.com",
         
-        // 框架：允许 iframe 源，包括静态内容和 X/Twitter 的主要 CDN
         "frame-src 'self' https://platform.twitter.com https://syndication.twitter.com https://cdn.syndication.twimg.com https://static.twitter.com https://x.com",
         
-        // 连接 (核心修复): NEEDS Supabase API 和 X/Twitter 动态数据
-        // 1. Supabase API (解决日志中的 connect-src 违规)
-        // 2. X/Twitter 核心连接域 (abs.twimg.com 是关键)
-        `connect-src 'self' https://${SUPABASE_DOMAIN} https://api.twitter.com https://syndication.twitter.com https://cdn.syndication.twimg.com https://x.com https://abs.twimg.com`, 
+        // Connect-src: 允许所有 API 域名
+        `connect-src 'self' https://${SUPABASE_DOMAIN} https://api.twitter.com https://syndication.twitter.com https://cdn.syndication.twimg.com https://x.com https://abs.twimg.com https://api.react-tweet.dev https://react-tweet.vercel.app`, 
 
-        // 图片：允许加载图片、缩略图和 blob: (视频预览/GIF)
         "img-src 'self' data: https://lwtvwliusnzjjrrhjyeq.supabase.co https://pbs.twimg.com https://syndication.twimg.com blob:",
+        
+        // 【核心修复】: 添加 media-src 以允许 Twitter 视频流
+        "media-src 'self' https://video.twimg.com",
 
         "style-src 'self' 'unsafe-inline'",
     ];

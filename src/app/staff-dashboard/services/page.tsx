@@ -19,10 +19,12 @@ export default async function StaffServicesPage() {
 
   // 【核心任务】: 从数据库获取当前用户拥有的所有服务
   // 我们不需要在这里进行任何复杂的过滤，因为 RLS 安全策略会自动处理
-  const { data: services, error } = await supabase
+const { data: services, error } = await supabase
     .from('services')
-    .select('*') // 获取所有字段
-    .order('created_at', { ascending: false }); // 按创建时间降序排列
+    .select('*') 
+    .eq('owner_id', user.id) // 确保用户权限
+    .eq('is_active', true) // <-- 【关键修复】: 仅获取活跃的服务
+    .order('created_at', { ascending: false });
   
   // 如果在获取数据时发生数据库层面的错误
   if (error) {

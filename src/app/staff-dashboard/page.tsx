@@ -55,7 +55,7 @@ const { data: profile, error: profileError } = await supabase
 
   return (
     <div className="max-w-[1200px] mx-auto gap-[10px]">
-      <h1 className="text-3xl font-bold mb-6 ">Dashboard</h1>
+      <h1 className="text-3xl font-bold mx-[10px] ">Dashboard</h1>
       <DashboardClient 
       stats={stats ?? {}} 
       profile={profile}  

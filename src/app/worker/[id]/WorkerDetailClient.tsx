@@ -73,15 +73,13 @@ const TweetEmbed: FC<{ url: string }> = ({ url }) => {
 
     // 将 Tweet 包裹在 Suspense 中，提供骨架屏
     return (
-        <div className="flex justify-center w-full my-4">
-            <div className="w-full max-w-[550px] mx-auto">
+
+            <div className="w-full ">
                 <Suspense fallback={<TweetSkeleton />}>
-                    {/* 直接使用 Tweet 组件，它将静态渲染 Tweet 内容 */}
-                    {/* 注意：这里的 Tweet 实际上是 react-tweet/api 的客户端包装器 */}
                     <Tweet id={tweetId} />
                 </Suspense>
             </div>
-        </div>
+
     );
 };
 
@@ -496,12 +494,13 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
 
         
         <div style={rightPanelStyle} className="w-full">
+          <div className='flex flex-wrap justify-center text-[var(--foreground)]'>
 
 
 
 
           {worker.photo_urls && worker.photo_urls.length > 0 && (
-            <div >
+            <div className="w-full">
               
               <div className="flex flex-col items-center ">
                 <div className="carousel w-full rounded-box">
@@ -511,19 +510,19 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
                       id={`slide${index + 1}`} 
                       className="carousel-item relative w-full"
                     >
-                      <div className="relative w-full aspect-[3/4] max-h-full">
+                      <div className="relative  aspect-[3/4] max-h-full w-[95%] mx-auto ">
                         <Image
                           src={url}
                           alt={`Photo ${index + 1} of the worker`}
                           fill
-                          sizes="min-[500px]:max-w-[350px] min-[1200px]:max-w-full"
-                          className="object-cover"
+                          sizes=""
+                          className="object-cover card"
                         />
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-center w-full max-w-[500px]">
+                <div className="flex justify-center w-full">
                   {worker.photo_urls.map((url: string, index: number) => (
                     <a 
                       key={`button-${url}`} 
@@ -539,14 +538,13 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
           )}
 {/* --- X/Twitter 视频嵌入区域 (使用 react-tweet) --- */}
           {worker.video_urls && worker.video_urls.length > 0 && (
-            <div className="mt-8">
-              <h3 className="text-xl font-bold text-white mb-4">X/Twitter Videos</h3>
+            <div className="flex justify-center w-full ">
               {worker.video_urls.map((url, index) => {
-                  // 清理 URL，移除查询参数（如 ?s=20）
+                  
                   const cleanedUrl = url.split('?')[0]; 
                   
                   return (
-                    <div key={index} className="grid grid-cols-1 gap-[10px] justify-items-center my-[10px]">
+                    <div key={index} className="flex mx-[10px] my-[10px] min-w-[430px]">
                       
                       {/* 【核心修复】使用 TweetEmbed 组件 */}
                       <TweetEmbed url={cleanedUrl} />
@@ -557,6 +555,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
             </div>
           )}
           {/* --- 结束 X/Twitter 视频 --- */}
+          </div>
 
 
 

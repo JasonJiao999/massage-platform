@@ -76,7 +76,10 @@ export default async function WorkerDetailPage({ params }: { params: { id: strin
     { data: shop, error: shopError }
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', params.id).single(),
-    supabase.from('services').select('*').eq('owner_id', params.id),
+    supabase.from('services')
+            .select('*')
+            .eq('owner_id', params.id)
+            .eq('is_active', true), // <-- 【关键修复】: 仅获取活跃的服务
     supabase.from('shops').select('*, staff!inner(*)').eq('staff.user_id', params.id).single()
   ]);
 
