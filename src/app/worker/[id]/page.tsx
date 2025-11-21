@@ -113,10 +113,11 @@ export default async function WorkerDetailPage({ params }: { params: { id: strin
     <WorkerDetailClient
       worker={worker}
       services={services || []}
-      shop={shop} // 繼續傳遞 shop 信息，以防其他地方需要
+      shop={shop} 
       initialAvailability={initialAvailability}
       existingBookings={existingBookings}
-      fullAddress={fullAddress} // 傳遞我們新生成的、正確的地址
+      fullAddress={fullAddress} 
+      
     />
   );
 }
