@@ -32,6 +32,7 @@ type FavoriteWorker = {
   tags: string[] | null;
   province_name: string | null;
   district_name: string | null;
+  cover_image_url: string | null;
 };
 
 
@@ -58,7 +59,7 @@ export default async function CustomerDashboardPage() {
       .from('favorite_workers') //
       .select(`
         worker:worker_profile_id (
-          id, nickname, qr_url, photo_urls, years, tags,
+          id, nickname, qr_url, photo_urls, years, tags,cover_image_url,
           province_name: province_id,
           district_name: district_id
         )

@@ -90,7 +90,10 @@ export default function MyMediaClient({ profile }: MediaProps) {
           <h2 className="card-title flex items-center text-white">
             <FaImage /> Cover Image (New Feature)
           </h2>
-          <p className="text-sm opacity-80">This image will be displayed at the top of your profile page. </p>
+          <p className="text-sm opacity-80">Please upload a cover image; your information will not be displayed on the website without a cover image. <br />
+                  กรุณาอัพโหลดภาพปก ข้อมูลของคุณจะไม่ปรากฏบนเว็บไซต์หากไม่มีภาพปก
+          </p>
+          
           <div className="flex flex-col md:flex-row gap-6 items-start mt-4">
           
             <div className="w-full md:w-1/3 max-h-[300px] aspect-[3/4] bg-black/20 rounded-lg overflow-hidden relative border-2 border-dashed border-white/30 flex items-center justify-center">

@@ -512,6 +512,7 @@ export type Database = {
             | null
           nickname: string | null
           photo_urls: string[] | null
+          cover_image_url: string | null
           points: number
           province_id: number | null
           qr_url: string | null
@@ -545,6 +546,7 @@ export type Database = {
             | null
           nickname?: string | null
           photo_urls?: string[] | null
+          cover_image_url?: string | null
           points?: number
           province_id?: number | null
           qr_url?: string | null
@@ -578,6 +580,7 @@ export type Database = {
             | null
           nickname?: string | null
           photo_urls?: string[] | null
+          cover_image_url?: string | null
           points?: number
           province_id?: number | null
           qr_url?: string | null
@@ -1233,6 +1236,7 @@ export type Database = {
           level: number
           nickname: string
           photo_urls: string[]
+          cover_image_url: string
           province_id: number
           province_name: string
           social_links: Json

@@ -236,20 +236,23 @@ export default function WorkerSearchClient({
       <div>
         {initialWorkers.length > 0 ? (
           // 核心修改：使用 flex 和 flex-wrap 来实现横向排列和自动换行
-          <div className="flex flex-wrap justify-center max-w-[1200px] mx-auto">
-            <div className='card w-full min-[1200px]:max-w-[1200px] '>
-<div className='grid grid-cols-2 
+          <div className="flex flex-wrap justify-center  mx-auto">
+            <div className='card w-full  '>
+              <div className='grid grid-cols-2 
                         min-[768px]:grid-cols-4   {/* 屏幕宽度 >= 768px 时显示 4 列 */}
                         min-[1024px]:grid-cols-5 {/* 屏幕宽度 >= 1024px 时显示 5 列 */}
-                        gap-[10px]'>
+                        gap-[10px]
+                        w-full'>
               
             {initialWorkers.map(worker => (
+
               <WorkerCard 
                 key={worker.id} 
                 worker={worker} 
                 isLoggedIn={isLoggedIn} 
                 isFavorited={favoritesSet.has(worker.id)} 
               />
+              
             ))}
             </div>
             </div>

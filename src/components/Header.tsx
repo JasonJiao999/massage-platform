@@ -37,9 +37,9 @@ const translations = {
     login: "登入",
     register: "註冊",
     logout: "登出",
-    adminDashboard: "管理員儀表板", 
-    shopDashboard: "管理儀表板",
-    workerDashboard: "員工儀表板",
+    adminDashboard: "儀表板", 
+    shopDashboard: "儀表板",
+    workerDashboard: "儀表板",
     profile: "個人資料"
   }
 };

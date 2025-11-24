@@ -14,6 +14,7 @@ type Worker = {
   tags: string[] | null;
   province_name: string | null;
   district_name: string | null;
+  cover_image_url: string | null;
 };
 
 interface WorkerCardProps {
@@ -25,11 +26,15 @@ interface WorkerCardProps {
 // 增强版本 - 更明确的样式控制
 // WorkerCard.tsx - 强样式版本
 export default function WorkerCard({ worker, isLoggedIn, isFavorited }: WorkerCardProps) {
-  const cardImage = worker.photo_urls?.[0] || worker.qr_url || '/default-qr.png';
+  const cardImage = worker.cover_image_url;
 
+if (!cardImage) {
+    return null;
+  }
+  
   return (
     <div 
-      className="card w-full bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-[500px]:max-w-[200px] min-[1200px]:max-w-[280px]"
+      className="card  bg-white rounded-lg shadow-md overflow-hidden flex flex-col max-w-[228px]"
       style={{
         backgroundColor: 'white',
         borderRadius: '10px',
@@ -103,7 +108,7 @@ export default function WorkerCard({ worker, isLoggedIn, isFavorited }: WorkerCa
         </Link>
         
         <div 
-          className="flex flex-wrap justify-center gap-1 mt-auto pt-2"
+          className="flex flex-wrap justify-center mt-auto pt-2"
           style={{
             display: 'flex',
             flexWrap: 'wrap',

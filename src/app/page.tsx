@@ -57,9 +57,10 @@ const [
 
 
     supabase.from('profiles')
-      .select('id, nickname, qr_url, photo_urls, years, tags') 
+      .select('id, nickname, qr_url, photo_urls, years, tags,cover_image_url') 
       .gt('level', 90) 
       .in('role', ['freeman', 'staff']) 
+      .not('cover_image_url', 'is', null)
       .limit(10)  // <--- 显示前10位，数值可以自己调整
   ]); 
 
