@@ -106,7 +106,7 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
     if (isMobile) {
       // 【移動端 - 垂直佈局】
       return (
-        <div className="flex flex-col gap-2 p-2">
+        <div className="flex flex-col gap-[5px] p-[5pxs]">
           <Link href="/login" className="btn"> 
             Login
           </Link>

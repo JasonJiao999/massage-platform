@@ -2437,3 +2437,57 @@ export async function adminGrantSubscriptionTime(
   
   return { success: true, message: `成功為用戶添加了 ${daysToAdd} 天訂閱。` };
 }
+
+
+
+// 1. 新增：上传个人封面图 Action
+export async function uploadMyCoverImage(prevState: any, formData: FormData) {
+  'use server';
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, message: 'Authentication required.' };
+
+  const file = formData.get('cover_image') as File;
+  if (!file || file.size === 0) {
+    return { success: false, message: 'No file selected.' };
+  }
+
+  try {
+
+    
+    // 生成路径
+    const fileExt = file.name.split('.').pop();
+    const fileName = `cover-${Date.now()}.${fileExt}`;
+    const filePath = `staff-photos/${user.id}/${fileName}`;
+
+    // 上传到 Storage (假设 bucket 是 web-media)
+    const { error: uploadError } = await supabase.storage
+      .from('web-media')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('web-media')
+      .getPublicUrl(filePath);
+
+    // 更新数据库
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ cover_image_url: publicUrl })
+      .eq('id', user.id);
+
+    if (updateError) throw updateError;
+
+    revalidatePath('/staff-dashboard/media'); // 刷新新页面
+    revalidatePath(`/worker/${user.id}`);     // 刷新公开页
+    
+    return { success: true, message: 'Cover image updated successfully!' };
+  } catch (error: any) {
+    console.error('Cover upload error:', error);
+    return { success: false, message: `Upload failed: ${error.message}` };
+  }
+}
+

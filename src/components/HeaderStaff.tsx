@@ -9,6 +9,7 @@ export default function HeaderStaff() {
     { name: 'My Dashboard', href: '/staff-dashboard/' },
     { name: 'My Messages', href: '/staff-dashboard/messages' },
     { name: 'My Profile', href: '/staff-dashboard/profile' },
+    { name: 'My Media', href: '/staff-dashboard/media' },
     { name: 'My Services', href: '/staff-dashboard/services' },
     { name: 'My schedule', href: '/staff-dashboard/schedule' },
     { name: 'Customer Management', href: '/staff-dashboard/bookings' },
