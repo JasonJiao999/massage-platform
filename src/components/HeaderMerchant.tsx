@@ -2,15 +2,58 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+
+// 静态翻译字典
+const translations = {
+  en: {
+    myConsole: 'My console',
+    teamInformation: 'Team Information',
+    teamPage: 'Team Page',
+    myTeam: 'My Team',
+    myProfile: 'My Profile'
+  },
+  th: {
+    myConsole: 'คอนโซลของฉัน',
+    teamInformation: 'ข้อมูลทีม',
+    teamPage: 'หน้าทีม',
+    myTeam: 'ทีมของฉัน',
+    myProfile: 'โปรไฟล์ของฉัน'
+  },
+  'zh-TW': {
+    myConsole: '我的控制台',
+    teamInformation: '團隊資訊',
+    teamPage: '團隊頁面',
+    myTeam: '我的團隊',
+    myProfile: '我的檔案'
+  }
+};
 
 export default function HeaderMerchant({ shopSlug }: { shopSlug: string | null }) {
   const pathname = usePathname();
+  const [currentLanguage, setCurrentLanguage] = useState('en');
+
+  // 根据浏览器语言自动设置语言
+  useEffect(() => {
+    const browserLanguage = navigator.language;
+    
+    if (browserLanguage.startsWith('th')) {
+      setCurrentLanguage('th');
+    } else if (browserLanguage.startsWith('zh-TW')) {
+      setCurrentLanguage('zh-TW');
+    } else {
+      setCurrentLanguage('en');
+    }
+  }, []);
+
+  const t = translations[currentLanguage as keyof typeof translations];
+
   const navLinks = [
-    { name: 'My console', href: '/dashboard/' },
-    { name: 'Team Information', href: '/dashboard/shop' },
-    { name: 'Team Page', href: shopSlug ? `/shops/${shopSlug}` : '#', target: '_blank'}, // target 在这里定义
-    { name: 'My Team', href: '/dashboard/staff' },
-    { name: 'My Profile', href: '/dashboard/profile' },
+    { name: t.myConsole, href: '/dashboard/' },
+    { name: t.teamInformation, href: '/dashboard/shop' },
+    { name: t.teamPage, href: shopSlug ? `/shops/${shopSlug}` : '#', target: '_blank' },
+    { name: t.myTeam, href: '/dashboard/staff' },
+    { name: t.myProfile, href: '/dashboard/profile' },
   ];
 
   return (
@@ -19,17 +62,15 @@ export default function HeaderMerchant({ shopSlug }: { shopSlug: string | null }
         <Link 
           key={link.name} 
           href={link.href}
-          target={link.target} // <-- 修正点 1: 传递 target
-          rel={link.target === '_blank' ? 'noopener noreferrer' : undefined} // <-- 修正点 2: 添加 rel
+          target={link.target}
+          rel={link.target === '_blank' ? 'noopener noreferrer' : undefined}
           className={`block p-4 rounded-lg shadow-sm transition-all ${
             pathname.startsWith(link.href) 
               ? 'bg-green-600 text-white' 
               : 'bg-white hover:bg-gray-50'
           }`}
         >
-          {/* 注意：使用 <h3> 作为按钮在语义上不标准，但功能上可行 */}
-          {/* 如果 'btn' 只是样式，可以考虑用 <span> */}
-          <h3 className="btn">{link.name}</h3> 
+          <h3 className="btn">{link.name}</h3>
         </Link>
       ))}
     </div>
