@@ -222,7 +222,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
     </ul>
     {/* --- (*** 列表結束 ***) --- */}
 
-{/* --- (*** 這是新添加的聊天按鈕 ***) --- */}
+{/* --- (*** 這是新添加的聊天按鈕 ***) --- 
 <form action={getOrCreateChatRoom.bind(null, worker.id)}>
   <button 
     type="submit" 
@@ -231,7 +231,7 @@ const WorkerDetailClient: FC<WorkerDetailProps> = ({ worker, services, shop, ini
     <FaComments />
     <span>Chat with {worker.nickname}</span>
   </button>
-</form>
+</form> */}
 
 
   </div>

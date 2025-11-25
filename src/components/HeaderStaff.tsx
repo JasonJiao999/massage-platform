@@ -59,10 +59,10 @@ export default function HeaderStaff() {
       name: translations[currentLanguage as keyof typeof translations].dashboard, 
       href: '/staff-dashboard/' 
     },
-    { 
-      name: translations[currentLanguage as keyof typeof translations].messages, 
-      href: '/staff-dashboard/messages' 
-    },
+    //{ 
+      //name: translations[currentLanguage as keyof typeof translations].messages, 
+      //href: '/staff-dashboard/messages' 
+    //}, 
     { 
       name: translations[currentLanguage as keyof typeof translations].profile, 
       href: '/staff-dashboard/profile' 
