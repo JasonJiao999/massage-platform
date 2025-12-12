@@ -104,10 +104,10 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
     if (user) {
       if (isMobile) {
         return (
-          <div className="flex flex-col w-full p-2">
+          <div className="flex flex-col w-full gap-[10px] bg-[var(--color-third:)]">
             <span className="btn" title={user.email}>{user.email}</span>
             {dashboardLink && (
-              <Link href={dashboardLink.href} className="btn">
+              <Link href={dashboardLink.href} className="btn no-underline">
                 {dashboardLink.name}
               </Link>
             )}
@@ -120,10 +120,10 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
       }
       
       return (
-        <div className="max-w-[1200px] mx-auto flex flex-row gap-4 items-center">
+        <div className="max-w-[1200px] mx-auto flex flex-row items-center">
           <span className="btn" title={user.email}>{user.email}</span>
           {dashboardLink && (
-            <Link href={dashboardLink.href} className="btn">
+            <Link href={dashboardLink.href} className="btn no-underline">
               {dashboardLink.name}
             </Link>
           )}
@@ -134,11 +134,11 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
 
     if (isMobile) {
       return (
-        <div className="flex flex-col gap-[5px] p-[5px]">
-          <Link href="/login" className="btn"> 
+        <div className="flex flex-col gap-[10px]">
+          <Link href="/login" className="btn no-underline"> 
             {t.login}
           </Link>
-          <Link href="/register" className="btn">
+          <Link href="/register" className="btn no-underline">
             {t.register}
           </Link>
         </div>
@@ -172,7 +172,7 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
           </div>
 
           <div className="md:hidden flex items-center">
-            <div className="relative bg-white" ref={mobileMenuRef}>
+            <div className="relative " ref={mobileMenuRef}>
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)} 
                 className="btn btn-square mx-[20px] bg-[var(--background)] hover:text-gray-900 hover:bg-gray-100 border-[5px] border-[var(--color-overimg)]"
@@ -195,7 +195,7 @@ const Header: FC<HeaderProps> = ({ user, profile, logoUrl }) => {
               </button>
 
               {isMenuOpen && (
-                <div className="absolute top-full right-[20px] left-4 mt-2 rounded-md ring-1 ring-black ring-opacity-5 z-50">
+                <div className="absolute top-full right-[20px] card bg-[var(--color-third)] p-[10px] z-50">
                   <UserActions isMobile={true} />
                 </div>
               )}
