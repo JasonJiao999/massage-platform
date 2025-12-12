@@ -1,0 +1,39 @@
+/* src/app/globals.css */
+
+/* 1. 正确的 Tailwind CSS 指令 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@plugin "daisyui";
+
+/* 2. 定义我们主题系统的CSS变量 (作为默认值/备用值) */
+:root {
+  --background: #000000;    /* 背景-HSL 值 */
+  --foreground: #000000;      /* 亮灰色文字 */
+
+  
+  --card: 0 0% 100%;         /* 卡片背景 - 与主背景同色 */
+  --card-foreground: #000000; /* 卡片上的文字 - 亮灰色 */
+  
+  --border: 217.2 32.6% 17.5%;    /* 边框颜色 - 稍亮的蓝色 */
+  
+  --radius: 0.5rem;               /* 边框圆角 */
+  --font-family: Arial, Helvetica, sans-serif; /* 默认字体 */
+
+  --animate-spin: spin 1s linear infinite; /*按钮*/
+  --color-primary: #fde128; /*主色调*/
+  --color-secondary: #ffffff; /*次色调*/
+  --color-third: #f74f4f;
+  --color-btnbg: #202020;
+  --color-overimg: #000000;
+}
+
+/* 3. 将一些基础变量应用到全局 */
+body {
+ 
+  color: var(--color-secondary);
+  font-family: var(--font-family);
+
+
+}
+
